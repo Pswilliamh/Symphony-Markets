@@ -4,8 +4,9 @@ import noScamCompassImg from '../assets/images/no_scam_compass_1794561548457.jpg
 import videoCoverStopsImg from '../assets/images/video_cover_stops_1794561549253.jpg';
 import videoCoverWalletImg from '../assets/images/video_cover_wallet_1794561551281.jpg';
 import { createNoScamZonePdfBlob } from '../utils/pdfGuideGenerator';
+import { KsbcGoldTrainingPage } from './KsbcGoldTrainingPage';
 
-export type PublicPageTab = 'welcome' | 'features' | 'story' | 'guide';
+export type PublicPageTab = 'welcome' | 'features' | 'ksbc' | 'story' | 'guide';
 
 interface LandingPageViewProps {
   activePage: PublicPageTab;
@@ -64,6 +65,8 @@ const WELCOME_SLIDES: WalkthroughSlide[] = [
   },
 ];
 
+const FIVE_DOLLAR_BLUEPRINT_VIDEO_URL =
+  '/assets/aistudio/Symphony_Markets__The__5_Blueprint_781e68ab.mp4';
 const HOMEPAGE_DRIVE_VIDEO_URL =
   'https://drive.google.com/file/d/1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw/view';
 const MANIFESTO_DRIVE_PDF_VIEW_URL =
@@ -71,38 +74,57 @@ const MANIFESTO_DRIVE_PDF_VIEW_URL =
 const SHARED_DRIVE_FOLDER_URL =
   'https://drive.google.com/drive/folders/1hPDCoTd5K4163HsDW7_LtQXXB8VvBkv3';
 
+const WELCOME_PLAYLIST = [
+  {
+    id: 'blueprint',
+    shortLabel: '01 · The $5 Blueprint',
+    fullTitle: 'Symphony Markets: The $5 Blueprint',
+    duration: '4:40',
+    url: FIVE_DOLLAR_BLUEPRINT_VIDEO_URL,
+    poster: videoCoverWalletImg,
+  },
+  {
+    id: 'sandbox',
+    shortLabel: '02 · The No-Scam Sandbox',
+    fullTitle: 'Symphony Markets: The No-Scam Sandbox',
+    duration: '5:45',
+    url: HOMEPAGE_DRIVE_VIDEO_URL,
+    poster: founderDeskImg,
+  },
+] as const;
+
 const INITIAL_LESSONS: VideoLessonItem[] = [
   {
+    id: 'vid_five_dollar_blueprint',
+    number: 'Featured · 4m 40s',
+    title: 'Symphony Markets: The $5 Blueprint (Why 1x Spot & 10-Cent Risk Protect Beginners)',
+    duration: 'HD Video · Ready',
+    description:
+      'Exposes how fake stop-loss platforms trap beginners, why sub-penny XRP & XLM fees preserve a $5 wallet, and how the 2% "10-Cent Safety Net" works.',
+    coverSrc: videoCoverWalletImg,
+    coverAlt: 'Smartphone beside a pocket notebook on a warm sunlit cafe table',
+    driveUrl: FIVE_DOLLAR_BLUEPRINT_VIDEO_URL,
+  },
+  {
     id: 'vid_sandbox_overview',
-    number: 'Overview Video',
-    title: 'Symphony Markets: The No-Scam Sandbox (Official Walkthrough)',
+    number: 'Overview · 5m 45s',
+    title: 'Symphony Markets: The No-Scam Sandbox (Official Platform Walkthrough)',
     duration: 'Google Drive MP4 · Ready',
     description:
-      'Our connected homepage video from Google Drive introducing Symphony Markets, the No-Scam Zone mission, and how to explore the training sandbox safely.',
+      'Full walkthrough introducing the Symphony Markets open-source classroom, the No-Scam Zone mission, and how to practice safely inside the workspace.',
     coverSrc: founderDeskImg,
     coverAlt: 'Sunlight across a warm oak study desk with notebook and market charts',
     driveUrl: HOMEPAGE_DRIVE_VIDEO_URL,
   },
   {
     id: 'vid_fake_stops',
-    number: 'Lesson 01',
-    title: 'How Fake "Stop-Trading" Buttons Scam Beginners—And How Real Protection Works',
-    duration: '1 min · Coming Soon',
+    number: 'Next 1-Min Guide',
+    title: 'Your Custom 60-Second How-To Slot (Attach Any Google Drive Video)',
+    duration: '1 min · Slot Ready',
     description:
-      'Learn how fraudulent websites fake stop-loss controls on screen while holding your funds hostage, and why keeping coins in your own wallet changes everything.',
+      'Reserved slot for your upcoming 1-minute Google Drive recordings—click "+ Attach Link" below anytime to add another short lesson.',
     coverSrc: videoCoverStopsImg,
     coverAlt: 'Printed market study notes and brass ruler on a sunlit wooden table',
-    driveUrl: '',
-  },
-  {
-    id: 'vid_five_dollar_wallet',
-    number: 'Lesson 02',
-    title: 'Your First $5 Self-Custody Wallet: Avoiding Gas Traps & Seed-Phrase Scams',
-    duration: '1 min · Coming Soon',
-    description:
-      'A calm, 60-second walkthrough of practicing with $5 of XLM or XRP using public read-only tracking—without ever giving any website access to your wallet.',
-    coverSrc: videoCoverWalletImg,
-    coverAlt: 'Smartphone beside a pocket notebook on a warm sunlit cafe table',
     driveUrl: '',
   },
 ];
@@ -155,14 +177,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 }) => {
   const welcomeVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Media Player State (Page 1: Welcome — connected by default to Google Drive Homepage Video)
+  // Media Player State (Page 1: Welcome — features both official Welcome Videos)
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
   const [currentSlideIdx, setCurrentSlideIdx] = useState<number>(0);
   const [elapsedInSlide, setElapsedInSlide] = useState<number>(0);
-  const [customVideoUrl, setCustomVideoUrl] = useState<string>(HOMEPAGE_DRIVE_VIDEO_URL);
+  const [customVideoUrl, setCustomVideoUrl] = useState<string>(FIVE_DOLLAR_BLUEPRINT_VIDEO_URL);
   const [showUrlEditor, setShowUrlEditor] = useState<boolean>(false);
-  const [draftVideoUrl, setDraftVideoUrl] = useState<string>(HOMEPAGE_DRIVE_VIDEO_URL);
+  const [draftVideoUrl, setDraftVideoUrl] = useState<string>(FIVE_DOLLAR_BLUEPRINT_VIDEO_URL);
 
   // Story Page Video Library Link State (Page 3: Our Story)
   const [lessons, setLessons] = useState<VideoLessonItem[]>(INITIAL_LESSONS);
@@ -300,9 +322,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 </span>
               </div>
 
-              <div className="space-y-2.5">
-                <h1 className="font-editorial text-4xl sm:text-5xl lg:text-[3.4rem] font-bold tracking-tight text-slate-900 dark:text-white leading-[1.04]">
-                  Symphony Markets
+              <div className="space-y-3">
+                <h1 className="font-editorial text-4xl sm:text-5xl lg:text-[3.3rem] font-bold tracking-tight text-slate-900 dark:text-white leading-[1.08]">
+                  <span className="inline-block px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30">
+                    Symphony Markets
+                  </span>
                 </h1>
                 <p
                   className="font-editorial text-xl sm:text-2xl font-semibold tracking-tight text-sky-700 dark:text-sky-400 leading-snug"
@@ -339,14 +363,20 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <span>No signup required to enter</span>
-                <span aria-hidden="true">·</span>
                 <button
                   type="button"
                   onClick={() => onNavigatePage('features')}
                   className="text-sky-600 dark:text-sky-400 hover:underline font-medium cursor-pointer"
                 >
                   Explore Features
+                </button>
+                <span aria-hidden="true">·</span>
+                <button
+                  type="button"
+                  onClick={() => onNavigatePage('ksbc')}
+                  className="text-amber-700 dark:text-amber-400 hover:underline font-medium cursor-pointer"
+                >
+                  KSBC Gold RWA Classroom
                 </button>
                 <span aria-hidden="true">·</span>
                 <button
@@ -360,8 +390,55 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Prominent On-Screen Video Media Player */}
+          {/* Right Column: Prominent On-Screen Dual-Video Media Player */}
           <div className="lg:col-span-7 flex flex-col justify-between border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl overflow-hidden">
+            {/* Top Welcome Video Playlist Switcher */}
+            <div className="px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {WELCOME_PLAYLIST.map((vid) => {
+                  const isActiveVid = customVideoUrl === vid.url;
+                  return (
+                    <button
+                      key={vid.id}
+                      type="button"
+                      onClick={() => {
+                        setCustomVideoUrl(vid.url);
+                        setVideoPlaying(false);
+                        setIsPlaying(false);
+                      }}
+                      className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                        isActiveVid
+                          ? 'bg-sky-600 text-white font-semibold'
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {vid.shortLabel} ({vid.duration})
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (customVideoUrl) {
+                    setCustomVideoUrl('');
+                    setVideoPlaying(false);
+                  } else {
+                    setCustomVideoUrl(FIVE_DOLLAR_BLUEPRINT_VIDEO_URL);
+                    setIsPlaying(false);
+                  }
+                }}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                  !customVideoUrl
+                    ? 'bg-sky-600 text-white font-semibold'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                4-Slide Summary
+              </button>
+            </div>
+
             <div className="relative aspect-16/9 w-full bg-slate-950 overflow-hidden">
               {embeddedCustomVideo ? (
                 embeddedCustomVideo.type === 'video' ? (
@@ -369,24 +446,42 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                     <video
                       ref={welcomeVideoRef}
                       key={embeddedCustomVideo.src}
-                      poster={founderDeskImg}
+                      poster={
+                        customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
+                          ? founderDeskImg
+                          : undefined
+                      }
                       controls
                       playsInline
                       preload="metadata"
                       onPlay={() => setVideoPlaying(true)}
                       onPause={() => setVideoPlaying(false)}
-                      onEnded={() => setVideoPlaying(false)}
+                      onEnded={() => {
+                        setVideoPlaying(false);
+                        if (customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL) {
+                          setCustomVideoUrl(HOMEPAGE_DRIVE_VIDEO_URL);
+                        }
+                      }}
                       className="w-full h-full object-contain bg-slate-950"
                     >
-                      <source src={embeddedCustomVideo.src} type="video/mp4" />
                       <source
-                        src="/api/drive-video/1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw"
+                        src={
+                          customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                            ? `${embeddedCustomVideo.src}#t=0.2`
+                            : embeddedCustomVideo.src
+                        }
                         type="video/mp4"
                       />
+                      {customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL && (
+                        <source
+                          src="/api/drive-video/1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw"
+                          type="video/mp4"
+                        />
+                      )}
                     </video>
 
                     {!videoPlaying && (
-                      <div className="pointer-events-none absolute inset-x-0 top-0 bottom-12 bg-gradient-to-b from-black/35 via-transparent to-black/35 flex items-center justify-center p-4">
+                      <div className="pointer-events-none absolute inset-x-0 top-0 bottom-12 bg-gradient-to-b from-black/40 via-transparent to-black/45 flex items-center justify-center p-4">
                         <button
                           type="button"
                           onClick={() => {
@@ -397,7 +492,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                           }}
                           className="pointer-events-auto px-5 py-3 rounded-lg bg-white/95 hover:bg-white text-slate-950 text-xs sm:text-sm font-semibold shadow-lg transition-transform duration-150 hover:scale-105 cursor-pointer whitespace-nowrap shrink-0"
                         >
-                          ▶ Play Welcome Video
+                          {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                            ? '▶ Play Video 1: The $5 Blueprint'
+                            : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
+                            ? '▶ Play Video 2: The No-Scam Sandbox'
+                            : '▶ Play Welcome Video'}
                         </button>
                       </div>
                     )}
@@ -492,29 +591,32 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                         </button>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCustomVideoUrl(HOMEPAGE_DRIVE_VIDEO_URL);
-                        setIsPlaying(false);
-                      }}
-                      className="ml-2 font-medium text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap"
-                    >
-                      ← Back to Homepage Video
-                    </button>
                   </div>
                 ) : (
                   <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-300">
                     <span className="font-semibold text-slate-900 dark:text-white">
-                      Symphony Markets: The No-Scam Sandbox
+                      {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                        ? 'Video 1 of 2 · Symphony Markets: The $5 Blueprint'
+                        : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
+                        ? 'Video 2 of 2 · Symphony Markets: The No-Scam Sandbox'
+                        : 'Custom Welcome Video'}
                     </span>
                     <span aria-hidden="true">·</span>
                     <button
                       type="button"
-                      onClick={() => setCustomVideoUrl('')}
-                      className="text-slate-500 hover:text-slate-900 dark:hover:text-white hover:underline cursor-pointer whitespace-nowrap"
+                      onClick={() => {
+                        setVideoPlaying(false);
+                        setCustomVideoUrl(
+                          customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                            ? HOMEPAGE_DRIVE_VIDEO_URL
+                            : FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                        );
+                      }}
+                      className="text-sky-600 dark:text-sky-400 font-medium hover:underline cursor-pointer whitespace-nowrap"
                     >
-                      View 4-Slide Summary
+                      {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                        ? 'Switch to Video 2 →'
+                        : '← Switch to Video 1'}
                     </button>
                   </div>
                 )}
@@ -523,9 +625,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   type="button"
                   onClick={() => {
                     setShowUrlEditor((v) => !v);
-                    setDraftVideoUrl(customVideoUrl || HOMEPAGE_DRIVE_VIDEO_URL);
+                    setDraftVideoUrl(customVideoUrl || FIVE_DOLLAR_BLUEPRINT_VIDEO_URL);
                   }}
-                  className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                  className="text-xs font-medium text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
                 >
                   {showUrlEditor ? 'Close Video Settings' : 'Video Source'}
                 </button>
@@ -546,6 +648,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                       setCustomVideoUrl(draftVideoUrl.trim());
                       setShowUrlEditor(false);
                       setIsPlaying(false);
+                      setVideoPlaying(false);
                     }}
                     className="px-3 py-1.5 bg-sky-600 text-white text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap shrink-0"
                   >
@@ -558,6 +661,13 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         </section>
       </div>
     );
+  }
+
+  /* ============================================================================
+   * PAGE 2B: STANDALONE KSBC GOLD REAL-WORLD ASSET (RWA) TRAINING PAGE
+   * ============================================================================ */
+  if (activePage === 'ksbc') {
+    return <KsbcGoldTrainingPage onEnterApp={onEnterApp} xrpLivePrice={xrpLivePrice} />;
   }
 
   /* ============================================================================

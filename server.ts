@@ -393,6 +393,98 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
     }
   });
 
+  // Serve local /assets/*.mp4 videos in 2 MB Range chunks so 30MB+ videos never hit Cloud Run's 32 MB response cap
+  app.get(/^\/assets\/.+\.mp4$/i, async (req, res, next) => {
+    try {
+      const fs = await import('fs');
+      const publicRoot = path.resolve(__dirname, 'public');
+      const distRoot = path.resolve(__dirname, 'dist');
+      const decodedPath = decodeURIComponent(req.path).replace(/^\/+/, '');
+      let candidatePath = path.resolve(publicRoot, decodedPath);
+      if (!candidatePath.startsWith(publicRoot + path.sep) || !fs.existsSync(candidatePath)) {
+        const distCandidate = path.resolve(distRoot, decodedPath);
+        if (distCandidate.startsWith(distRoot + path.sep) && fs.existsSync(distCandidate)) {
+          candidatePath = distCandidate;
+        } else {
+          next();
+          return;
+        }
+      }
+
+      const stat = fs.statSync(candidatePath);
+      if (!stat.isFile()) {
+        next();
+        return;
+      }
+
+      const totalSize = stat.size;
+      const rangeHeader = req.headers.range;
+
+      if (rangeHeader) {
+        const match = /bytes=(\d+)-(\d*)/.exec(rangeHeader);
+        const start = match ? parseInt(match[1], 10) : 0;
+        const requestedEnd =
+          match && match[2] ? parseInt(match[2], 10) : start + MAX_VIDEO_CHUNK_BYTES - 1;
+        const end = Math.min(requestedEnd, start + MAX_VIDEO_CHUNK_BYTES - 1, totalSize - 1);
+
+        if (start >= totalSize || start > end) {
+          res.status(416).setHeader('Content-Range', `bytes */${totalSize}`).end();
+          return;
+        }
+
+        const chunkLength = end - start + 1;
+        res.status(206);
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Range', `bytes ${start}-${end}/${totalSize}`);
+        res.setHeader('Content-Length', String(chunkLength));
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+
+        if (req.method === 'HEAD') {
+          res.end();
+          return;
+        }
+
+        const stream = fs.createReadStream(candidatePath, { start, end });
+        stream.on('error', () => {
+          if (!res.writableEnded) res.end();
+        });
+        stream.pipe(res);
+        return;
+      }
+
+      if (req.method === 'HEAD') {
+        res.status(200);
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Length', String(totalSize));
+        res.end();
+        return;
+      }
+
+      // If a client requests a large MP4 without Range, return the first 2 MB chunk as 206 so Cloud Run never drops >32MB payloads
+      if (totalSize > 20 * 1024 * 1024) {
+        const end = Math.min(MAX_VIDEO_CHUNK_BYTES - 1, totalSize - 1);
+        res.status(206);
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Range', `bytes 0-${end}/${totalSize}`);
+        res.setHeader('Content-Length', String(end + 1));
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        const stream = fs.createReadStream(candidatePath, { start: 0, end });
+        stream.on('error', () => {
+          if (!res.writableEnded) res.end();
+        });
+        stream.pipe(res);
+        return;
+      }
+
+      next();
+    } catch {
+      next();
+    }
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({

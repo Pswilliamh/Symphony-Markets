@@ -432,20 +432,20 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Top Bar Contract: 3 Zones separated by gap-8 */}
-      <header className="flex items-center justify-between gap-8 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        {/* Zone 1: Single text element wordmark */}
+      <header className="flex items-center justify-between gap-8 px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        {/* Zone 1: Single text element wordmark with warm background highlight */}
         <a
           href="#welcome"
           onClick={(e) => {
             e.preventDefault();
             navigatePublicPage('welcome');
           }}
-          className="font-editorial text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap shrink-0"
+          className="font-editorial text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white px-3.5 py-1 rounded-lg bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 whitespace-nowrap shrink-0"
         >
           Symphony Markets
         </a>
 
-        {/* Zone 2: Standalone Page Menu Items (4–5 concise single-line links) */}
+        {/* Zone 2: Standalone Page Menu Items (5 concise single-line links) */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
           <button
             type="button"
@@ -471,6 +471,17 @@ export default function App() {
           </button>
           <button
             type="button"
+            onClick={() => navigatePublicPage('ksbc')}
+            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              viewMode === 'landing' && publicPage === 'ksbc'
+                ? 'text-amber-700 dark:text-amber-400 font-semibold'
+                : 'hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            KSBC Gold RWA
+          </button>
+          <button
+            type="button"
             onClick={() => navigatePublicPage('story')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               viewMode === 'landing' && publicPage === 'story'
@@ -491,15 +502,6 @@ export default function App() {
           >
             Free PDF Guide
           </button>
-          {viewMode === 'app' && (
-            <button
-              type="button"
-              onClick={() => handleEnterApp()}
-              className="text-sky-600 dark:text-sky-400 font-semibold whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              Training App
-            </button>
-          )}
         </nav>
 
         {/* Zone 3: 1 primary action */}
@@ -547,6 +549,17 @@ export default function App() {
           }`}
         >
           Features
+        </button>
+        <button
+          type="button"
+          onClick={() => navigatePublicPage('ksbc')}
+          className={`whitespace-nowrap shrink-0 cursor-pointer ${
+            viewMode === 'landing' && publicPage === 'ksbc'
+              ? 'text-amber-700 dark:text-amber-400 font-semibold'
+              : ''
+          }`}
+        >
+          KSBC Gold RWA
         </button>
         <button
           type="button"
