@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import founderDeskImg from '../assets/images/founder_desk_story_1794561548330.jpg';
 import noScamCompassImg from '../assets/images/no_scam_compass_1794561548457.jpg';
 import videoCoverStopsImg from '../assets/images/video_cover_stops_1794561549253.jpg';
@@ -64,7 +64,25 @@ const WELCOME_SLIDES: WalkthroughSlide[] = [
   },
 ];
 
+const HOMEPAGE_DRIVE_VIDEO_URL =
+  'https://drive.google.com/file/d/1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw/view';
+const MANIFESTO_DRIVE_PDF_VIEW_URL =
+  'https://drive.google.com/file/d/1mMH2ngPd4gWPjFYEOAHtpv9XZm-v9McN/view';
+const SHARED_DRIVE_FOLDER_URL =
+  'https://drive.google.com/drive/folders/1hPDCoTd5K4163HsDW7_LtQXXB8VvBkv3';
+
 const INITIAL_LESSONS: VideoLessonItem[] = [
+  {
+    id: 'vid_sandbox_overview',
+    number: 'Overview Video',
+    title: 'Symphony Markets: The No-Scam Sandbox (Official Walkthrough)',
+    duration: 'Google Drive MP4 · Ready',
+    description:
+      'Our connected homepage video from Google Drive introducing Symphony Markets, the No-Scam Zone mission, and how to explore the training sandbox safely.',
+    coverSrc: founderDeskImg,
+    coverAlt: 'Sunlight across a warm oak study desk with notebook and market charts',
+    driveUrl: HOMEPAGE_DRIVE_VIDEO_URL,
+  },
   {
     id: 'vid_fake_stops',
     number: 'Lesson 01',
@@ -95,13 +113,33 @@ function toEmbeddableVideoUrl(rawUrl: string): { type: 'iframe' | 'video'; src: 
 
   const driveMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
   if (driveMatch?.[1]) {
+    if (driveMatch[1] === '1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw') {
+      return { type: 'video', src: '/assets/symphony-welcome.mp4' };
+    }
     return {
-      type: 'iframe',
-      src: `https://drive.google.com/file/d/${driveMatch[1]}/preview`,
+      type: 'video',
+      src: `/api/drive-video/${driveMatch[1]}`,
     };
   }
 
-  if (trimmed.endsWith('.mp4') || trimmed.endsWith('.webm') || trimmed.endsWith('.ogg')) {
+  const driveIdParam = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (trimmed.includes('drive.google.com') && driveIdParam?.[1]) {
+    if (driveIdParam[1] === '1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw') {
+      return { type: 'video', src: '/assets/symphony-welcome.mp4' };
+    }
+    return {
+      type: 'video',
+      src: `/api/drive-video/${driveIdParam[1]}`,
+    };
+  }
+
+  if (
+    trimmed.startsWith('/assets/') ||
+    trimmed.startsWith('/api/drive-video/') ||
+    trimmed.endsWith('.mp4') ||
+    trimmed.endsWith('.webm') ||
+    trimmed.endsWith('.ogg')
+  ) {
     return { type: 'video', src: trimmed };
   }
 
@@ -115,16 +153,20 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   xrpLivePrice,
   xlmLivePrice,
 }) => {
-  // Media Player State (Page 1: Welcome)
+  const welcomeVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Media Player State (Page 1: Welcome — connected by default to Google Drive Homepage Video)
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
   const [currentSlideIdx, setCurrentSlideIdx] = useState<number>(0);
   const [elapsedInSlide, setElapsedInSlide] = useState<number>(0);
-  const [customVideoUrl, setCustomVideoUrl] = useState<string>('');
+  const [customVideoUrl, setCustomVideoUrl] = useState<string>(HOMEPAGE_DRIVE_VIDEO_URL);
   const [showUrlEditor, setShowUrlEditor] = useState<boolean>(false);
-  const [draftVideoUrl, setDraftVideoUrl] = useState<string>('');
+  const [draftVideoUrl, setDraftVideoUrl] = useState<string>(HOMEPAGE_DRIVE_VIDEO_URL);
 
   // Story Page Video Library Link State (Page 3: Our Story)
   const [lessons, setLessons] = useState<VideoLessonItem[]>(INITIAL_LESSONS);
+  const [playingLessonId, setPlayingLessonId] = useState<string | null>(null);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [draftLessonUrl, setDraftLessonUrl] = useState<string>('');
 
@@ -133,6 +175,8 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isSubmittingEmail, setIsSubmittingEmail] = useState<boolean>(false);
   const [unlockedForEmail, setUnlockedForEmail] = useState<string | null>(null);
+  const [showPdfPreview, setShowPdfPreview] = useState<boolean>(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isPlaying || customVideoUrl || activePage !== 'welcome') return;
@@ -205,16 +249,35 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
     }
   };
 
-  const handleDownloadPdf = () => {
-    const blob = createNoScamZonePdfBlob(unlockedForEmail ?? undefined);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'Symphony-Markets-No-Scam-Zone-Guide.pdf';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  const handleDownloadPdf = async () => {
+    setIsDownloadingPdf(true);
+    try {
+      const res = await fetch('/api/drive-pdf?download=1');
+      if (!res.ok) {
+        throw new Error('Fallback to generated PDF');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'no-scam-zone-manifesto.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch {
+      const fallbackBlob = createNoScamZonePdfBlob(unlockedForEmail ?? undefined);
+      const url = URL.createObjectURL(fallbackBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'no-scam-zone-manifesto.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
   };
 
   /* ============================================================================
@@ -302,11 +365,43 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             <div className="relative aspect-16/9 w-full bg-slate-950 overflow-hidden">
               {embeddedCustomVideo ? (
                 embeddedCustomVideo.type === 'video' ? (
-                  <video
-                    src={embeddedCustomVideo.src}
-                    controls
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="relative w-full h-full">
+                    <video
+                      ref={welcomeVideoRef}
+                      key={embeddedCustomVideo.src}
+                      poster={founderDeskImg}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      onPlay={() => setVideoPlaying(true)}
+                      onPause={() => setVideoPlaying(false)}
+                      onEnded={() => setVideoPlaying(false)}
+                      className="w-full h-full object-contain bg-slate-950"
+                    >
+                      <source src={embeddedCustomVideo.src} type="video/mp4" />
+                      <source
+                        src="/api/drive-video/1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw"
+                        type="video/mp4"
+                      />
+                    </video>
+
+                    {!videoPlaying && (
+                      <div className="pointer-events-none absolute inset-x-0 top-0 bottom-12 bg-gradient-to-b from-black/35 via-transparent to-black/35 flex items-center justify-center p-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const el = welcomeVideoRef.current;
+                            if (el) {
+                              void el.play();
+                            }
+                          }}
+                          className="pointer-events-auto px-5 py-3 rounded-lg bg-white/95 hover:bg-white text-slate-950 text-xs sm:text-sm font-semibold shadow-lg transition-transform duration-150 hover:scale-105 cursor-pointer whitespace-nowrap shrink-0"
+                        >
+                          ▶ Play Welcome Video
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <iframe
                     src={embeddedCustomVideo.src}
@@ -328,7 +423,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/20 flex flex-col justify-between p-4 sm:p-6">
                     <div className="flex items-center justify-between gap-2 text-xs text-slate-200 font-mono">
                       <span>{activeSlide.chapter}</span>
-                      <span>{isPlaying ? 'PLAYING OVERVIEW' : '1-MIN WELCOME TOUR'}</span>
+                      <span>{isPlaying ? 'PLAYING OVERVIEW' : '4-SLIDE OVERVIEW'}</span>
                     </div>
 
                     {!isPlaying && (
@@ -336,10 +431,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                         <button
                           type="button"
                           onClick={() => setIsPlaying(true)}
-                          aria-label="Play Welcome Video Overview"
+                          aria-label="Play Slide Tour"
                           className="px-5 py-2.5 rounded-lg bg-white/95 hover:bg-white text-slate-950 text-xs sm:text-sm font-semibold shadow-md transition-transform duration-150 hover:scale-105 cursor-pointer whitespace-nowrap shrink-0"
                         >
-                          ▶ Play Welcome Video Overview
+                          ▶ Play 4-Slide Summary
                         </button>
                       </div>
                     )}
@@ -360,7 +455,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             {/* Compact Transport Bar */}
             <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 space-y-2">
               {!embeddedCustomVideo && (
-                <div className="w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="w-full h-1 bg-slate-200 dark:border-slate-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-sky-600 transition-transform duration-200 origin-left"
                     style={{ width: `${Math.min(100, totalProgressPct)}%` }}
@@ -397,26 +492,42 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                         </button>
                       ))}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomVideoUrl(HOMEPAGE_DRIVE_VIDEO_URL);
+                        setIsPlaying(false);
+                      }}
+                      className="ml-2 font-medium text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap"
+                    >
+                      ← Back to Homepage Video
+                    </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setCustomVideoUrl('')}
-                    className="text-xs font-medium text-slate-600 dark:text-slate-300 hover:underline cursor-pointer"
-                  >
-                    ← Built-In Welcome Tour
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      Symphony Markets: The No-Scam Sandbox
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomVideoUrl('')}
+                      className="text-slate-500 hover:text-slate-900 dark:hover:text-white hover:underline cursor-pointer whitespace-nowrap"
+                    >
+                      View 4-Slide Summary
+                    </button>
+                  </div>
                 )}
 
                 <button
                   type="button"
                   onClick={() => {
                     setShowUrlEditor((v) => !v);
-                    setDraftVideoUrl(customVideoUrl);
+                    setDraftVideoUrl(customVideoUrl || HOMEPAGE_DRIVE_VIDEO_URL);
                   }}
                   className="text-xs font-medium text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
                 >
-                  {customVideoUrl ? 'Change Google Drive Video' : '+ Embed Google Drive Video'}
+                  {showUrlEditor ? 'Close Video Settings' : 'Video Source'}
                 </button>
               </div>
 
@@ -630,105 +741,142 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <div className="text-xs font-medium text-sky-600 dark:text-sky-400">
-                  1-Minute Trading Library · Google Drive Ready
+                  Trading Video Library · Connected to Google Drive
                 </div>
                 <h2 className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
-                  Short 60-Second How-To Video Guides
+                  Walkthrough & Short 60-Second How-To Video Guides
                 </h2>
               </div>
-              <button
-                type="button"
-                onClick={() => onEnterApp()}
-                className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
-              >
-                Practice Inside the App →
-              </button>
+              <div className="flex items-center gap-4 text-xs">
+                <a
+                  href={SHARED_DRIVE_FOLDER_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 hover:underline"
+                >
+                  Open Shared Google Drive Folder ↗
+                </a>
+                <button
+                  type="button"
+                  onClick={() => onEnterApp()}
+                  className="font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+                >
+                  Practice Inside the App →
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {lessons.map((lesson) => (
-                <div
-                  key={lesson.id}
-                  className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex flex-col justify-between bg-slate-50/40 dark:bg-slate-950/40"
-                >
-                  <div className="relative aspect-16/9 w-full overflow-hidden">
-                    <img
-                      src={lesson.coverSrc}
-                      alt={lesson.coverAlt}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent p-3.5 flex items-center justify-between text-xs text-white">
-                      <span className="font-semibold">{lesson.number}</span>
-                      <span className="font-mono text-[11px] text-slate-200">{lesson.duration}</span>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {lessons.map((lesson) => {
+                const resolvedMedia = toEmbeddableVideoUrl(lesson.driveUrl);
+                const isLessonPlaying = playingLessonId === lesson.id && resolvedMedia;
 
-                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                    <div className="space-y-1.5">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white leading-snug">
-                        {lesson.title}
-                      </h3>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {lesson.description}
-                      </p>
-                    </div>
-
-                    {editingLessonId === lesson.id ? (
-                      <div className="flex items-center gap-2 pt-2">
-                        <input
-                          type="url"
-                          value={draftLessonUrl}
-                          onChange={(e) => setDraftLessonUrl(e.target.value)}
-                          placeholder="Paste Google Drive share link..."
-                          className="flex-1 px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                return (
+                  <div
+                    key={lesson.id}
+                    className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden flex flex-col justify-between bg-slate-50/40 dark:bg-slate-950/40"
+                  >
+                    <div className="relative aspect-16/9 w-full bg-slate-950 overflow-hidden">
+                      {isLessonPlaying && resolvedMedia.type === 'video' ? (
+                        <video
+                          src={resolvedMedia.src}
+                          controls
+                          autoPlay
+                          playsInline
+                          className="w-full h-full object-contain bg-slate-950"
                         />
-                        <button
-                          type="button"
-                          onClick={() => handleSaveDriveLink(lesson.id)}
-                          className="px-3 py-1.5 bg-sky-600 text-white text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap shrink-0"
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingLessonId(null)}
-                          className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
-                        >
-                          Cancel
-                        </button>
+                      ) : isLessonPlaying && resolvedMedia.type === 'iframe' ? (
+                        <iframe
+                          src={resolvedMedia.src}
+                          title={lesson.title}
+                          allow="autoplay; fullscreen"
+                          className="w-full h-full border-0"
+                        />
+                      ) : (
+                        <>
+                          <img
+                            src={lesson.coverSrc}
+                            alt={lesson.coverAlt}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent p-3.5 flex items-center justify-between text-xs text-white">
+                            <span className="font-semibold">{lesson.number}</span>
+                            <span className="font-mono text-[11px] text-slate-200">
+                              {lesson.duration}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                      <div className="space-y-1.5">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white leading-snug">
+                          {lesson.title}
+                        </h3>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                          {lesson.description}
+                        </p>
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70 dark:border-slate-800/70 text-xs">
-                        {lesson.driveUrl ? (
-                          <a
-                            href={lesson.driveUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+
+                      {editingLessonId === lesson.id ? (
+                        <div className="flex items-center gap-2 pt-2">
+                          <input
+                            type="url"
+                            value={draftLessonUrl}
+                            onChange={(e) => setDraftLessonUrl(e.target.value)}
+                            placeholder="Paste Google Drive share link..."
+                            className="flex-1 px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveDriveLink(lesson.id)}
+                            className="px-3 py-1.5 bg-sky-600 text-white text-xs font-semibold rounded-lg cursor-pointer whitespace-nowrap shrink-0"
                           >
-                            Watch 1-Min Video (Google Drive) →
-                          </a>
-                        ) : (
-                          <span className="text-slate-500 dark:text-slate-400">
-                            Video slot reserved for your recording
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingLessonId(lesson.id);
-                            setDraftLessonUrl(lesson.driveUrl);
-                          }}
-                          className="text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 font-medium cursor-pointer whitespace-nowrap shrink-0"
-                        >
-                          {lesson.driveUrl ? 'Edit Drive Link' : '+ Attach Drive Link'}
-                        </button>
-                      </div>
-                    )}
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingLessonId(null)}
+                            className="px-2 py-1.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/70 dark:border-slate-800/70 text-xs">
+                          {lesson.driveUrl ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPlayingLessonId((curr) => (curr === lesson.id ? null : lesson.id))
+                              }
+                              className="font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+                            >
+                              {isLessonPlaying ? 'Stop Video' : '▶ Play Video Inline'}
+                            </button>
+                          ) : (
+                            <span className="text-slate-500 dark:text-slate-400">
+                              Video slot reserved for your recording
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingLessonId(lesson.id);
+                              setDraftLessonUrl(lesson.driveUrl);
+                            }}
+                            className="text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 font-medium cursor-pointer whitespace-nowrap shrink-0"
+                          >
+                            {lesson.driveUrl ? 'Edit Link' : '+ Attach Link'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -740,21 +888,22 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
    * PAGE 4: STANDALONE 100% FREE "NO-SCAM ZONE" PDF GUIDE PAGE
    * ============================================================================ */
   return (
-    <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 lg:py-10 flex items-center min-h-[calc(100vh-132px)]">
+    <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 lg:py-10 flex flex-col justify-center min-h-[calc(100vh-132px)] gap-6">
       <div className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 sm:p-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           <div className="lg:col-span-7 space-y-4">
             <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              100% Free PDF Resource · Nothing For Sale, Ever
+              100% Free PDF Resource · Synced From Google Drive · Nothing For Sale, Ever
             </div>
             <h1
               className="font-editorial text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight"
               style={{ textWrap: 'balance' }}
             >
-              The “No-Scam Zone” Starter Guide (Free PDF)
+              The “No-Scam Zone” Manifesto & Starter Guide (Free PDF)
             </h1>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-[62ch]">
-              Enter your email to unlock and download our printable community PDF checklist—built to protect newcomers before they ever connect a wallet or place a $5 learning trade.
+              Enter your email to unlock and download our official{' '}
+              <strong>no-scam-zone-manifesto.pdf</strong> directly from our community Google Drive—built to protect newcomers before they ever connect a wallet or place a $5 learning trade.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-200 dark:border-slate-800 text-xs">
@@ -790,10 +939,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <div className="p-6 rounded-xl bg-emerald-500/5 border border-emerald-500/30 space-y-4">
                 <div className="space-y-1">
                   <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                    ✓ Free Guide Unlocked for {unlockedForEmail}
+                    ✓ Manifesto PDF Unlocked for {unlockedForEmail}
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Click below to download your copy of <strong>Symphony-Markets-No-Scam-Zone-Guide.pdf</strong>, or step inside the live training app.
+                    Download your copy of <strong>no-scam-zone-manifesto.pdf</strong> below, preview it right on this page, or step inside the live training app.
                   </p>
                 </div>
 
@@ -801,9 +950,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   <button
                     type="button"
                     onClick={handleDownloadPdf}
-                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                    disabled={isDownloadingPdf}
+                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
                   >
-                    Download Free PDF Guide
+                    {isDownloadingPdf ? 'Downloading PDF...' : 'Download no-scam-zone-manifesto.pdf'}
                   </button>
                   <button
                     type="button"
@@ -812,6 +962,24 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   >
                     Enter App →
                   </button>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-500/20 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setShowPdfPreview((p) => !p)}
+                    className="font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                  >
+                    {showPdfPreview ? 'Hide Inline PDF Reader' : 'Read PDF Inline on Page'}
+                  </button>
+                  <a
+                    href={MANIFESTO_DRIVE_PDF_VIEW_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-slate-600 dark:text-slate-400 hover:underline"
+                  >
+                    View in Google Drive ↗
+                  </a>
                 </div>
               </div>
             ) : (
@@ -825,7 +993,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                     htmlFor="free-guide-email"
                     className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5"
                   >
-                    Email Address for Instant Free PDF Download
+                    Email Address for Instant Free Manifesto PDF
                   </label>
                   <input
                     id="free-guide-email"
@@ -851,7 +1019,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 >
                   {isSubmittingEmail
                     ? 'Preparing Your Free PDF...'
-                    : 'Unlock & Download Free PDF Guide'}
+                    : 'Unlock & Download Free Manifesto PDF'}
                 </button>
 
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
@@ -862,6 +1030,28 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           </div>
         </div>
       </div>
+
+      {unlockedForEmail && showPdfPreview && (
+        <div className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-900 dark:text-white">
+              no-scam-zone-manifesto.pdf (Synced from Google Drive)
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowPdfPreview(false)}
+              className="text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+            >
+              Close Reader
+            </button>
+          </div>
+          <iframe
+            src="/api/drive-pdf"
+            title="No-Scam Zone Manifesto PDF"
+            className="w-full h-[640px] border-0 bg-slate-100 dark:bg-slate-950"
+          />
+        </div>
+      )}
     </div>
   );
 };

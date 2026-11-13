@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import { Readable } from 'stream';
+import { ReadableStream as WebReadableStream } from 'stream/web';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -220,8 +222,175 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
     res.json({
       ok: true,
       email,
-      message: 'Your 100% Free No-Scam Zone PDF Guide is unlocked and ready to download below.',
+      message: 'Your 100% Free No-Scam Zone Manifesto PDF is unlocked and ready to download below.',
     });
+  });
+
+  // Default Google Drive Asset IDs from the shared Symphony Markets folder
+  // Folder: https://drive.google.com/drive/folders/1hPDCoTd5K4163HsDW7_LtQXXB8VvBkv3
+  const DEFAULT_DRIVE_VIDEO_ID = '1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw'; // Symphony_Markets__The_No-Scam_Sandbox.mp4
+  const DEFAULT_DRIVE_PDF_ID = '1mMH2ngPd4gWPjFYEOAHtpv9XZm-v9McN'; // no-scam-zone-manifesto.pdf
+  const MAX_VIDEO_CHUNK_BYTES = 2 * 1024 * 1024; // 2 MB chunks keep every HTTP response well under Cloud Run's 32 MB limit
+
+  let cachedManifestoPdf: Buffer | null = null;
+
+  app.get('/api/drive-video/:fileId', async (req, res) => {
+    const rawId = String(req.params.fileId || DEFAULT_DRIVE_VIDEO_ID).trim();
+    if (!/^[a-zA-Z0-9_-]{10,80}$/.test(rawId)) {
+      res.status(400).json({ error: 'Invalid Google Drive video ID.' });
+      return;
+    }
+
+    // Fast-path: if requesting the default homepage video and local web-optimized asset exists, stream from disk
+    const fs = await import('fs');
+    const localBundledVideo = path.join(__dirname, 'public', 'assets', 'symphony-welcome.mp4');
+    if (rawId === DEFAULT_DRIVE_VIDEO_ID && fs.existsSync(localBundledVideo)) {
+      const stat = fs.statSync(localBundledVideo);
+      const totalSize = stat.size;
+      const rangeHeader = req.headers.range;
+
+      if (rangeHeader) {
+        const match = /bytes=(\d+)-(\d*)/.exec(rangeHeader);
+        const start = match ? parseInt(match[1], 10) : 0;
+        const requestedEnd =
+          match && match[2] ? parseInt(match[2], 10) : start + MAX_VIDEO_CHUNK_BYTES - 1;
+        const end = Math.min(requestedEnd, start + MAX_VIDEO_CHUNK_BYTES - 1, totalSize - 1);
+
+        if (start >= totalSize || start > end) {
+          res.status(416).setHeader('Content-Range', `bytes */${totalSize}`).end();
+          return;
+        }
+
+        const chunkLength = end - start + 1;
+        res.status(206);
+        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Content-Range', `bytes ${start}-${end}/${totalSize}`);
+        res.setHeader('Content-Length', String(chunkLength));
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+
+        const fileStream = fs.createReadStream(localBundledVideo, { start, end });
+        fileStream.on('error', () => {
+          if (!res.writableEnded) res.end();
+        });
+        fileStream.pipe(res);
+        return;
+      }
+
+      // Non-range fallback (local file is optimized well under 32 MB)
+      res.status(200);
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Content-Length', String(totalSize));
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      fs.createReadStream(localBundledVideo).pipe(res);
+      return;
+    }
+
+    // Upstream Google Drive streaming with strict 2 MB Range clamping so responses never exceed Cloud Run's 32 MB limit
+    const abortController = new AbortController();
+    req.on('close', () => {
+      if (!res.writableEnded) {
+        abortController.abort();
+      }
+    });
+
+    try {
+      const driveUrl = `https://drive.google.com/uc?export=download&id=${encodeURIComponent(rawId)}`;
+      const rangeHeader = req.headers.range;
+      let start = 0;
+      let end = MAX_VIDEO_CHUNK_BYTES - 1;
+
+      if (rangeHeader) {
+        const match = /bytes=(\d+)-(\d*)/.exec(rangeHeader);
+        if (match) {
+          start = parseInt(match[1], 10);
+          const requestedEnd = match[2]
+            ? parseInt(match[2], 10)
+            : start + MAX_VIDEO_CHUNK_BYTES - 1;
+          end = Math.min(requestedEnd, start + MAX_VIDEO_CHUNK_BYTES - 1);
+        }
+      }
+
+      const upstream = await fetch(driveUrl, {
+        headers: {
+          Range: `bytes=${start}-${end}`,
+        },
+        redirect: 'follow',
+        signal: abortController.signal,
+      });
+
+      if (!upstream.ok && upstream.status !== 206) {
+        res.status(upstream.status).json({ error: 'Unable to stream video from Google Drive.' });
+        return;
+      }
+
+      res.status(206);
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Accept-Ranges', 'bytes');
+      const contentLength = upstream.headers.get('content-length');
+      if (contentLength) {
+        res.setHeader('Content-Length', contentLength);
+      }
+      const contentRange = upstream.headers.get('content-range');
+      if (contentRange) {
+        res.setHeader('Content-Range', contentRange);
+      }
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+
+      if (!upstream.body) {
+        res.end();
+        return;
+      }
+
+      const nodeStream = Readable.fromWeb(upstream.body as unknown as WebReadableStream);
+      nodeStream.on('error', () => {
+        if (!res.writableEnded) res.end();
+      });
+      nodeStream.pipe(res);
+    } catch (err: unknown) {
+      if (abortController.signal.aborted) return;
+      const message = err instanceof Error ? err.message : 'Video stream error';
+      if (!res.headersSent) {
+        res.status(502).json({ error: message });
+      } else if (!res.writableEnded) {
+        res.end();
+      }
+    }
+  });
+
+  app.get('/api/drive-pdf', async (req, res) => {
+    const isDownload = req.query.download === '1';
+    try {
+      const fs = await import('fs');
+      const localPdfPath = path.join(__dirname, 'public', 'assets', 'no-scam-zone-manifesto.pdf');
+      if (!cachedManifestoPdf && fs.existsSync(localPdfPath)) {
+        cachedManifestoPdf = fs.readFileSync(localPdfPath);
+      }
+
+      if (!cachedManifestoPdf) {
+        const pdfUrl = `https://drive.google.com/uc?export=download&id=${DEFAULT_DRIVE_PDF_ID}`;
+        const upstream = await fetch(pdfUrl, { redirect: 'follow' });
+        if (!upstream.ok) {
+          throw new Error(`Google Drive returned status ${upstream.status}`);
+        }
+        const arrayBuf = await upstream.arrayBuffer();
+        cachedManifestoPdf = Buffer.from(arrayBuf);
+      }
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Length', String(cachedManifestoPdf.length));
+      res.setHeader(
+        'Content-Disposition',
+        `${isDownload ? 'attachment' : 'inline'}; filename="no-scam-zone-manifesto.pdf"`
+      );
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.send(cachedManifestoPdf);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to retrieve PDF guide from Google Drive.';
+      res.status(502).json({ error: message });
+    }
   });
 
   if (process.env.NODE_ENV !== 'production') {
