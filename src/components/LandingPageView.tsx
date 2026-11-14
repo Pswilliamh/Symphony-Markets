@@ -1,4 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
+import {
+  ArrowRight,
+  Compass,
+  Layers,
+  MessageSquareText,
+  ShieldCheck,
+  SlidersHorizontal,
+} from 'lucide-react';
 import founderDeskImg from '../assets/images/founder_desk_story_1794561548330.jpg';
 import noScamCompassImg from '../assets/images/no_scam_compass_1794561548457.jpg';
 import videoCoverStopsImg from '../assets/images/video_cover_stops_1794561549253.jpg';
@@ -679,7 +687,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div className="space-y-1">
             <div className="text-xs font-semibold text-sky-600 dark:text-sky-400">
-              Platform Capabilities · 100% Free Open-Source Toolkit
+              Visual Map of Platform Capabilities · 100% Free Open-Source Toolkit
             </div>
             <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
               What Symphony Markets Provides Inside the App
@@ -696,73 +704,226 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {[
-            {
-              span: 'md:col-span-7',
-              num: '01. $5 Real-Wallet Guided Training Roadmap',
-              desc: 'A progressive 5-step beginner curriculum teaching you how to avoid multi-dollar network gas traps, understand XRPL/Stellar 1-coin wallet reserves, check whether a coin is near its ceiling, and apply the "10-Cent Safety Net" on a real $5 Spot budget.',
-              targetId: 'start-here',
-              actionLabel: 'Launch $5 Roadmap →',
-            },
-            {
-              span: 'md:col-span-5',
-              num: '02. Plain-English AI Market Mentor',
-              desc: 'Ask any question in everyday words. Our server-side AI Mentor reads live XRP and XLM candles and decodes confusing Wall Street jargon before you touch your wallet.',
-              targetId: 'start-here',
-              actionLabel: 'Ask the AI Mentor →',
-            },
-            {
-              span: 'md:col-span-4',
-              num: '03. 2% Risk & 1:2 Stop-Loss Simulator',
-              desc: 'Real-time open-source position sizing across 1x Spot, Futures margin/liquidation warnings, and Options breakeven math—with visual target lines plotted directly on live charts.',
-              targetId: 'risk-chart',
-              actionLabel: 'Open Risk Calculator →',
-            },
-            {
-              span: 'md:col-span-4',
-              num: '04. Candlestick & Fibonacci Decoder',
-              desc: 'Automatically spots Hammer, Doji, Morning Star, and Engulfing bars on live XRP/USDT and XLM/USDT feeds, explaining what buyers and sellers are doing at key pullback bands.',
-              targetId: 'candlestick-guide',
-              actionLabel: 'Explore Candlestick Guide →',
-            },
-            {
-              span: 'md:col-span-4',
-              num: '05. 11-Module Skill Desk & Time Machine',
-              desc: 'Includes a 2,500-path Monte Carlo session replay, multi-chart scanner, 6-point pre-trade risk audit, scale-out exit ladder, and explicit "yes"-gated paper bracket tickets.',
-              targetId: 'skill-desk',
-              actionLabel: 'Try the Time Machine →',
-            },
-            {
-              span: 'md:col-span-12',
-              num: '06. Read-Only Public Wallet Watch & 24/7 Decentralized DEX Lab',
-              desc: 'Safely monitor external Trust Wallet, XRPL, and Stellar public addresses without ever exposing private keys, and inspect real on-chain DEX AMM liquidity pools (XRP/RLUSD, XLM/USDC, and tokenized Solar DePIN pools).',
-              targetId: 'ai-dex-lab',
-              actionLabel: 'Inspect Live DEX & Wallet Tools →',
-            },
-          ].map((feat) => (
-            <div
-              key={feat.num}
-              className={`${feat.span} p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between gap-4`}
-            >
-              <div className="space-y-2">
+          {/* Card 01: $5 Real-Wallet Guided Training Roadmap */}
+          <div className="md:col-span-7 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between gap-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Compass className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
                 <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-                  {feat.num}
+                  01. $5 Real-Wallet Guided Training Roadmap
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {feat.desc}
-                </p>
               </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => onEnterApp(feat.targetId)}
-                  className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
-                >
-                  {feat.actionLabel}
-                </button>
+
+              {/* Visual 5-Step Flow Track */}
+              <div className="py-3 border-y border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs font-mono tabular-nums">
+                <span className="font-semibold text-slate-800 dark:text-slate-200">1. $5 Budget</span>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="text-sky-700 dark:text-sky-400">2. ~$0.0001 Fee</span>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="text-amber-700 dark:text-amber-400">3. 1-Coin Reserve</span>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="text-emerald-700 dark:text-emerald-400 font-semibold">4. $0.10 Safety Net</span>
               </div>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Step-by-step visual checkpoints showing how to avoid high-gas traps, respect XRPL/Stellar wallet reserves, and cap risk at 10 cents on a $5 Spot wallet.
+              </p>
             </div>
-          ))}
+            <div>
+              <button
+                type="button"
+                onClick={() => onEnterApp('start-here')}
+                className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Launch $5 Roadmap →
+              </button>
+            </div>
+          </div>
+
+          {/* Card 02: Plain-English AI Market Mentor */}
+          <div className="md:col-span-5 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between gap-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <MessageSquareText className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                  02. Plain-English AI Market Mentor
+                </h2>
+              </div>
+
+              {/* Visual Jargon -> Plain English Schematic */}
+              <div className="py-3 border-y border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 text-xs">
+                <span className="font-mono text-rose-600 dark:text-rose-400 line-through">
+                  “RSI 78 Overbought”
+                </span>
+                <ArrowRight className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  “Near ceiling — wait for dip”
+                </span>
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Reads live XRP and XLM candles and translates confusing Wall Street jargon into calm, everyday words before you touch your wallet.
+              </p>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => onEnterApp('start-here')}
+                className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Ask the AI Mentor →
+              </button>
+            </div>
+          </div>
+
+          {/* Card 03: 2% Risk & 1:2 Stop-Loss Simulator */}
+          <div className="md:col-span-4 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between gap-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                  03. 2% Risk & 1:2 Stop-Loss Bar
+                </h2>
+              </div>
+
+              {/* Mini Visual 1:2 Risk-Reward Bar */}
+              <div className="w-full h-8 rounded-md overflow-hidden flex font-mono text-[11px] font-bold tabular-nums">
+                <div style={{ width: '34%' }} className="bg-rose-600 text-white flex items-center justify-center px-1.5 whitespace-nowrap">
+                  Stop -$0.10 (1R)
+                </div>
+                <div style={{ width: '66%' }} className="bg-emerald-600 text-white flex items-center justify-center px-1.5 whitespace-nowrap">
+                  Target +$0.20 (2R)
+                </div>
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Plots visual Stop-Loss and Take-Profit lines directly onto live charts across 1x Spot, Futures liquidation warnings, and Options math.
+              </p>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => onEnterApp('risk-chart')}
+                className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Open Risk Calculator →
+              </button>
+            </div>
+          </div>
+
+          {/* Card 04: Candlestick & Fibonacci Decoder */}
+          <div className="md:col-span-4 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between gap-4">
+            <div className="space-y-3">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                04. Visual Candlestick Decoder
+              </h2>
+
+              {/* Custom Inline Candlestick Illustration SVG */}
+              <svg
+                viewBox="0 0 240 48"
+                className="w-full h-11"
+                role="img"
+                aria-label="Visual illustration of Hammer, Doji, and Engulfing candlesticks"
+              >
+                {/* Fib Reference Dashed Line */}
+                <line x1="8" y1="36" x2="232" y2="36" stroke="#38BDF8" strokeWidth="1" strokeDasharray="3 3" />
+                {/* Bullish Hammer */}
+                <line x1="40" y1="10" x2="40" y2="42" stroke="#10B981" strokeWidth="2" />
+                <rect x="33" y="12" width="14" height="10" rx="1.5" fill="#10B981" />
+                <text x="54" y="21" fontSize="10" fontFamily="monospace" fill="#10B981">Hammer</text>
+                {/* Bearish Rejection */}
+                <line x1="145" y1="6" x2="145" y2="38" stroke="#F43F5E" strokeWidth="2" />
+                <rect x="138" y="24" width="14" height="10" rx="1.5" fill="#F43F5E" />
+                <text x="159" y="32" fontSize="10" fontFamily="monospace" fill="#F43F5E">Star</text>
+              </svg>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Automatically highlights Hammer, Doji, and Engulfing shapes on live XRP & XLM feeds so you see buyer vs. seller pressure visually.
+              </p>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => onEnterApp('candlestick-guide')}
+                className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Explore Candlestick Guide →
+              </button>
+            </div>
+          </div>
+
+          {/* Card 05: 11-Module Skill Desk & Time Machine */}
+          <div className="md:col-span-4 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between gap-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                  05. 2,500-Path Time Machine
+                </h2>
+              </div>
+
+              {/* Custom Inline Monte Carlo Fan Paths SVG */}
+              <svg
+                viewBox="0 0 240 48"
+                className="w-full h-11"
+                role="img"
+                aria-label="Monte Carlo probability fan chart illustration"
+              >
+                <circle cx="16" cy="26" r="3.5" fill="#0284C7" />
+                {/* Upper Bullish Path */}
+                <path d="M16,26 Q90,22 150,12 T224,8" fill="none" stroke="#10B981" strokeWidth="2" />
+                {/* Median Path */}
+                <path d="M16,26 Q95,25 155,23 T224,22" fill="none" stroke="#0284C7" strokeWidth="1.8" strokeDasharray="4 3" />
+                {/* Lower Stop Path */}
+                <path d="M16,26 Q90,32 150,38 T224,42" fill="none" stroke="#F43F5E" strokeWidth="2" />
+              </svg>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Replays historical candles bar-by-bar and simulates 2,500 Monte Carlo outcomes before you ever risk a real coin.
+              </p>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => onEnterApp('skill-desk')}
+                className="text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Try the Time Machine →
+              </button>
+            </div>
+          </div>
+
+          {/* Card 06: Read-Only Public Wallet Watch & 24/7 Decentralized DEX Lab */}
+          <div className="md:col-span-12 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="space-y-2 max-w-3xl">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                  06. Read-Only Public Wallet Watch & 24/7 Decentralized DEX Lab
+                </h2>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Paste any public XRPL, Stellar, or EVM address to view balances with <strong>zero private keys shared</strong>, and visually inspect real on-chain AMM pools (XRP/RLUSD & XLM/USDC).
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4 shrink-0">
+              <div className="flex items-center gap-2 text-xs font-mono text-emerald-700 dark:text-emerald-400">
+                <span>Public Address</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+                <span>0 Keys Asked</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+                <span>Live Ledger View</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => onEnterApp('ai-dex-lab')}
+                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                Inspect Live DEX & Wallet Tools →
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
