@@ -12,14 +12,22 @@ import noScamCompassImg from '../assets/images/no_scam_compass_1794561548457.jpg
 import videoCoverStopsImg from '../assets/images/video_cover_stops_1794561549253.jpg';
 import videoCoverWalletImg from '../assets/images/video_cover_wallet_1794561551281.jpg';
 import { createNoScamZonePdfBlob } from '../utils/pdfGuideGenerator';
+import { AssetSymbol, Candle } from '../types/market';
+import { CandlestickSymphonyComposer } from './CandlestickSymphonyComposer';
 import { KsbcGoldTrainingPage } from './KsbcGoldTrainingPage';
 import { ScamScreenXRayInspector } from './ScamScreenXRayInspector';
-import { SymphonyHarpLogo, symphonyHarpEmblemImg } from './SymphonyHarpLogo';
+import { SymphonyFrequencyBanners } from './SymphonyFrequencyBanners';
+import {
+  SymphonyCandlestickBackdrop,
+  SymphonyHarpLogo,
+  symphonyHarpEmblemImg,
+} from './SymphonyHarpLogo';
 import { SymphonyPodcastPlayer } from './SymphonyPodcastPlayer';
 
 export type PublicPageTab =
   | 'welcome'
   | 'features'
+  | 'symphony'
   | 'ksbc'
   | 'podcast'
   | 'story'
@@ -31,6 +39,9 @@ interface LandingPageViewProps {
   onEnterApp: (targetSectionId?: string) => void;
   xrpLivePrice: number;
   xlmLivePrice: number;
+  symbol?: AssetSymbol;
+  onSelectSymbol?: (sym: AssetSymbol) => void;
+  candles?: Candle[];
 }
 
 interface WalkthroughSlide {
@@ -290,6 +301,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   onEnterApp,
   xrpLivePrice,
   xlmLivePrice,
+  symbol = 'XRPUSDT',
+  onSelectSymbol,
+  candles = [],
 }) => {
   const welcomeVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -430,14 +444,15 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   if (activePage === 'welcome') {
     return (
       <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 lg:py-8 flex-1 flex flex-col items-center justify-center gap-6">
-        {/* Centered Symphony Markets Highlighted Name + Emblem */}
+        {/* Centered Symphony Markets Highlighted Name + Emblem + Faded Animated Red & Green Candlesticks */}
         <h1 className="font-editorial text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight text-center">
-          <span className="inline-flex items-center gap-3.5 pl-3 pr-5 py-2 rounded-2xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30">
+          <span className="relative overflow-hidden inline-flex items-center gap-3.5 pl-3.5 pr-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 shadow-sm">
+            <SymphonyCandlestickBackdrop className="opacity-30 dark:opacity-40" />
             <SymphonyHarpLogo
               variant="emblem"
-              className="w-11 h-11 sm:w-13 sm:h-13 shadow-md"
+              className="relative z-10 w-11 h-11 sm:w-13 sm:h-13 shadow-md"
             />
-            <span>Symphony Markets</span>
+            <span className="relative z-10">Symphony Markets</span>
           </span>
         </h1>
 
@@ -731,13 +746,73 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         </section>
 
         {/* Single Clean Entry Button to Step Behind the Welcome Stage */}
-        <button
-          type="button"
-          onClick={() => onEnterApp()}
-          className="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-        >
-          Enter Symphony Markets →
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => onEnterApp()}
+            className="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            Enter Symphony Markets →
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigatePage('symphony')}
+            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            ♪ Symphony Music Module →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ============================================================================
+   * PAGE 2D: STANDALONE 8-HOUR CANDLESTICK SYMPHONY MUSIC GRAPH STUDIO
+   * ============================================================================ */
+  if (activePage === 'symphony') {
+    return (
+      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+              <button
+                type="button"
+                onClick={() => onNavigatePage('welcome')}
+                className="text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+              >
+                ← Back to Welcome Stage
+              </button>
+              <span aria-hidden="true">·</span>
+              <span>Separate Visual & Musical Module</span>
+              <span aria-hidden="true">·</span>
+              <span className="font-mono">♪ ♫ ♩ ♬ Candlesticks as Musical Notes</span>
+            </div>
+            <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+              ♪ The Market Symphony & 8-Hour Candlestick Music Score
+            </h1>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onEnterApp('market-symphony')}
+            className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+          >
+            Open Inside Full Workspace →
+          </button>
+        </div>
+
+        {/* Visual Candlestick-to-Musical-Notes Analogy Banners & Symphony Audio Cards */}
+        <SymphonyFrequencyBanners />
+
+        {/* Dedicated 8-Hour Candlestick Symphony Composer & Interactive Music Staff */}
+        <CandlestickSymphonyComposer
+          symbol={symbol}
+          onSelectSymbol={onSelectSymbol}
+          candles={candles}
+          livePrice={symbol === 'XRPUSDT' ? xrpLivePrice : xlmLivePrice}
+          xrpLivePrice={xrpLivePrice}
+          xlmLivePrice={xlmLivePrice}
+        />
       </div>
     );
   }

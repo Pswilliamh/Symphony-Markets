@@ -6,13 +6,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CandleEducationDeck } from './components/CandleEducationDeck';
 import { CandlestickChart } from './components/CandlestickChart';
+import { CandlestickSymphonyComposer } from './components/CandlestickSymphonyComposer';
 import { DayTraderSkillSuite } from './components/DayTraderSkillSuite';
 import { DecentralizedAiDexDesk } from './components/DecentralizedAiDexDesk';
 import { LandingPageView, PublicPageTab } from './components/LandingPageView';
 import { PortfolioAndToolsSection } from './components/PortfolioAndToolsSection';
 import { RiskSimulatorPanel } from './components/RiskSimulatorPanel';
 import { StartHereRoadmap } from './components/StartHereRoadmap';
-import { SymphonyHarpLogo } from './components/SymphonyHarpLogo';
+import { SymphonyCandlestickBackdrop, SymphonyHarpLogo } from './components/SymphonyHarpLogo';
 import {
   calculateFibonacciLevels,
   enrichCandlesWithIndicators,
@@ -434,31 +435,32 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Top Bar Contract: 3 Zones separated by gap-8 */}
       <header className="flex items-center justify-between gap-8 px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        {/* Zone 1: Brand Emblem + Wordmark with warm background highlight */}
+        {/* Zone 1: Brand Emblem + Wordmark with warm background highlight & faded animated candlesticks */}
         <a
           href="#welcome"
           onClick={(e) => {
             e.preventDefault();
             navigatePublicPage('welcome');
           }}
-          className="inline-flex items-center gap-2.5 font-editorial text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white pl-2 pr-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 whitespace-nowrap shrink-0"
+          className="relative overflow-hidden inline-flex items-center gap-2.5 font-editorial text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white pl-2 pr-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 whitespace-nowrap shrink-0"
         >
-          <SymphonyHarpLogo variant="emblem" className="w-8 h-8 sm:w-9 sm:h-9" />
-          <span>Symphony Markets</span>
+          <SymphonyCandlestickBackdrop className="opacity-25 dark:opacity-35" />
+          <SymphonyHarpLogo variant="emblem" className="relative z-10 w-8 h-8 sm:w-9 sm:h-9" />
+          <span className="relative z-10">Symphony Markets</span>
         </a>
 
         {/* Zone 2: Standalone Page Menu Items (5 concise single-line links) */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
           <button
             type="button"
-            onClick={() => navigatePublicPage('features')}
+            onClick={() => navigatePublicPage('symphony')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              viewMode === 'landing' && publicPage === 'features'
-                ? 'text-sky-600 dark:text-sky-400 font-semibold'
+              viewMode === 'landing' && publicPage === 'symphony'
+                ? 'text-amber-600 dark:text-amber-400 font-semibold'
                 : 'hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            Features
+            ♪ Symphony Music
           </button>
           <button
             type="button"
@@ -540,6 +542,17 @@ export default function App() {
           }`}
         >
           Welcome
+        </button>
+        <button
+          type="button"
+          onClick={() => navigatePublicPage('symphony')}
+          className={`whitespace-nowrap shrink-0 cursor-pointer ${
+            viewMode === 'landing' && publicPage === 'symphony'
+              ? 'text-amber-600 dark:text-amber-400 font-semibold'
+              : ''
+          }`}
+        >
+          ♪ Symphony Music
         </button>
         <button
           type="button"
@@ -629,6 +642,9 @@ export default function App() {
             onEnterApp={handleEnterApp}
             xrpLivePrice={xrpLive}
             xlmLivePrice={xlmLive}
+            symbol={symbol}
+            onSelectSymbol={handleSelectSymbol}
+            candles={activeCandles}
           />
         </main>
       ) : (
@@ -643,6 +659,9 @@ export default function App() {
               </a>
               <a href="#risk-chart" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
                 2. Live Chart & 2% Risk Simulator
+              </a>
+              <a href="#market-symphony" className="text-amber-700 dark:text-amber-400 font-semibold hover:underline whitespace-nowrap">
+                ♪ 8-Hour Music Graph
               </a>
               {!beginnerFocusMode && (
                 <>
@@ -858,6 +877,18 @@ export default function App() {
               onOpenPaperPosition={handleOpenPaperPosition}
             />
           </div>
+        </section>
+
+        {/* Dedicated 8-Hour Candlestick Symphony Music Graph Module */}
+        <section id="market-symphony">
+          <CandlestickSymphonyComposer
+            symbol={symbol}
+            onSelectSymbol={handleSelectSymbol}
+            candles={activeCandles}
+            livePrice={livePrice}
+            xrpLivePrice={xrpLive}
+            xlmLivePrice={xlmLive}
+          />
         </section>
 
         {/* Day-Trader-Skill 11-Module Interactive Suite (Hidden when Simplify Screen is active) */}

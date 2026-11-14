@@ -553,12 +553,26 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
   });
 
   if (process.env.NODE_ENV !== 'production') {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
+    let viteMiddleware: express.RequestHandler | null = null;
+    const viteReady = (async () => {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true, hmr: false, watch: null },
+        appType: 'spa',
+      });
+      viteMiddleware = vite.middlewares;
+    })();
+
+    app.use(async (req, res, next) => {
+      if (!viteMiddleware) {
+        await viteReady;
+      }
+      if (viteMiddleware) {
+        viteMiddleware(req, res, next);
+      } else {
+        next();
+      }
     });
-    app.use(vite.middlewares);
   } else {
     const distPath = path.join(__dirname, 'dist');
     app.use(express.static(distPath));

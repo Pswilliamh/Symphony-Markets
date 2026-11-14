@@ -87,22 +87,22 @@ export const SymphonyHarpLogo: React.FC<SymphonyHarpLogoProps> = ({
         strokeWidth="0.9"
       />
 
-      {/* HARP STRINGS AS GLOWING MARKET CANDLESTICKS (Wicks + Candle Bodies) */}
-      {/* String 1: Emerald Candlestick */}
+      {/* HARP STRINGS AS GLOWING GREEN & RED MARKET CANDLESTICKS (Wicks + Candle Bodies) */}
+      {/* String 1: Emerald Bullish Candlestick */}
       <line x1="21.5" y1="20" x2="21.5" y2="47.5" stroke="#10B981" strokeWidth="1.35" strokeLinecap="round" />
       <rect x="19.8" y="32" width="3.4" height="8.5" rx="0.8" fill="#10B981" stroke="#6EE7B7" strokeWidth="0.5" />
 
-      {/* String 2: Sky-Cyan Candlestick */}
-      <line x1="26" y1="21.5" x2="26" y2="47.5" stroke="#38BDF8" strokeWidth="1.35" strokeLinecap="round" />
-      <rect x="24.3" y="29" width="3.4" height="9" rx="0.8" fill="#0EA5E9" stroke="#7DD3FC" strokeWidth="0.5" />
+      {/* String 2: Ruby Red Pullback Candlestick (Harmonic Rest) */}
+      <line x1="26" y1="21.5" x2="26" y2="47.5" stroke="#F43F5E" strokeWidth="1.35" strokeLinecap="round" />
+      <rect x="24.3" y="29" width="3.4" height="9" rx="0.8" fill="#E11D48" stroke="#FDA4AF" strokeWidth="0.5" />
 
       {/* String 3: Emerald Breakout Candlestick */}
       <line x1="30.5" y1="24" x2="30.5" y2="47.5" stroke="#34D399" strokeWidth="1.35" strokeLinecap="round" />
       <rect x="28.8" y="27" width="3.4" height="8.5" rx="0.8" fill="#10B981" stroke="#A7F3D0" strokeWidth="0.5" />
 
-      {/* String 4: Sky-Cyan Continuation Candlestick */}
-      <line x1="35" y1="27.5" x2="35" y2="45" stroke="#38BDF8" strokeWidth="1.35" strokeLinecap="round" />
-      <rect x="33.3" y="30" width="3.4" height="7" rx="0.8" fill="#0EA5E9" stroke="#7DD3FC" strokeWidth="0.5" />
+      {/* String 4: Ruby Red Consolidation Candlestick */}
+      <line x1="35" y1="27.5" x2="35" y2="45" stroke="#FB7185" strokeWidth="1.35" strokeLinecap="round" />
+      <rect x="33.3" y="30" width="3.4" height="7" rx="0.8" fill="#E11D48" stroke="#FDA4AF" strokeWidth="0.5" />
 
       {/* String 5: Upper Harmonic Emerald Candlestick */}
       <line x1="39.5" y1="26.5" x2="39.5" y2="39" stroke="#34D399" strokeWidth="1.35" strokeLinecap="round" />
@@ -219,3 +219,99 @@ export const SymphonyHarpLogo: React.FC<SymphonyHarpLogoProps> = ({
     </svg>
   );
 };
+
+interface BackdropCandleItem {
+  x: number;
+  wickTop: number;
+  wickBottom: number;
+  bodyTop: number;
+  bodyHeight: number;
+  bullish: boolean;
+  delay: string;
+}
+
+const HARMONIC_BANNER_CANDLES: BackdropCandleItem[] = [
+  { x: 18, wickTop: 14, wickBottom: 52, bodyTop: 24, bodyHeight: 18, bullish: true, delay: '0s' },
+  { x: 44, wickTop: 18, wickBottom: 56, bodyTop: 28, bodyHeight: 16, bullish: false, delay: '0.35s' },
+  { x: 70, wickTop: 10, wickBottom: 48, bodyTop: 18, bodyHeight: 21, bullish: true, delay: '0.7s' },
+  { x: 96, wickTop: 16, wickBottom: 54, bodyTop: 25, bodyHeight: 15, bullish: true, delay: '1.05s' },
+  { x: 122, wickTop: 20, wickBottom: 58, bodyTop: 30, bodyHeight: 18, bullish: false, delay: '1.4s' },
+  { x: 148, wickTop: 12, wickBottom: 50, bodyTop: 20, bodyHeight: 20, bullish: true, delay: '0.25s' },
+  { x: 174, wickTop: 8, wickBottom: 46, bodyTop: 15, bodyHeight: 22, bullish: true, delay: '0.6s' },
+  { x: 200, wickTop: 18, wickBottom: 55, bodyTop: 27, bodyHeight: 16, bullish: false, delay: '0.95s' },
+  { x: 226, wickTop: 11, wickBottom: 49, bodyTop: 19, bodyHeight: 19, bullish: true, delay: '1.3s' },
+  { x: 252, wickTop: 19, wickBottom: 56, bodyTop: 28, bodyHeight: 17, bullish: false, delay: '0.45s' },
+  { x: 278, wickTop: 9, wickBottom: 47, bodyTop: 16, bodyHeight: 22, bullish: true, delay: '0.8s' },
+  { x: 304, wickTop: 14, wickBottom: 51, bodyTop: 22, bodyHeight: 18, bullish: true, delay: '1.15s' },
+  { x: 330, wickTop: 19, wickBottom: 55, bodyTop: 29, bodyHeight: 15, bullish: false, delay: '1.5s' },
+  { x: 356, wickTop: 7, wickBottom: 45, bodyTop: 14, bodyHeight: 23, bullish: true, delay: '0.2s' },
+];
+
+/**
+ * Faded, semi-transparent animated red and green candlesticks moving gently
+ * up and down behind the Symphony Markets brand banner—visualizing the market
+ * as a harmonic musical score rather than chaotic noise.
+ */
+export const SymphonyCandlestickBackdrop: React.FC<{ className?: string }> = ({
+  className = '',
+}) => {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 376 64"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      className={`pointer-events-none select-none absolute inset-0 w-full h-full ${className}`}
+    >
+      {/* Subtle 5-Line Musical Staff / Harmonic Frequency Grid */}
+      <line x1="0" y1="16" x2="376" y2="16" stroke="#D97706" strokeOpacity="0.12" strokeWidth="0.7" />
+      <line x1="0" y1="32" x2="376" y2="32" stroke="#0284C7" strokeOpacity="0.12" strokeWidth="0.7" />
+      <line x1="0" y1="48" x2="376" y2="48" stroke="#10B981" strokeOpacity="0.12" strokeWidth="0.7" />
+
+      {/* Gentle Harmonic Sine Wave Connecting the Candlesticks */}
+      <path
+        d="M 0 38 Q 48 16, 96 32 T 192 28 T 288 30 T 376 20"
+        fill="none"
+        stroke="#F59E0B"
+        strokeOpacity="0.24"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+
+      {/* Faded Animated Green & Red Candlesticks */}
+      {HARMONIC_BANNER_CANDLES.map((c) => {
+        const strokeColor = c.bullish ? '#10B981' : '#F43F5E';
+        const fillColor = c.bullish ? '#059669' : '#E11D48';
+        return (
+          <g
+            key={c.x}
+            className={c.bullish ? 'symphony-candle-up' : 'symphony-candle-down'}
+            style={{
+              animationDelay: c.delay,
+              transformOrigin: `${c.x}px 32px`,
+            }}
+          >
+            <line
+              x1={c.x}
+              y1={c.wickTop}
+              x2={c.x}
+              y2={c.wickBottom}
+              stroke={strokeColor}
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <rect
+              x={c.x - 4.2}
+              y={c.bodyTop}
+              width="8.4"
+              height={c.bodyHeight}
+              rx="1.8"
+              fill={fillColor}
+            />
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
+
