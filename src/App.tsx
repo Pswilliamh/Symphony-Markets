@@ -12,6 +12,7 @@ import { LandingPageView, PublicPageTab } from './components/LandingPageView';
 import { PortfolioAndToolsSection } from './components/PortfolioAndToolsSection';
 import { RiskSimulatorPanel } from './components/RiskSimulatorPanel';
 import { StartHereRoadmap } from './components/StartHereRoadmap';
+import { SymphonyHarpLogo } from './components/SymphonyHarpLogo';
 import {
   calculateFibonacciLevels,
   enrichCandlesWithIndicators,
@@ -433,31 +434,21 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Top Bar Contract: 3 Zones separated by gap-8 */}
       <header className="flex items-center justify-between gap-8 px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        {/* Zone 1: Single text element wordmark with warm background highlight */}
+        {/* Zone 1: Brand Emblem + Wordmark with warm background highlight */}
         <a
           href="#welcome"
           onClick={(e) => {
             e.preventDefault();
             navigatePublicPage('welcome');
           }}
-          className="font-editorial text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white px-3.5 py-1 rounded-lg bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-2.5 font-editorial text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white pl-2 pr-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 whitespace-nowrap shrink-0"
         >
-          Symphony Markets
+          <SymphonyHarpLogo variant="emblem" className="w-8 h-8 sm:w-9 sm:h-9" />
+          <span>Symphony Markets</span>
         </a>
 
         {/* Zone 2: Standalone Page Menu Items (5 concise single-line links) */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
-          <button
-            type="button"
-            onClick={() => navigatePublicPage('welcome')}
-            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              viewMode === 'landing' && publicPage === 'welcome'
-                ? 'text-sky-600 dark:text-sky-400 font-semibold'
-                : 'hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Welcome Video
-          </button>
           <button
             type="button"
             onClick={() => navigatePublicPage('features')}
@@ -478,7 +469,18 @@ export default function App() {
                 : 'hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            KSBC Gold RWA
+            KSBC Gold
+          </button>
+          <button
+            type="button"
+            onClick={() => navigatePublicPage('podcast')}
+            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              viewMode === 'landing' && publicPage === 'podcast'
+                ? 'text-amber-600 dark:text-amber-400 font-semibold'
+                : 'hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Podcast
           </button>
           <button
             type="button"
@@ -500,7 +502,7 @@ export default function App() {
                 : 'hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            Free PDF Guide
+            PDF Guide
           </button>
         </nav>
 
@@ -537,7 +539,7 @@ export default function App() {
               : ''
           }`}
         >
-          Welcome Video
+          Welcome
         </button>
         <button
           type="button"
@@ -559,7 +561,18 @@ export default function App() {
               : ''
           }`}
         >
-          KSBC Gold RWA
+          KSBC Gold
+        </button>
+        <button
+          type="button"
+          onClick={() => navigatePublicPage('podcast')}
+          className={`whitespace-nowrap shrink-0 cursor-pointer ${
+            viewMode === 'landing' && publicPage === 'podcast'
+              ? 'text-amber-600 dark:text-amber-400 font-semibold'
+              : ''
+          }`}
+        >
+          Podcast
         </button>
         <button
           type="button"
@@ -581,7 +594,7 @@ export default function App() {
               : ''
           }`}
         >
-          Free PDF Guide
+          PDF Guide
         </button>
         <button
           type="button"
@@ -954,9 +967,12 @@ export default function App() {
         }`}
       >
         <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <span>
-            Symphony Markets — Free Open-Source No-Scam Zone Education & Simulator. Not financial advice.
-          </span>
+          <div className="flex items-center gap-2">
+            <SymphonyHarpLogo variant="vector" className="w-5 h-5" />
+            <span>
+              Symphony Markets — Free Open-Source No-Scam Zone Education & Simulator. Not financial advice.
+            </span>
+          </div>
           <div className="flex items-center gap-4">
             <button
               type="button"

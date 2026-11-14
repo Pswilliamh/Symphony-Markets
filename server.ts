@@ -229,10 +229,46 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
   // Default Google Drive Asset IDs from the shared Symphony Markets folder
   // Folder: https://drive.google.com/drive/folders/1hPDCoTd5K4163HsDW7_LtQXXB8VvBkv3
   const DEFAULT_DRIVE_VIDEO_ID = '1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw'; // Symphony_Markets__The_No-Scam_Sandbox.mp4
+  const ANTIDOTE_DRIVE_VIDEO_ID = '1vgJ0QiwY1aVtJwr-iPtKLdxTdcVqTTnr'; // Symphony_Markets__The_Antidote_to_Predation.mp4
+  const BLUEPRINT_DRIVE_VIDEO_ID = '1RNomMOr0irdvq0nsbm8nQh2fhooCPoBp'; // Symphony_Markets__The__5_Blueprint.mp4
   const DEFAULT_DRIVE_PDF_ID = '1mMH2ngPd4gWPjFYEOAHtpv9XZm-v9McN'; // no-scam-zone-manifesto.pdf
   const MAX_VIDEO_CHUNK_BYTES = 2 * 1024 * 1024; // 2 MB chunks keep every HTTP response well under Cloud Run's 32 MB limit
 
-  let cachedManifestoPdf: Buffer | null = null;
+  const DRIVE_DOCS_MAP: Record<
+    string,
+    { localFile: string; driveId: string; downloadName: string; mimeType: string }
+  > = {
+    manifesto: {
+      localFile: 'no-scam-zone-manifesto.pdf',
+      driveId: '1mMH2ngPd4gWPjFYEOAHtpv9XZm-v9McN',
+      downloadName: 'no-scam-zone-manifesto.pdf',
+      mimeType: 'application/pdf',
+    },
+    certificate: {
+      localFile: 'no-scam-zone-certificate.pdf',
+      driveId: '1gijppbcHpuRfAcLSzOsYXJiD3SzIxf-e',
+      downloadName: 'no-scam-zone-certificate.pdf',
+      mimeType: 'application/pdf',
+    },
+    companion: {
+      localFile: 'quantum-analemma-companion.pdf',
+      driveId: '1L6Fq0y4Jwm7_j03Qb6Pbh83kZONAaXzy',
+      downloadName: 'quantum-analemma-companion.pdf',
+      mimeType: 'application/pdf',
+    },
+    book_pdf: {
+      localFile: 'quantum-analemma-cycle.pdf',
+      driveId: '1VOPZ7qvbJN9AbkxRaBG8kIl-fAMgdWer',
+      downloadName: 'quantum-analemma-a-i-technology-cycle.pdf',
+      mimeType: 'application/pdf',
+    },
+    book_epub: {
+      localFile: 'quantum-analemma-cycle.epub',
+      driveId: '1Us_E4FMnxOgcRZ-S056JR-Enq4s_v-u0',
+      downloadName: 'quantum-analemma-a-i-technology-cycle.epub',
+      mimeType: 'application/epub+zip',
+    },
+  };
 
   app.get('/api/drive-video/:fileId', async (req, res) => {
     const rawId = String(req.params.fileId || DEFAULT_DRIVE_VIDEO_ID).trim();
@@ -241,11 +277,25 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
       return;
     }
 
-    // Fast-path: if requesting the default homepage video and local web-optimized asset exists, stream from disk
+    // Fast-path: if requesting one of our known Google Drive videos and local web-optimized asset exists, stream from disk
     const fs = await import('fs');
-    const localBundledVideo = path.join(__dirname, 'public', 'assets', 'symphony-welcome.mp4');
-    if (rawId === DEFAULT_DRIVE_VIDEO_ID && fs.existsSync(localBundledVideo)) {
-      const stat = fs.statSync(localBundledVideo);
+    const localVideoCandidate =
+      rawId === DEFAULT_DRIVE_VIDEO_ID
+        ? path.join(__dirname, 'public', 'assets', 'symphony-welcome.mp4')
+        : rawId === ANTIDOTE_DRIVE_VIDEO_ID
+        ? path.join(__dirname, 'public', 'assets', 'symphony-antidote.mp4')
+        : rawId === BLUEPRINT_DRIVE_VIDEO_ID
+        ? path.join(
+            __dirname,
+            'public',
+            'assets',
+            'aistudio',
+            'Symphony_Markets__The__5_Blueprint_781e68ab.mp4'
+          )
+        : null;
+
+    if (localVideoCandidate && fs.existsSync(localVideoCandidate)) {
+      const stat = fs.statSync(localVideoCandidate);
       const totalSize = stat.size;
       const rangeHeader = req.headers.range;
 
@@ -269,7 +319,7 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
         res.setHeader('Content-Length', String(chunkLength));
         res.setHeader('Cache-Control', 'public, max-age=3600');
 
-        const fileStream = fs.createReadStream(localBundledVideo, { start, end });
+        const fileStream = fs.createReadStream(localVideoCandidate, { start, end });
         fileStream.on('error', () => {
           if (!res.writableEnded) res.end();
         });
@@ -277,13 +327,15 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
         return;
       }
 
-      // Non-range fallback (local file is optimized well under 32 MB)
-      res.status(200);
+      // Non-range fallback: clamp to 2 MB chunk if > 20 MB
+      const end = Math.min(MAX_VIDEO_CHUNK_BYTES - 1, totalSize - 1);
+      res.status(206);
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Content-Length', String(totalSize));
+      res.setHeader('Content-Range', `bytes 0-${end}/${totalSize}`);
+      res.setHeader('Content-Length', String(end + 1));
       res.setHeader('Cache-Control', 'public, max-age=3600');
-      fs.createReadStream(localBundledVideo).pipe(res);
+      fs.createReadStream(localVideoCandidate, { start: 0, end }).pipe(res);
       return;
     }
 
@@ -361,40 +413,43 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
 
   app.get('/api/drive-pdf', async (req, res) => {
     const isDownload = req.query.download === '1';
+    const docKey = String(req.query.doc || 'manifesto').trim();
+    const docMeta = DRIVE_DOCS_MAP[docKey] ?? DRIVE_DOCS_MAP.manifesto;
+
     try {
       const fs = await import('fs');
-      const localPdfPath = path.join(__dirname, 'public', 'assets', 'no-scam-zone-manifesto.pdf');
-      if (!cachedManifestoPdf && fs.existsSync(localPdfPath)) {
-        cachedManifestoPdf = fs.readFileSync(localPdfPath);
-      }
+      const localDocPath = path.join(__dirname, 'public', 'assets', docMeta.localFile);
+      let fileBuffer: Buffer | null = null;
 
-      if (!cachedManifestoPdf) {
-        const pdfUrl = `https://drive.google.com/uc?export=download&id=${DEFAULT_DRIVE_PDF_ID}`;
-        const upstream = await fetch(pdfUrl, { redirect: 'follow' });
+      if (fs.existsSync(localDocPath)) {
+        fileBuffer = fs.readFileSync(localDocPath);
+      } else {
+        const driveUrl = `https://drive.google.com/uc?export=download&id=${docMeta.driveId || DEFAULT_DRIVE_PDF_ID}`;
+        const upstream = await fetch(driveUrl, { redirect: 'follow' });
         if (!upstream.ok) {
           throw new Error(`Google Drive returned status ${upstream.status}`);
         }
         const arrayBuf = await upstream.arrayBuffer();
-        cachedManifestoPdf = Buffer.from(arrayBuf);
+        fileBuffer = Buffer.from(arrayBuf);
       }
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Length', String(cachedManifestoPdf.length));
+      res.setHeader('Content-Type', docMeta.mimeType);
+      res.setHeader('Content-Length', String(fileBuffer.length));
       res.setHeader(
         'Content-Disposition',
-        `${isDownload ? 'attachment' : 'inline'}; filename="no-scam-zone-manifesto.pdf"`
+        `${isDownload ? 'attachment' : 'inline'}; filename="${docMeta.downloadName}"`
       );
       res.setHeader('Cache-Control', 'public, max-age=3600');
-      res.send(cachedManifestoPdf);
+      res.send(fileBuffer);
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : 'Unable to retrieve PDF guide from Google Drive.';
+        err instanceof Error ? err.message : 'Unable to retrieve document from Google Drive.';
       res.status(502).json({ error: message });
     }
   });
 
-  // Serve local /assets/*.mp4 videos in 2 MB Range chunks so 30MB+ videos never hit Cloud Run's 32 MB response cap
-  app.get(/^\/assets\/.+\.mp4$/i, async (req, res, next) => {
+  // Serve local /assets/*.mp4 and /assets/*.m4a media in 2 MB Range chunks so 30MB-45MB files never hit Cloud Run's 32 MB response cap
+  app.get(/^\/assets\/.+\.(mp4|m4a|mp3|ogg|webm)$/i, async (req, res, next) => {
     try {
       const fs = await import('fs');
       const publicRoot = path.resolve(__dirname, 'public');
@@ -417,6 +472,18 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
         return;
       }
 
+      const ext = path.extname(candidatePath).toLowerCase();
+      const mediaMimeType =
+        ext === '.m4a'
+          ? 'audio/mp4'
+          : ext === '.mp3'
+          ? 'audio/mpeg'
+          : ext === '.ogg'
+          ? 'audio/ogg'
+          : ext === '.webm'
+          ? 'video/webm'
+          : 'video/mp4';
+
       const totalSize = stat.size;
       const rangeHeader = req.headers.range;
 
@@ -434,7 +501,7 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
 
         const chunkLength = end - start + 1;
         res.status(206);
-        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Content-Type', mediaMimeType);
         res.setHeader('Accept-Ranges', 'bytes');
         res.setHeader('Content-Range', `bytes ${start}-${end}/${totalSize}`);
         res.setHeader('Content-Length', String(chunkLength));
@@ -455,18 +522,18 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
 
       if (req.method === 'HEAD') {
         res.status(200);
-        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Content-Type', mediaMimeType);
         res.setHeader('Accept-Ranges', 'bytes');
         res.setHeader('Content-Length', String(totalSize));
         res.end();
         return;
       }
 
-      // If a client requests a large MP4 without Range, return the first 2 MB chunk as 206 so Cloud Run never drops >32MB payloads
+      // If a client requests a large MP4/M4A without Range, return the first 2 MB chunk as 206 so Cloud Run never drops >32MB payloads
       if (totalSize > 20 * 1024 * 1024) {
         const end = Math.min(MAX_VIDEO_CHUNK_BYTES - 1, totalSize - 1);
         res.status(206);
-        res.setHeader('Content-Type', 'video/mp4');
+        res.setHeader('Content-Type', mediaMimeType);
         res.setHeader('Accept-Ranges', 'bytes');
         res.setHeader('Content-Range', `bytes 0-${end}/${totalSize}`);
         res.setHeader('Content-Length', String(end + 1));

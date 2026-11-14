@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import { CheckCircle2, Eye, Lock, ShieldCheck } from 'lucide-react';
+import selfCustodyKeysImg from '../assets/images/infographic_self_custody_keys_1794621087516.jpg';
 import {
   AssetSymbol,
   Candle,
@@ -6,6 +8,7 @@ import {
   InstrumentType,
   TradeSide,
 } from '../types/market';
+import { ScamScreenXRayInspector } from './ScamScreenXRayInspector';
 
 interface StartHereRoadmapProps {
   symbol: AssetSymbol;
@@ -90,6 +93,8 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
 }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [showGlossary, setShowGlossary] = useState<boolean>(false);
+  const [showScamXRay, setShowScamXRay] = useState<boolean>(false);
+  const [keysImgError, setKeysImgError] = useState<boolean>(false);
 
   // Step 5 AI Mentor State
   const [customQuestion, setCustomQuestion] = useState<string>('');
@@ -282,6 +287,19 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
 
           <button
             type="button"
+            onClick={() => setShowScamXRay((x) => !x)}
+            className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              showScamXRay
+                ? 'border-rose-500/60 bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold'
+                : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5 shrink-0" />
+            <span>{showScamXRay ? 'Hide Scam X-Ray' : 'Red-Flag Scam X-Ray'}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={onToggleBeginnerFocusMode}
             className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               beginnerFocusMode
@@ -293,6 +311,9 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Collapsible Interactive Red-Flag Scam X-Ray */}
+      {showScamXRay && <ScamScreenXRayInspector />}
 
       {/* Collapsible Plain-English Jargon Decoder */}
       {showGlossary && (
@@ -385,7 +406,77 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
             </div>
           </div>
 
-          <div className="lg:col-span-5 border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/60 dark:bg-slate-950/60 space-y-3">
+          <div className="lg:col-span-5 border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/60 dark:bg-slate-950/60 space-y-4">
+            {/* Visual 5-Coin ($5.00) Stack + 10-Cent Safety Slice */}
+            <div className="space-y-2.5 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  Visual $5.00 Wallet Breakdown ({coinName})
+                </span>
+                <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  2% Max Risk = $0.10 Slice
+                </span>
+              </div>
+
+              {/* 5 Visual $1 Coins */}
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((dollarIdx) => {
+                  const reserveUsd = symbol === 'XLMUSDT' ? 0.41 : Math.min(4.2, livePrice);
+                  const isFullReserve = dollarIdx <= Math.floor(reserveUsd);
+                  const isPartialReserve =
+                    !isFullReserve && dollarIdx === Math.floor(reserveUsd) + 1 && reserveUsd % 1 > 0.05;
+                  const isRiskSliceCoin = dollarIdx === 5;
+
+                  return (
+                    <div
+                      key={dollarIdx}
+                      className="flex flex-col items-center gap-1 text-center"
+                    >
+                      <div
+                        className={`w-12 h-12 rounded-full border-2 flex flex-col items-center justify-center font-mono text-xs font-bold tabular-nums ${
+                          isFullReserve
+                            ? 'bg-amber-500/20 border-amber-500 text-amber-800 dark:text-amber-300'
+                            : isPartialReserve
+                            ? 'bg-gradient-to-r from-amber-500/25 via-emerald-500/15 to-emerald-500/20 border-amber-500/80 text-slate-900 dark:text-white'
+                            : isRiskSliceCoin
+                            ? 'bg-emerald-500/15 border-sky-500 text-slate-900 dark:text-white ring-2 ring-rose-500/40'
+                            : 'bg-emerald-500/15 border-emerald-500 text-emerald-800 dark:text-emerald-300'
+                        }`}
+                      >
+                        {isFullReserve ? (
+                          <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        ) : (
+                          <span>$1</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 leading-tight">
+                        {isFullReserve
+                          ? 'Reserve'
+                          : isPartialReserve
+                          ? symbol === 'XLMUSDT'
+                            ? '41¢ Lock'
+                            : 'Part Lock'
+                          : isRiskSliceCoin
+                          ? '10¢ Risk'
+                          : 'Safe Free'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+                <span className="flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-amber-600 shrink-0" />
+                  1-Coin Wallet Reserve stays yours
+                </span>
+                <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                  $4.90 of $5 protected by Stop Exit
+                </span>
+              </div>
+            </div>
+
             <div className="text-xs font-semibold text-slate-900 dark:text-white">
               Quick $5 Coin Comparison (Live Data)
             </div>
@@ -450,6 +541,36 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Full-Width Educational Textbook Infographic for Rule C: Private Vault Key vs. Public Viewing Window */}
+          <div className="lg:col-span-12 pt-2 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+            <div className="md:col-span-5">
+              {!keysImgError ? (
+                <img
+                  src={selfCustodyKeysImg}
+                  alt="Architectural diagram comparing Private Cryptographic Key locked inside a brass vault versus an open glass Public Cryptographic Address viewing window"
+                  referrerPolicy="no-referrer"
+                  onError={() => setKeysImgError(true)}
+                  className="w-full aspect-16/9 object-cover rounded-xl border border-slate-200 dark:border-slate-800"
+                />
+              ) : (
+                <div className="w-full aspect-16/9 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-4 text-xs text-slate-600 dark:text-slate-400">
+                  Private Key (Locked Vault — Never Share) vs. Public Address (Read-Only Viewing Window)
+                </div>
+              )}
+            </div>
+            <div className="md:col-span-7 space-y-2 text-xs">
+              <div className="font-semibold text-sky-600 dark:text-sky-400">
+                Visualizing Rule C · How Self-Custody Keys Actually Work
+              </div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Left = Your Private 12-Word Vault Key (Never Share) · Right = Your Public Viewing Window (Safe to Paste)
+              </h3>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                Think of your wallet as having two completely different parts: your <strong>Private Key / 12-Word Phrase</strong> is the physical brass master key locked inside your own phone—anyone who sees it can open the safe. Your <strong>Public Receive Address</strong> (<span className="font-mono">G...</span> or <span className="font-mono">r...</span>) is simply a bulletproof glass window that lets you (or Symphony Markets) view the balance from the outside with zero ability to touch your coins.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -464,27 +585,42 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
               You don’t need to memorize 50 indicators. Look at the candlestick chart right below this box—it only shows three simple things:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-              <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2">
+                <svg viewBox="0 0 120 34" className="w-full h-8" aria-hidden="true">
+                  <line x1="35" y1="4" x2="35" y2="30" stroke="#10B981" strokeWidth="2" />
+                  <rect x="27" y="9" width="16" height="14" rx="2" fill="#10B981" />
+                  <line x1="85" y1="4" x2="85" y2="30" stroke="#F43F5E" strokeWidth="2" />
+                  <rect x="77" y="11" width="16" height="14" rx="2" fill="#F43F5E" />
+                </svg>
                 <div className="font-semibold text-emerald-600 dark:text-emerald-400">
                   1. Green & Red Bars
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-slate-600 dark:text-slate-400">
                   Green means buyers pushed price higher during that time block. Red means sellers pushed it lower.
                 </p>
               </div>
-              <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2">
+                <svg viewBox="0 0 120 34" className="w-full h-8" aria-hidden="true">
+                  <path d="M8,26 Q45,20 75,14 T112,7" fill="none" stroke="#0284C7" strokeWidth="2.5" />
+                  <path d="M8,30 Q48,25 80,20 T112,15" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeDasharray="3 2" />
+                </svg>
                 <div className="font-semibold text-sky-600 dark:text-sky-400">
                   2. Blue & Purple Trend Lines
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-slate-600 dark:text-slate-400">
                   The smooth lines show the average price. When the blue line (EMA 20) stays above the purple line (SMA 50), the overall tide is rising.
                 </p>
               </div>
-              <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2">
+                <svg viewBox="0 0 120 34" className="w-full h-8" aria-hidden="true">
+                  <line x1="8" y1="6" x2="112" y2="6" stroke="#F43F5E" strokeWidth="1.5" strokeDasharray="3 3" />
+                  <rect x="8" y="16" width="104" height="10" fill="#10B981" fillOpacity="0.2" />
+                  <line x1="8" y1="21" x2="112" y2="21" stroke="#10B981" strokeWidth="1.5" />
+                </svg>
                 <div className="font-semibold text-amber-600 dark:text-amber-400">
                   3. Colored Horizontal Zones
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-slate-600 dark:text-slate-400">
                   Fibonacci bands mark "ceiling" (0%) and "discount pullback" (50%–61.8%) zones so you can see if price is high or on sale.
                 </p>
               </div>
@@ -597,6 +733,42 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               Even when you buy <strong>${fiveDollarPlan.cashUsedUsd.toFixed(2)}</strong> worth of {coinName} in your real wallet, you do <strong>not</strong> risk losing all $5! By picking your "Safety Exit" price before you buy, a wrong guess only costs pennies—teaching you the exact habit professionals use with $50,000:
             </p>
+
+            {/* Visual Proportional Wallet Protection Bar */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  Visual Wallet Shield: Protected Capital vs. Risk Slice
+                </span>
+                <span className="font-mono text-[11px] text-slate-500 tabular-nums">
+                  1:{rrRatio} Reward-to-Risk Ratio
+                </span>
+              </div>
+              <div className="w-full h-9 rounded-lg overflow-hidden flex font-mono text-xs font-bold tabular-nums border border-slate-300 dark:border-slate-700">
+                <div
+                  style={{
+                    width: `${Math.max(
+                      72,
+                      100 -
+                        Math.min(
+                          28,
+                          (fiveDollarPlan.actualLossIfStopped /
+                            Math.max(fiveDollarPlan.budget, 0.01)) *
+                            100 *
+                            4
+                        )
+                    )}%`,
+                  }}
+                  className="bg-emerald-600 text-white flex items-center justify-center px-2 whitespace-nowrap overflow-hidden"
+                >
+                  Kept Safe ${(fiveDollarPlan.budget - fiveDollarPlan.actualLossIfStopped).toFixed(2)}
+                </div>
+                <div className="flex-1 bg-rose-600 text-white flex items-center justify-center px-2 whitespace-nowrap">
+                  Risk -${fiveDollarPlan.actualLossIfStopped.toFixed(2)}
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono tabular-nums">
               <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800">

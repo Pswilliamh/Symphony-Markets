@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import dexAmmPoolImg from '../assets/images/infographic_dex_amm_pool_1794621088958.jpg';
 import {
   AssetSymbol,
   Candle,
@@ -112,6 +113,7 @@ export const DecentralizedAiDexDesk: React.FC<DecentralizedAiDexDeskProps> = ({
   // Explicit On-Chain Co-Sign Gate State
   const [txConfirmText, setTxConfirmText] = useState<string>('');
   const [txStatusMsg, setTxStatusMsg] = useState<string | null>(null);
+  const [ammImgError, setAmmImgError] = useState<boolean>(false);
 
   // Sync default DEX venue when user switches between XRP and XLM
   useEffect(() => {
@@ -655,6 +657,37 @@ export const DecentralizedAiDexDesk: React.FC<DecentralizedAiDexDeskProps> = ({
           <span className="block text-[11px] text-slate-500">
             vs. 1:{rrRatio} Gross Target
           </span>
+        </div>
+      </div>
+
+      {/* Visual Educational Infographic: How a Decentralized DEX AMM Pool Balances Two Coins */}
+      <div className="p-4 sm:p-5 rounded-xl bg-slate-50/70 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+        <div className="lg:col-span-5">
+          {!ammImgError ? (
+            <img
+              src={dexAmmPoolImg}
+              alt="Scientific isometric diagram of an Automated Market Maker liquidity pool balancing Asset A and Asset B cylinders on an equilibrium scale"
+              referrerPolicy="no-referrer"
+              onError={() => setAmmImgError(true)}
+              className="w-full aspect-16/9 object-cover rounded-lg border border-slate-200 dark:border-slate-800"
+            />
+          ) : (
+            <div className="w-full aspect-16/9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center p-4 text-xs font-mono text-slate-600 dark:text-slate-400">
+              AMM Constant-Product Pool: Reserve A × Reserve B = Constant K
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-7 space-y-2 text-xs">
+          <div className="font-semibold text-sky-600 dark:text-sky-400">
+            Visualizing Decentralized Trading · How On-Chain Liquidity Pools Replace Middlemen
+          </div>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            Two Connected Reserve Cylinders Balanced by Open Math (<span className="font-mono">x × y = k</span>)
+          </h3>
+          <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+            Instead of sending your money to a centralized company, an on-chain <strong>Automated Market Maker (AMM)</strong> holds two coins in transparent smart-ledger cylinders (for example, <strong>{dexSnapshot?.pairLabel ?? 'XRP / RLUSD'}</strong>). When you swap Coin A in, Coin B flows directly back to your own wallet in {dexSnapshot?.settlementSeconds ?? 4} seconds. Larger swaps tip the scale slightly (<strong>Price Impact: {dexExecutionMath.priceImpactBps.toFixed(2)} bps</strong>), which is why checking pool depth first protects you from slippage traps.
+          </p>
         </div>
       </div>
 

@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Wallet,
 } from 'lucide-react';
+import goldRwaBlueprintImg from '../assets/images/infographic_gold_rwa_blueprint_1794621089543.jpg';
 
 interface KsbcGoldTrainingPageProps {
   onEnterApp: (targetSectionId?: string) => void;
@@ -61,6 +62,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
   xrpLivePrice,
 }) => {
   const [activeStep, setActiveStep] = useState<LessonStep>(1);
+  const [blueprintImgError, setBlueprintImgError] = useState<boolean>(false);
 
   // Step 2 Hypothetical Minting Sandbox State
   const [goldOunces, setGoldOunces] = useState<number>(3);
@@ -335,11 +337,35 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
               </div>
             </div>
 
-            {/* Minimal, Clear Training Callout */}
-            <div className="px-4 py-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
-              <span>
-                <strong>Why train before launching?</strong> Learning all 3 stages now means when KSBC becomes a live XRPL token, you already understand how real backing works.
-              </span>
+            {/* Blueprint Infographic + Thorough Plain-English Walkthrough */}
+            <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-5">
+                {!blueprintImgError ? (
+                  <img
+                    src={goldRwaBlueprintImg}
+                    alt="Architectural blueprint illustration showing fine gold bullion bars on an analytical assay balance connected to distributed ledger blocks"
+                    referrerPolicy="no-referrer"
+                    onError={() => setBlueprintImgError(true)}
+                    className="w-full aspect-16/9 object-cover rounded-lg border border-slate-200 dark:border-slate-800"
+                  />
+                ) : (
+                  <div className="w-full aspect-16/9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center p-4 text-xs font-mono text-slate-600 dark:text-slate-400">
+                    Assay Scale Verification → 1:1 XRPL Distributed Ledger Blocks
+                  </div>
+                )}
+              </div>
+
+              <div className="lg:col-span-7 space-y-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                  Full Plain-English Explanation · Why KSBC Starts as an Educational Blueprint
+                </div>
+                <p>
+                  <strong>KSBC (Kingdom Symphony Bible Coin)</strong> was originally envisioned as an honest exchange mechanism for Real-World Asset (RWA) gold. Right now, KSBC is <strong>not a live trading coin</strong> and makes zero claims of government certification—everything here is a transparent personal-learning blueprint for people who want to understand how physical gold can become a real digital asset in the future.
+                </p>
+                <p>
+                  Instead of printing tokens out of thin air, genuine RWA tokenization follows a strict sequence: <strong>(1) Physical Metal</strong> is weighed and assayed for purity (such as 999.9 fine gold), <strong>(2) Independent Proof-of-Reserve</strong> locks that exact weight in an audited vault, and <strong>(3) Divisible Ledger Receipts</strong> are issued 1-to-1 on the XRP Ledger so everyday holders can transfer fractional gold weight in 3–4 seconds for ~$0.0001.
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -517,6 +543,28 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                 <div className="text-[11px] text-slate-600 dark:text-slate-400">
                   100% matched to {totalGrams.toFixed(1)}g gold.
                 </div>
+              </div>
+            </div>
+
+            {/* Detailed Step-by-Step Words Explaining the XRPL Minting & Trustline Mechanics */}
+            <div className="p-4 sm:p-5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              <div>
+                <strong className="block text-slate-900 dark:text-white mb-1">
+                  1. Cold Issuer Account vs. Hot Distribution
+                </strong>
+                On the XRP Ledger, honest issuers separate the <strong>Cold Issuing Address</strong> (kept offline, strictly minting tokens when new verified metal enters the vault) from the operational distribution account so nobody can secretly inflate supply.
+              </div>
+              <div>
+                <strong className="block text-slate-900 dark:text-white mb-1">
+                  2. Why XRPL Requires a 0.2 XRP Trustline
+                </strong>
+                Unlike networks where scammers drop fake tokens into your wallet uninvited, XRPL requires you to sign an explicit <span className="font-mono">TrustSet</span> opt-in (temporarily locking {xrplTrustlineReserveXrp} XRP in your own wallet) before you can hold any RWA token.
+              </div>
+              <div>
+                <strong className="block text-slate-900 dark:text-white mb-1">
+                  3. Redemption Burns the Digital Receipt
+                </strong>
+                If a holder redeems physical gold from the vault, those exact tokens are returned to the issuer address and permanently extinguished so the ledger supply never exceeds the real metal on the shelf.
               </div>
             </div>
           </div>
@@ -709,6 +757,14 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                     95% Borrowed Debt Zone (Instant Liquidation Danger)
                   </div>
                 </div>
+              </div>
+
+              {/* Detailed Plain-English Explanation of Over-Collateralization vs. Leverage */}
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <strong className="text-slate-900 dark:text-white">
+                  Why the Green Safety Cushion Protects Families & Learners:
+                </strong>{' '}
+                In hypothetical RWA collateral models, borrowing at a conservative <strong>{ltvPercent}% Loan-to-Value (LTV)</strong> against ${collateralGoldUsd.toLocaleString()} of verified asset value leaves a <strong>${safetyEquityBufferUsd.toFixed(0)} ({safetyBufferPct}%) equity cushion</strong> so normal market dips do not wipe you out. By contrast, 20x crypto futures use 95% borrowed debt with only 5% margin—meaning a routine 5% market wiggle liquidates 100% of a beginner’s account.
               </div>
             </div>
           </div>
