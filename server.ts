@@ -209,6 +209,145 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
     }
   });
 
+  app.post('/api/ai-buy-sell-helper', async (req, res) => {
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        res.status(500).json({
+          error:
+            'GEMINI_API_KEY is not configured. Please check Settings > Secrets in AI Studio.',
+        });
+        return;
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
+
+      const {
+        symbol,
+        timeframe,
+        livePrice,
+        high24h,
+        low24h,
+        ema20,
+        sma50,
+        rsi14,
+        fib382,
+        fib500,
+        fib618,
+        latestPattern,
+        accountBalance,
+        riskPercent,
+        recentCandlesSummary,
+      } = req.body ?? {};
+
+      const prompt = `Examine this LIVE crypto market state right now and generate recommended technical Buy (Entry), Safety Stop-Loss, and Sell (Take-Profit) points (Use at Your Own Risk):
+
+Asset: ${symbol} (Timeframe: ${timeframe})
+Current Live Price: $${livePrice}
+24h Swing Range: Low $${low24h} to High $${high24h}
+Moving Averages: 20 EMA = $${ema20} | 50 SMA = $${sma50}
+Momentum: RSI(14) = ${rsi14}
+Fibonacci Retracement Support/Resistance Levels:
+- Fib 38.2%: $${fib382}
+- Fib 50.0%: $${fib500}
+- Fib 61.8% (Golden Pocket): $${fib618}
+Latest Candlestick Pattern Detected: ${latestPattern}
+Recent Candles Summary: ${recentCandlesSummary}
+User Wallet Size: $${accountBalance} (Max Risk Per Trade: ${riskPercent}%)
+
+Provide specific numerical Recommended Buy Zone 1 (Primary Pullback/Support Buy), Recommended Buy Zone 2 (Deep Value Buy), Recommended Stop-Loss (Invalidation Floor), and 3 Recommended Sell Zones (TP1 Conservative, TP2 Core 1:2 Target, TP3 Breakout Target), plus a plain-English explanation of why the live chart supports these exact points and what could invalidate the setup.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-4-hydrogen',
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'You are an algorithmic technical analysis helper examining live market structure (EMA 20/50, RSI 14, Fibonacci 38.2/50/61.8 levels, and candlestick patterns) to output concrete, disciplined Recommended Buy Points, Safety Stop-Loss Points, and Recommended Sell (Take-Profit) Points. Always include a clear reminder that all signals are probabilistic technical levels provided strictly on a "Use at Your Own Risk" basis with a strict 2% risk cap ($0.10 on a $5 wallet) and 1x Spot self-custody discipline.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              marketVerdict: {
+                type: Type.STRING,
+                description:
+                  'One of: BUY_ZONE_ACTIVE, WAIT_FOR_PULLBACK_BUY, or SELL_RESISTANCE_ALERT',
+              },
+              verdictHeadline: {
+                type: Type.STRING,
+                description:
+                  'Concise 1-sentence summary of the current live market posture and action.',
+              },
+              recommendedBuy1: {
+                type: Type.NUMBER,
+                description: 'Primary recommended buy/entry price based on live support/Fibonacci.',
+              },
+              recommendedBuy1Note: {
+                type: Type.STRING,
+                description: 'Plain-English reason why Buy Point 1 is the primary entry zone.',
+              },
+              recommendedBuy2: {
+                type: Type.NUMBER,
+                description: 'Secondary deep-discount limit buy price if a deeper wick occurs.',
+              },
+              recommendedBuy2Note: {
+                type: Type.STRING,
+                description: 'Plain-English reason for Deep Value Buy Point 2.',
+              },
+              recommendedStopLoss: {
+                type: Type.NUMBER,
+                description: 'Recommended safety stop-loss price below structural support.',
+              },
+              stopLossNote: {
+                type: Type.STRING,
+                description: 'Why this price invalidates the setup and protects the wallet.',
+              },
+              recommendedSell1: {
+                type: Type.NUMBER,
+                description: 'First recommended sell/take-profit price (TP1 conservative target).',
+              },
+              recommendedSell2: {
+                type: Type.NUMBER,
+                description: 'Second recommended sell/take-profit price (TP2 core 1:2 R:R target).',
+              },
+              recommendedSell3: {
+                type: Type.NUMBER,
+                description: 'Third recommended sell/take-profit price (TP3 upper breakout target).',
+              },
+              sellStrategyNote: {
+                type: Type.STRING,
+                description: 'How to scale out across Sell Points 1, 2, and 3 in plain English.',
+              },
+              liveMarketWhy: {
+                type: Type.STRING,
+                description:
+                  '2-3 sentences in plain English explaining what the live candles, RSI, and moving averages are doing right now.',
+              },
+              riskDisclaimer: {
+                type: Type.STRING,
+                description:
+                  'Explicit Use-at-Your-Own-Risk reminder tailored to this trade setup.',
+              },
+            },
+          },
+        },
+      });
+
+      const rawText = (response.text ?? '{}').trim();
+      res.json(JSON.parse(rawText));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Unexpected error running AI Buy & Sell Helper.';
+      res.status(500).json({ error: message });
+    }
+  });
+
   const guideSignups: Array<{ email: string; requestedAt: string }> = [];
 
   app.post('/api/free-guide-signup', (req, res) => {

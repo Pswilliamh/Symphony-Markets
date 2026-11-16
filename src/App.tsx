@@ -10,6 +10,7 @@ import { CandlestickSymphonyComposer } from './components/CandlestickSymphonyCom
 import { DayTraderSkillSuite } from './components/DayTraderSkillSuite';
 import { DecentralizedAiDexDesk } from './components/DecentralizedAiDexDesk';
 import { LandingPageView, PublicPageTab } from './components/LandingPageView';
+import { LiveAiSignalHelper } from './components/LiveAiSignalHelper';
 import { MarketCyclesEducationModule } from './components/MarketCyclesEducationModule';
 import { PortfolioAndToolsSection } from './components/PortfolioAndToolsSection';
 import { RiskSimulatorPanel } from './components/RiskSimulatorPanel';
@@ -669,6 +670,9 @@ export default function App() {
               <a href="#start-here" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
                 1. $5 Start Here Roadmap
               </a>
+              <a href="#ai-buy-sell-helper" className="text-amber-700 dark:text-amber-400 font-bold hover:underline whitespace-nowrap">
+                ★ AI Buy & Sell Helper
+              </a>
               <a href="#risk-chart" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
                 2. Live Chart & 2% Risk Simulator
               </a>
@@ -740,6 +744,34 @@ export default function App() {
             }}
             beginnerFocusMode={beginnerFocusMode}
             onToggleBeginnerFocusMode={() => setBeginnerFocusMode((v) => !v)}
+          />
+        </section>
+
+        {/* Live AI Market Examiner: Recommended Buy, Stop-Loss & Sell Points (Use at Your Own Risk) */}
+        <section id="ai-buy-sell-helper">
+          <LiveAiSignalHelper
+            symbol={symbol}
+            onSelectSymbol={handleSelectSymbol}
+            timeframe={timeframe}
+            candles={activeCandles}
+            stats={activeStats}
+            fibLevels={fibLevels}
+            livePrice={livePrice}
+            xrpLivePrice={xrpLive}
+            xlmLivePrice={xlmLive}
+            accountBalance={accountBalance}
+            riskPercent={riskPercent}
+            onApplyRecommendationToChart={({ entryPrice: recEntry, stopDistancePct: recStopPct, rrRatio: recRr }) => {
+              setEntryPrice(recEntry);
+              setStopDistancePct(recStopPct);
+              setRrRatio(recRr);
+              setTradeSide('long');
+              setShowRiskOverlay(true);
+              setAlertBanner(
+                `Loaded AI Buy & Sell Points onto Live ${symbol} Chart: Buy $${recEntry.toFixed(4)} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
+              );
+              document.getElementById('risk-chart')?.scrollIntoView({ behavior: 'smooth' });
+            }}
           />
         </section>
 

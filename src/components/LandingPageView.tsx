@@ -15,6 +15,7 @@ import { createNoScamZonePdfBlob } from '../utils/pdfGuideGenerator';
 import { AssetSymbol, Candle } from '../types/market';
 import { CandlestickSymphonyComposer } from './CandlestickSymphonyComposer';
 import { KsbcGoldTrainingPage } from './KsbcGoldTrainingPage';
+import { LiveAiSignalHelper } from './LiveAiSignalHelper';
 import { MarketCyclesEducationModule } from './MarketCyclesEducationModule';
 import { ScamScreenXRayInspector } from './ScamScreenXRayInspector';
 import { SymphonyFrequencyBanners } from './SymphonyFrequencyBanners';
@@ -770,6 +771,13 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           >
             Bull vs. Bear & 4-Year Cycles →
           </button>
+          <button
+            type="button"
+            onClick={() => onEnterApp('ai-buy-sell-helper')}
+            className="px-5 py-2.5 border border-amber-400/80 bg-slate-900 hover:bg-slate-800 text-amber-300 text-sm font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            ★ Live AI Buy & Sell Helper →
+          </button>
         </div>
       </div>
     );
@@ -794,21 +802,37 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <span aria-hidden="true">·</span>
               <span>Visual Market Compass</span>
               <span aria-hidden="true">·</span>
-              <span className="font-mono">2012–2028 Cycles & Monthly Seasonality</span>
+              <span className="font-mono">2012–2028 Cycles & Live AI Buy/Sell Helper</span>
             </div>
             <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-              Bull vs. Bear Markets, Seasonal Rhythms & The 4-Year Cycle Clock
+              Bull vs. Bear Markets, 4-Year Cycles & Live AI Buy/Sell Helper
             </h1>
           </div>
 
           <button
             type="button"
-            onClick={() => onEnterApp('market-cycles')}
+            onClick={() => onEnterApp('ai-buy-sell-helper')}
             className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
-            Open Inside Full Workspace →
+            Open With Live Interactive Chart →
           </button>
         </div>
+
+        {/* Live AI Buy & Sell Zone Examiner (Use at Your Own Risk) */}
+        <LiveAiSignalHelper
+          symbol={symbol || 'XRPUSDT'}
+          onSelectSymbol={(sym) => onSelectSymbol && onSelectSymbol(sym)}
+          timeframe="1h"
+          candles={candles || []}
+          stats={null}
+          fibLevels={[]}
+          livePrice={symbol === 'XLMUSDT' ? xlmLivePrice : xrpLivePrice}
+          xrpLivePrice={xrpLivePrice}
+          xlmLivePrice={xlmLivePrice}
+          accountBalance={5}
+          riskPercent={2.0}
+          onApplyRecommendationToChart={() => onEnterApp('risk-chart')}
+        />
 
         <MarketCyclesEducationModule
           symbol={symbol}
