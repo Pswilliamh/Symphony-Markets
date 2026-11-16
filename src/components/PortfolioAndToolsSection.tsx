@@ -46,8 +46,10 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
   onDeleteAlert,
 }) => {
   // Wallet Form State
-  const [walletLabel, setWalletLabel] = useState('My Trust Wallet Watch');
-  const [walletNetwork, setWalletNetwork] = useState<'XRPL' | 'Stellar' | 'TrustWallet Multi-Chain'>('XRPL');
+  const [walletLabel, setWalletLabel] = useState('My Android Xaman Wallet');
+  const [walletNetwork, setWalletNetwork] = useState<
+    'Xaman Wallet (XRPL)' | 'XRPL' | 'Stellar' | 'TrustWallet Multi-Chain'
+  >('Xaman Wallet (XRPL)');
   const [walletAddress, setWalletAddress] = useState('');
   const [isSyncingWallet, setIsSyncingWallet] = useState(false);
 
@@ -88,7 +90,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
     e.preventDefault();
     const addr =
       walletAddress.trim() ||
-      (walletNetwork === 'XRPL'
+      (walletNetwork === 'XRPL' || walletNetwork === 'Xaman Wallet (XRPL)'
         ? 'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh'
         : 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGSNFHEYVXM3XOJMDS674JZ');
     setIsSyncingWallet(true);
@@ -318,10 +320,10 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <form onSubmit={handleAddWatchedWallet} className="lg:col-span-5 space-y-3">
             <div className="text-xs font-semibold text-slate-900 dark:text-white">
-              Add Read-Only Public Wallet (Trust Wallet / XRPL / Stellar)
+              Add Read-Only Public Wallet (Xaman Android / Trust Wallet / XRPL / Stellar)
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Monitor external holdings safely using only a public address. Never enter seed phrases or private keys.
+              Monitor your live 5 XRP test or external holdings safely using only your public <span className="font-mono">r...</span> or <span className="font-mono">G...</span> address. Never enter seed phrases or Xaman Secret Numbers.
             </p>
 
             <div>
@@ -332,7 +334,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
                 type="text"
                 value={walletLabel}
                 onChange={(e) => setWalletLabel(e.target.value)}
-                placeholder="e.g., Trust Wallet Cold Storage"
+                placeholder="e.g., My Android Xaman Wallet"
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white"
               />
             </div>
@@ -340,24 +342,31 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
-                  Ledger Network
+                  Wallet / Ledger Network
                 </label>
                 <select
                   value={walletNetwork}
                   onChange={(e) =>
-                    setWalletNetwork(e.target.value as 'XRPL' | 'Stellar' | 'TrustWallet Multi-Chain')
+                    setWalletNetwork(
+                      e.target.value as
+                        | 'Xaman Wallet (XRPL)'
+                        | 'XRPL'
+                        | 'Stellar'
+                        | 'TrustWallet Multi-Chain'
+                    )
                   }
                   className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white"
                 >
-                  <option value="XRPL">XRP Ledger (XRPL)</option>
-                  <option value="Stellar">Stellar Network (XLM)</option>
+                  <option value="Xaman Wallet (XRPL)">Xaman Wallet (Android / XRPL)</option>
+                  <option value="XRPL">XRP Ledger (Trust Wallet / Native)</option>
+                  <option value="Stellar">Stellar Network (XLM / Lobstr)</option>
                   <option value="TrustWallet Multi-Chain">Trust Wallet Multi-Chain</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
-                  Public Address (Optional Demo)
+                  Public Receive Address (`r...` / `G...`)
                 </label>
                 <input
                   type="text"

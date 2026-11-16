@@ -462,12 +462,12 @@ export async function fetchMarketData(
 }
 
 export async function fetchPublicWalletBalance(
-  network: 'XRPL' | 'Stellar' | 'TrustWallet Multi-Chain',
+  network: 'XRPL' | 'Xaman Wallet (XRPL)' | 'Stellar' | 'TrustWallet Multi-Chain',
   address: string
 ): Promise<{ xrpBalance: number; xlmBalance: number; usdtBalance: number; isLiveChain: boolean }> {
   const trimmed = address.trim();
   try {
-    if (network === 'Stellar' && trimmed.startsWith('G') && trimmed.length >= 50) {
+    if (trimmed.startsWith('G') && trimmed.length >= 50) {
       const res = await fetch(`https://horizon.stellar.org/accounts/${trimmed}`);
       if (res.ok) {
         const data = (await res.json()) as {
@@ -481,9 +481,12 @@ export async function fetchPublicWalletBalance(
         }
         return { xrpBalance: 0, xlmBalance: xlm, usdtBalance: usdt, isLiveChain: true };
       }
+      if (res.status === 404) {
+        return { xrpBalance: 0, xlmBalance: 0, usdtBalance: 0, isLiveChain: true };
+      }
     }
 
-    if (network === 'XRPL' && trimmed.startsWith('r') && trimmed.length >= 25) {
+    if (trimmed.startsWith('r') && trimmed.length >= 25) {
       const res = await fetch('https://xrplcluster.com/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -494,12 +497,20 @@ export async function fetchPublicWalletBalance(
       });
       if (res.ok) {
         const data = (await res.json()) as {
-          result?: { account_data?: { Balance?: string } };
+          result?: { error?: string; account_data?: { Balance?: string } };
         };
         const drops = data?.result?.account_data?.Balance;
         if (drops) {
           return {
             xrpBalance: parseInt(drops, 10) / 1_000_000,
+            xlmBalance: 0,
+            usdtBalance: 0,
+            isLiveChain: true,
+          };
+        }
+        if (data?.result?.error === 'actNotFound') {
+          return {
+            xrpBalance: 0,
             xlmBalance: 0,
             usdtBalance: 0,
             isLiveChain: true,
@@ -513,9 +524,10 @@ export async function fetchPublicWalletBalance(
 
   // Deterministic educational read-only balance based on address characters
   const hash = trimmed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const isXrpFocused = network === 'XRPL' || network === 'Xaman Wallet (XRPL)';
   return {
     xrpBalance: network !== 'Stellar' ? 1850 + (hash % 4200) : 0,
-    xlmBalance: network !== 'XRPL' ? 6400 + ((hash * 7) % 15000) : 0,
+    xlmBalance: !isXrpFocused ? 6400 + ((hash * 7) % 15000) : 0,
     usdtBalance: 1200 + ((hash * 3) % 3800),
     isLiveChain: false,
   };

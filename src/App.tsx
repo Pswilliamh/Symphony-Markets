@@ -686,7 +686,7 @@ export default function App() {
                 ★ AI Buy & Sell Helper
               </a>
               <a href="#ten-set-auto-trader" className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline whitespace-nowrap">
-                ⚡ 10-Set Auto-Trader (Trust Wallet)
+                ⚡ 10-Set Auto-Trader (Xaman / Trust)
               </a>
               <a href="#risk-chart" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
                 2. Live Chart & 2% Risk Simulator

@@ -100,7 +100,7 @@ export interface PaperPosition {
 export interface WatchedWallet {
   id: string;
   label: string;
-  network: 'XRPL' | 'Stellar' | 'TrustWallet Multi-Chain';
+  network: 'XRPL' | 'Xaman Wallet (XRPL)' | 'Stellar' | 'TrustWallet Multi-Chain';
   address: string;
   xrpBalance: number;
   xlmBalance: number;

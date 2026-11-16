@@ -89,10 +89,10 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   const [isAutoRunning, setIsAutoRunning] = useState<boolean>(false);
   const [selectedSetNumber, setSelectedSetNumber] = useState<number>(1);
 
-  // Active Trust Wallet State
-  const [walletNetwork, setWalletNetwork] = useState<'XRPL' | 'Stellar' | 'EVM_TrustExtension'>(
-    symbol === 'XRPUSDT' ? 'XRPL' : 'Stellar'
-  );
+  // Active Self-Custody Wallet State (Xaman Android/iOS & Trust Wallet)
+  const [walletNetwork, setWalletNetwork] = useState<
+    'Xaman_XRPL' | 'XRPL' | 'Stellar' | 'EVM_TrustExtension'
+  >(symbol === 'XRPUSDT' ? 'Xaman_XRPL' : 'Stellar');
   const [trustWalletAddress, setTrustWalletAddress] = useState<string>(
     'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh'
   );
@@ -397,12 +397,25 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
       const trimmed = trustWalletAddress.trim();
       if (!trimmed) {
-        setWalletStatusMsg('Please enter your public Trust Wallet address first.');
+        setWalletStatusMsg('Please enter your public Xaman or Trust Wallet address first.');
         setIsCheckingWallet(false);
         return;
       }
 
-      // Live XRPL or Stellar Public Ledger Verification
+      if (
+        trimmed.startsWith('0x') &&
+        (walletNetwork === 'Xaman_XRPL' || walletNetwork === 'XRPL')
+      ) {
+        setWalletConnected(false);
+        setLiveOnChainBalance('Warning: 0x EVM/BEP-20 Address Detected');
+        setWalletStatusMsg(
+          'Heads-up: That 0x... address is BNB Smart Chain / Ethereum (wrapped XRP), NOT native XRP Ledger! Open Xaman on Android (or select Native XRP Ledger in Trust Wallet) and copy your address starting with lowercase r...'
+        );
+        setIsCheckingWallet(false);
+        return;
+      }
+
+      // Live XRPL (Xaman / Trust Wallet) or Stellar Public Ledger Verification
       if (trimmed.startsWith('r') && trimmed.length >= 25) {
         const res = await fetch('https://xrplcluster.com/', {
           method: 'POST',
@@ -416,13 +429,20 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         const drops = data?.result?.account_data?.Balance;
         if (drops) {
           const xrpBal = (Number(drops) / 1_000_000).toFixed(2);
-          setLiveOnChainBalance(`${xrpBal} XRP verified on live XRPL Mainnet`);
+          const spendable = Math.max(0, Number(drops) / 1_000_000 - 1).toFixed(2);
+          setLiveOnChainBalance(
+            `${xrpBal} XRP on XRPL (${spendable} XRP spendable after 1 XRP reserve)`
+          );
+        } else if (data?.result?.error === 'actNotFound') {
+          setLiveOnChainBalance('0.00 XRP on XRPL (Send ≥1 XRP to activate 1 XRP Base Reserve)');
         } else {
           setLiveOnChainBalance('Public XRPL address linked (Read-Only Non-Custodial Mode)');
         }
         setWalletConnected(true);
+        const walletLabelName =
+          walletNetwork === 'Xaman_XRPL' ? 'Xaman Wallet (XRPL)' : 'Trust Wallet (XRPL)';
         setWalletStatusMsg(
-          `Connected to active XRPL Trust Wallet address (${trimmed.slice(0, 8)}...${trimmed.slice(-6)}). 10-Set DEX Offer payloads ready for non-custodial signing.`
+          `Connected to ${walletLabelName} (${trimmed.slice(0, 8)}...${trimmed.slice(-6)}). Personal r... wallet = NO Destination Tag needed for self-custody transfers!`
         );
       } else if (trimmed.startsWith('G') && trimmed.length >= 50) {
         const res = await fetch(`https://horizon.stellar.org/accounts/${trimmed}`);
@@ -447,9 +467,9 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         );
       } else {
         setWalletConnected(true);
-        setLiveOnChainBalance('Active Trust Wallet Address Linked (Non-Custodial)');
+        setLiveOnChainBalance('Active Self-Custody Wallet Linked (Non-Custodial)');
         setWalletStatusMsg(
-          `Linked active Trust Wallet address (${trimmed.slice(0, 10)}...). Ready to stage 10-Set Buy & Sell orders.`
+          `Linked public wallet address (${trimmed.slice(0, 10)}...). Ready to stage 10-Set Buy & Sell orders.`
         );
       }
     } catch {
@@ -523,14 +543,14 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
             </span>
           </div>
           <h2 className="font-editorial text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Automated 10-Set Buy & Sell Sequencer (Simulated or Active Trust Wallet)
+            Automated 10-Set Buy & Sell Sequencer (Simulated or Active Xaman / Trust Wallet)
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
             Built for advanced students: this tool automatically chooses the <strong>Buy Point</strong>, <strong>Safety Stop-Loss</strong>, and <strong>Sell Point</strong> across <strong>10 complete sets (Set #01 – Set #10)</strong> and writes a plain-English breakdown of <em>what it did and why</em> so you master how institutional 10-trade batches work.
           </p>
         </div>
 
-        {/* Mode Toggle: Simulated Classroom vs. Live Active Trust Wallet */}
+        {/* Mode Toggle: Simulated Classroom vs. Live Active Xaman / Trust Wallet */}
         <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
           <button
             type="button"
@@ -553,28 +573,43 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
             }`}
           >
             <Wallet className="w-3.5 h-3.5 inline mr-1.5" />
-            Active Trust Wallet Mode
+            Xaman / Trust Wallet Mode
           </button>
         </div>
       </div>
 
-      {/* Active Trust Wallet Connection Bar (Shown when in Active Trust Wallet Mode) */}
+      {/* Active Xaman & Trust Wallet Connection Bar (Shown when in Active Wallet Mode) */}
       {executionMode === 'trust_wallet_live' && (
         <div className="rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 sm:p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 max-w-2xl">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 dark:text-emerald-300">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>
-                  NON-CUSTODIAL ACTIVE TRUST WALLET BRIDGE (ZERO PRIVATE KEYS EVER ASKED)
+                  Non-Custodial Xaman (Android / iOS) & Trust Wallet Bridge · Zero Private Keys Asked
                 </span>
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300">
-                Connect your active Trust Wallet browser extension or paste your public XRPL (`r...`) / Stellar (`G...`) address to stage the 10-Set Buy & Sell DEX limit offers directly for your wallet signature.
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Paste your public <strong>Xaman Wallet</strong> native XRPL address (<span className="font-mono">r...</span>) or <strong>Trust Wallet</strong> address (<span className="font-mono">r...</span> / <span className="font-mono">G...</span>) to verify your live on-chain balance and stage 10-Set DEX Limit Offers. <strong>Tip:</strong> Sending XRP to your personal Xaman <span className="font-mono">r...</span> wallet requires <strong>NO Destination Tag</strong>—just make sure Trust Wallet is on <strong>Native XRP (`r...`)</strong>, not BEP-20 (`0x...`).
               </p>
             </div>
 
-            <div className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setWalletNetwork('Xaman_XRPL');
+                  setTrustWalletAddress('rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh');
+                  onSelectSymbol('XRPUSDT');
+                }}
+                className={`px-2.5 py-1 rounded font-semibold cursor-pointer ${
+                  walletNetwork === 'Xaman_XRPL'
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Xaman (Android XRPL)
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -588,7 +623,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                     : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
-                XRPL (XRP)
+                Trust Wallet (XRPL)
               </button>
               <button
                 type="button"
@@ -616,17 +651,17 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                     : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
-                Trust Browser Extension
+                Browser Extension
               </button>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <input
               type="text"
               value={trustWalletAddress}
               onChange={(e) => setTrustWalletAddress(e.target.value)}
-              placeholder="Paste public Trust Wallet address (r... or G... or 0x...)"
+              placeholder="Paste public Xaman or Trust Wallet address (r... for XRPL or G... for Stellar)"
               className="flex-1 min-w-[240px] px-3.5 py-2 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
             />
             <button
@@ -636,18 +671,27 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
               {isCheckingWallet
-                ? 'Connecting Trust Wallet...'
+                ? 'Checking Live Ledger...'
                 : walletConnected
-                ? '✓ Active Trust Wallet Connected'
-                : 'Connect Active Trust Wallet'}
+                ? '✓ Wallet Verified on Ledger'
+                : 'Verify Public Wallet'}
             </button>
+            <a
+              href="https://xumm.app/detect/xapp:xumm.dex"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-emerald-400/60 dark:border-emerald-500/40 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-slate-800 text-xs font-semibold text-emerald-800 dark:text-emerald-300 rounded-lg transition-colors whitespace-nowrap shrink-0"
+            >
+              <span>Open Xaman DEX (Android)</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
             <a
               href="https://link.trustwallet.com"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0"
             >
-              <span>Open Trust Wallet App</span>
+              <span>Open Trust Wallet</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>

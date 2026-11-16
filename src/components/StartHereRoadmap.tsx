@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, Eye, Lock, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Eye, Lock, ShieldCheck } from 'lucide-react';
 import selfCustodyKeysImg from '../assets/images/infographic_self_custody_keys_1794621087516.jpg';
 import videoCoverWalletImg from '../assets/images/video_cover_wallet_1794561551281.jpg';
 import {
@@ -97,6 +97,13 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
   const [showGlossary, setShowGlossary] = useState<boolean>(false);
   const [showScamXRay, setShowScamXRay] = useState<boolean>(false);
   const [keysImgError, setKeysImgError] = useState<boolean>(false);
+
+  // Step 1 Interactive 5 XRP Pre-Send & Destination Tag Safety Checker (Xaman & Trust Wallet)
+  const [testRecipientType, setTestRecipientType] = useState<'personal_xaman_trust' | 'exchange'>(
+    'personal_xaman_trust'
+  );
+  const [testAddressInput, setTestAddressInput] = useState<string>('');
+  const [testXrpAmount, setTestXrpAmount] = useState<string>('5');
 
   // Step 5 AI Mentor State
   const [customQuestion, setCustomQuestion] = useState<string>('');
@@ -581,8 +588,181 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
             </div>
           </div>
 
+          {/* Full-Width Interactive 5 XRP Pre-Send & Destination Tag Checker (Xaman Android vs. Trust Wallet) */}
+          <div className="lg:col-span-12 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  Real-Wallet Pre-Send Safety Check · Xaman Wallet (Android / iOS) & Trust Wallet
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  Testing a 5 XRP Send? Check “Why No Destination Tag Shows Up” & Verify `r...` vs. `0x...` First
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                100% Local Check · Never Paste Seed Phrases
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              <div className="lg:col-span-6 space-y-3 text-xs">
+                <div>
+                  <label className="block font-semibold text-slate-800 dark:text-slate-200 mb-1.5">
+                    1. Where are you sending your XRP?
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTestRecipientType('personal_xaman_trust')}
+                      className={`p-2.5 rounded-lg border text-left font-semibold transition-colors cursor-pointer ${
+                        testRecipientType === 'personal_xaman_trust'
+                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      My Own Xaman / Trust Wallet
+                      <span className="block font-normal text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Personal self-custody `r...` address
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTestRecipientType('exchange')}
+                      className={`p-2.5 rounded-lg border text-left font-semibold transition-colors cursor-pointer ${
+                        testRecipientType === 'exchange'
+                          ? 'border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Centralized Exchange Deposit
+                      <span className="block font-normal text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Coinbase, Uphold, Kraken, Binance
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                  <div className="sm:col-span-8">
+                    <label className="block font-semibold text-slate-800 dark:text-slate-200 mb-1">
+                      2. Paste Recipient Public Address (Optional Check)
+                    </label>
+                    <input
+                      type="text"
+                      value={testAddressInput}
+                      onChange={(e) => setTestAddressInput(e.target.value)}
+                      placeholder="Paste r... (Native XRPL) or 0x... to test"
+                      className="w-full px-3 py-2 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-4">
+                    <label className="block font-semibold text-slate-800 dark:text-slate-200 mb-1">
+                      Send Amount (XRP)
+                    </label>
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.5"
+                      value={testXrpAmount}
+                      onChange={(e) => setTestXrpAmount(e.target.value)}
+                      className="w-full px-3 py-2 font-mono tabular-nums text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5 text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <strong className="block text-slate-900 dark:text-white">
+                    Why Trust Wallet Sometimes Hides the “Destination Tag” Box:
+                  </strong>
+                  <p>
+                    1. <strong>Check for Wrapped BEP-20 XRP (`0x...`):</strong> Trust Wallet lists both <strong>Native XRP (`XRP Ledger`, starts with `r...`)</strong> and <strong>Binance-Peg XRP (`BNB Smart Chain / BEP20`, starts with `0x...`)</strong>. BEP-20 XRP has <em>no</em> Destination Tag field and <strong>cannot</strong> be sent to a native `r...` Xaman address!
+                  </p>
+                  <p>
+                    2. <strong>Why Xaman Wallet on Android Is Ideal:</strong> <strong>Xaman (`xaman.app`)</strong> is built exclusively for the real XRP Ledger (`r...`). It always uses native XRP, warns automatically if an exchange requires a Destination Tag, and includes the native XRPL DEX right inside the app.
+                  </p>
+                </div>
+              </div>
+
+              <div className="lg:col-span-6 space-y-3 text-xs">
+                {(() => {
+                  const trimmedAddr = testAddressInput.trim();
+                  const parsedAmt = Math.max(0, parseFloat(testXrpAmount) || 0);
+                  const isEvmWrongChain = trimmedAddr.startsWith('0x');
+                  const isNativeXrpl = trimmedAddr.startsWith('r') && trimmedAddr.length >= 25;
+                  const spendableAfterNewActivation = Math.max(0, parsedAmt - 1 - 0.00001);
+
+                  if (isEvmWrongChain) {
+                    return (
+                      <div className="p-4 rounded-xl border border-rose-400 dark:border-rose-500/60 bg-rose-50/70 dark:bg-rose-950/30 space-y-2">
+                        <div className="flex items-center gap-2 font-bold text-rose-700 dark:text-rose-300">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>STOP — `0x...` Address Detected (BNB Smart Chain / EVM, NOT Native XRPL!)</span>
+                        </div>
+                        <p className="text-rose-800 dark:text-rose-200 leading-relaxed">
+                          This address starts with <span className="font-mono font-bold">0x</span>, which means it is on an Ethereum/BNB Smart Chain network—<strong>not</strong> the native XRP Ledger! That is why Trust Wallet does not show a Destination Tag option on BEP-20 XRP. Do not send between `0x...` and `r...` addresses directly. In Trust Wallet, enable <strong>XRP (XRP Ledger)</strong> whose Receive address starts with lowercase <span className="font-mono font-bold">r</span>.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-3">
+                      <div className="flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-300">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>
+                          {testRecipientType === 'personal_xaman_trust'
+                            ? 'Personal Xaman / Trust Wallet (`r...`): NO Destination Tag Needed!'
+                            : 'Exchange Deposit (`r...`): Destination Tag IS Mandatory!'}
+                        </span>
+                      </div>
+
+                      {testRecipientType === 'personal_xaman_trust' ? (
+                        <p className="text-slate-700 dark:text-slate-200 leading-relaxed">
+                          When sending {parsedAmt || 5} XRP to <strong>your own Android Xaman Wallet</strong> (or personal Trust Wallet `r...` address), <strong>you do NOT need a Destination Tag</strong> because that `r...` account belongs 100% to you alone. Leave the Tag/Memo blank—as long as both wallets show native <span className="font-mono font-bold">r...</span> addresses!
+                        </p>
+                      ) : (
+                        <p className="text-amber-900 dark:text-amber-200 leading-relaxed">
+                          Centralized exchanges share one vault `r...` address across thousands of users. You <strong>MUST enter the numeric Destination Tag / Memo</strong> shown on your exchange deposit screen. If Trust Wallet is not showing a Tag/Memo field at all, verify you selected <strong>Native XRP (`r...`)</strong> and not BEP-20 XRP (`0x...`)!
+                        </p>
+                      )}
+
+                      {trimmedAddr && !isNativeXrpl && (
+                        <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300">
+                          Heads-up: Native XRP Ledger addresses always start with a lowercase <strong>r</strong> (25–35 characters, e.g., <span className="font-mono">rEb8...</span>). Double-check the address in Xaman by tapping <strong>Receive</strong>.
+                        </div>
+                      )}
+
+                      <div className="pt-2.5 border-t border-emerald-200 dark:border-emerald-500/30 space-y-1.5 font-mono text-[11px] tabular-nums text-slate-700 dark:text-slate-300">
+                        <div className="font-sans font-bold text-slate-900 dark:text-white">
+                          1 XRP Reserve Math for Your {parsedAmt || 5} XRP Test:
+                        </div>
+                        <div>
+                          • If receiving into a brand-new Xaman (`0 XRP`) wallet:{' '}
+                          <strong className="text-amber-700 dark:text-amber-400">1.00 XRP</strong> locks as Base Reserve →{' '}
+                          <strong className="text-emerald-700 dark:text-emerald-400">
+                            {spendableAfterNewActivation.toFixed(2)} XRP
+                          </strong>{' '}
+                          is immediately spendable!
+                        </div>
+                        <div>
+                          • If sending OUT of a Trust Wallet that holds only{' '}
+                          <strong>{parsedAmt || 5}.00 XRP total</strong>: XRPL keeps{' '}
+                          <strong>1.00 XRP</strong> inside Trust Wallet, so max sendable is{' '}
+                          <strong className="text-sky-700 dark:text-sky-400">
+                            ~{Math.max(0, (parsedAmt || 5) - 1.0001).toFixed(4)} XRP
+                          </strong>
+                          .
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+
           {/* Full-Width Educational Textbook Infographic for Rule C: Private Vault Key vs. Public Viewing Window */}
-          <div className="lg:col-span-12 pt-2 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+          <div className="lg:col-span-12 pt-4 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
             <div className="md:col-span-5">
               {!keysImgError ? (
                 <img
@@ -603,10 +783,10 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
                 Visualizing Rule C · How Self-Custody Keys Actually Work
               </div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Left = Your Private 12-Word Vault Key (Never Share) · Right = Your Public Viewing Window (Safe to Paste)
+                Left = Your Private 12-Word / Secret Numbers Key (Never Share) · Right = Your Public Viewing Window (Safe to Paste)
               </h3>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                Think of your wallet as having two completely different parts: your <strong>Private Key / 12-Word Phrase</strong> is the physical brass master key locked inside your own phone—anyone who sees it can open the safe. Your <strong>Public Receive Address</strong> (<span className="font-mono">G...</span> or <span className="font-mono">r...</span>) is simply a bulletproof glass window that lets you (or Symphony Markets) view the balance from the outside with zero ability to touch your coins.
+                Think of your wallet as having two completely different parts: your <strong>Private Key</strong> (12-word phrase in Trust Wallet, or 8-row Secret Numbers / phrase in Xaman) is the physical brass master key locked inside your own Android phone—anyone who sees it can open the safe. Your <strong>Public Receive Address</strong> (<span className="font-mono">r...</span> in Xaman/XRPL or <span className="font-mono">G...</span> in Stellar) is simply a bulletproof glass window that lets you (or Symphony Markets) view the balance from the outside with zero ability to touch your coins.
               </p>
             </div>
           </div>
