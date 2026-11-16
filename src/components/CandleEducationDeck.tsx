@@ -295,7 +295,7 @@ export const CandleEducationDeck: React.FC<CandleEducationDeckProps> = ({
     return CANDLE_PATTERNS.bullish_engulfing;
   }, [manualPatternId, selectedCandleIndex, candles, recentDetections]);
 
-  const decimals = 4;
+  const decimals = symbol === 'BTCUSDT' ? 2 : 4;
 
   return (
     <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-5 flex flex-col gap-5">

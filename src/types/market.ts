@@ -1,4 +1,4 @@
-export type AssetSymbol = 'XRPUSDT' | 'XLMUSDT';
+export type AssetSymbol = 'BTCUSDT' | 'XRPUSDT' | 'XLMUSDT';
 
 export type Timeframe = '15m' | '1h' | '4h' | '1d';
 
@@ -58,7 +58,7 @@ export interface FibonacciLevel {
 
 export interface MarketStats {
   symbol: AssetSymbol;
-  baseAsset: 'XRP' | 'XLM';
+  baseAsset: 'BTC' | 'XRP' | 'XLM';
   name: string;
   lastPrice: number;
   priceChange24h: number;
@@ -100,8 +100,9 @@ export interface PaperPosition {
 export interface WatchedWallet {
   id: string;
   label: string;
-  network: 'XRPL' | 'Xaman Wallet (XRPL)' | 'Stellar' | 'TrustWallet Multi-Chain';
+  network: 'Bitcoin' | 'XRPL' | 'Xaman Wallet (XRPL)' | 'Stellar' | 'TrustWallet Multi-Chain';
   address: string;
+  btcBalance?: number;
   xrpBalance: number;
   xlmBalance: number;
   usdtBalance: number;

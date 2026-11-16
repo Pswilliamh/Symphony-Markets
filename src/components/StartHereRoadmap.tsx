@@ -119,8 +119,8 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
     knowExitPrice: false,
   });
 
-  const coinName = symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
-  const decimals = 4;
+  const coinName = symbol === 'BTCUSDT' ? 'BTC' : symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
+  const decimals = symbol === 'BTCUSDT' ? 2 : 4;
 
   // Live plain-English chart reading
   const liveReading = useMemo(() => {
@@ -184,7 +184,7 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
       patternName: pat ? `${pat.name} (${pat.bias})` : isGreen ? 'Green Up-Bar' : 'Red Down-Bar',
       wiseVerdict,
     };
-  }, [candles, livePrice, coinName]);
+  }, [candles, livePrice, coinName, decimals]);
 
   // Concrete $5 Wallet Numbers
   const fiveDollarPlan = useMemo(() => {
@@ -462,7 +462,12 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
               {/* 5 Visual $1 Coins */}
               <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 4, 5].map((dollarIdx) => {
-                  const reserveUsd = symbol === 'XLMUSDT' ? 0.41 : Math.min(4.2, livePrice);
+                  const reserveUsd =
+                    symbol === 'BTCUSDT'
+                      ? 0
+                      : symbol === 'XLMUSDT'
+                      ? 0.41
+                      : Math.min(4.2, livePrice);
                   const isFullReserve = dollarIdx <= Math.floor(reserveUsd);
                   const isPartialReserve =
                     !isFullReserve && dollarIdx === Math.floor(reserveUsd) + 1 && reserveUsd % 1 > 0.05;
@@ -527,6 +532,27 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
               </p>
             </div>
             <div className="space-y-2 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectSymbol('BTCUSDT');
+                  onActivateFiveDollarPreset();
+                }}
+                className={`w-full p-3 text-left rounded-lg border transition-colors cursor-pointer ${
+                  symbol === 'BTCUSDT'
+                    ? 'border-amber-500 bg-amber-500/10'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
+                }`}
+              >
+                <div className="flex justify-between font-semibold text-slate-900 dark:text-white">
+                  <span>Bitcoin (BTC) · Satoshis Self-Custody</span>
+                  <span className="text-amber-600 dark:text-amber-400">$0 Base Reserve</span>
+                </div>
+                <div className="text-slate-500 dark:text-slate-400 mt-0.5">
+                  In-App: Simulated Paper Sizing · Live Ledger: $5 buys ~5,500 Satoshis (0.000055 BTC, 21M hard cap)
+                </div>
+              </button>
+
               <button
                 type="button"
                 onClick={() => {

@@ -27,6 +27,7 @@ interface LiveAiSignalHelperProps {
   stats: MarketStats | null;
   fibLevels: FibonacciLevel[];
   livePrice: number;
+  btcLivePrice?: number;
   xrpLivePrice: number;
   xlmLivePrice: number;
   accountBalance: number;
@@ -63,8 +64,9 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
   stats,
   fibLevels,
   livePrice,
-  xrpLivePrice,
-  xlmLivePrice,
+  btcLivePrice = 91450,
+  xrpLivePrice = 2.42,
+  xlmLivePrice = 0.415,
   accountBalance,
   riskPercent,
   onApplyRecommendationToChart,
@@ -75,9 +77,28 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
   const [aiError, setAiError] = useState<string | null>(null);
   const [lastScannedSymbol, setLastScannedSymbol] = useState<AssetSymbol | null>(null);
 
+  const isBtc = symbol === 'BTCUSDT';
+  const priceDecimals = isBtc ? 2 : 4;
+  const coinName = symbol === 'BTCUSDT' ? 'BTC' : symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
+
+  const fmtPrice = (val: number) =>
+    isBtc
+      ? val.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : val.toFixed(4);
+
   // Real-time deterministic technical computation from the live candle stream
   const liveQuantLevels = useMemo(() => {
-    const safePrice = livePrice > 0 ? livePrice : symbol === 'XRPUSDT' ? 2.42 : 0.415;
+    const safePrice =
+      livePrice > 0
+        ? livePrice
+        : symbol === 'BTCUSDT'
+        ? 91450
+        : symbol === 'XRPUSDT'
+        ? 2.42
+        : 0.415;
     const recent = candles.slice(-24);
     const high24h =
       stats?.high24h ??
@@ -117,14 +138,18 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
       high24h - (high24h - low24h) * 0.786;
 
     // Determine primary Buy 1, Buy 2, Stop-Loss, and Sell 1/2/3 levels
-    const buyPoint1 = Number(Math.min(safePrice * 0.995, Math.max(fib500, fib618)).toFixed(4));
-    const buyPoint2 = Number(Math.min(buyPoint1 * 0.985, fib786).toFixed(4));
-    const stopLoss = Number((buyPoint1 * 0.98).toFixed(4)); // 2.0% stop distance from Buy 1
+    const buyPoint1 = Number(
+      Math.min(safePrice * 0.995, Math.max(fib500, fib618)).toFixed(priceDecimals)
+    );
+    const buyPoint2 = Number(Math.min(buyPoint1 * 0.985, fib786).toFixed(priceDecimals));
+    const stopLoss = Number((buyPoint1 * 0.98).toFixed(priceDecimals)); // 2.0% stop distance from Buy 1
     const riskPerCoin = Math.max(safePrice * 0.005, buyPoint1 - stopLoss);
 
-    const sellPoint1 = Number((buyPoint1 + riskPerCoin * 1.5).toFixed(4)); // 1:1.5 R:R
-    const sellPoint2 = Number((buyPoint1 + riskPerCoin * 2.0).toFixed(4)); // 1:2.0 R:R
-    const sellPoint3 = Number(Math.max(high24h * 1.012, buyPoint1 + riskPerCoin * 3.0).toFixed(4)); // 1:3.0 R:R
+    const sellPoint1 = Number((buyPoint1 + riskPerCoin * 1.5).toFixed(priceDecimals)); // 1:1.5 R:R
+    const sellPoint2 = Number((buyPoint1 + riskPerCoin * 2.0).toFixed(priceDecimals)); // 1:2.0 R:R
+    const sellPoint3 = Number(
+      Math.max(high24h * 1.012, buyPoint1 + riskPerCoin * 3.0).toFixed(priceDecimals)
+    ); // 1:3.0 R:R
 
     // Position in 24h range (0% = low24h, 100% = high24h)
     const rangeSpan = Math.max(0.0001, high24h - low24h);
@@ -134,16 +159,16 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
     let verdict: 'BUY_ZONE_ACTIVE' | 'WAIT_FOR_PULLBACK_BUY' | 'SELL_RESISTANCE_ALERT' =
       'WAIT_FOR_PULLBACK_BUY';
     let verdictLabel = 'WAIT FOR PULLBACK TO BUY ZONE 1';
-    let verdictSummary = `Live ${symbol === 'XRPUSDT' ? 'XRP' : 'XLM'} is trading in the middle of its range (${rangePct.toFixed(0)}% of 24h range). Avoid chasing; stage limit orders at Buy Point 1 ($${buyPoint1.toFixed(4)}).`;
+    let verdictSummary = `Live ${coinName} is trading in the middle of its range (${rangePct.toFixed(0)}% of 24h range). Avoid chasing; stage limit orders at Buy Point 1 ($${buyPoint1.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })}).`;
 
     if (rsi14 <= 43 || rangePct <= 38) {
       verdict = 'BUY_ZONE_ACTIVE';
       verdictLabel = 'BUY ZONE ACTIVE (NEAR FIBONACCI SUPPORT FLOOR)';
-      verdictSummary = `Live ${symbol === 'XRPUSDT' ? 'XRP' : 'XLM'} is resting near its Fibonacci pullback support floor (${rangePct.toFixed(0)}% of 24h range, RSI ${rsi14.toFixed(1)}). Favorable 1:2 risk-to-reward zone with Stop-Loss at $${stopLoss.toFixed(4)}.`;
+      verdictSummary = `Live ${coinName} is resting near its Fibonacci pullback support floor (${rangePct.toFixed(0)}% of 24h range, RSI ${rsi14.toFixed(1)}). Favorable 1:2 risk-to-reward zone with Stop-Loss at $${stopLoss.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })}.`;
     } else if (rsi14 >= 67 || rangePct >= 78) {
       verdict = 'SELL_RESISTANCE_ALERT';
       verdictLabel = 'NEAR CEILING / SELL RESISTANCE ZONE — DO NOT CHASE';
-      verdictSummary = `Live ${symbol === 'XRPUSDT' ? 'XRP' : 'XLM'} is near its 24-hour ceiling (${rangePct.toFixed(0)}% of range, RSI ${rsi14.toFixed(1)}). High risk of pullback—harvest profits near Sell Points or wait for a dip back to $${buyPoint1.toFixed(4)}.`;
+      verdictSummary = `Live ${coinName} is near its 24-hour ceiling (${rangePct.toFixed(0)}% of range, RSI ${rsi14.toFixed(1)}). High risk of pullback—harvest profits near Sell Points or wait for a dip back to $${buyPoint1.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })}.`;
     }
 
     const latestPatternName = lastCandle?.detectedPattern
@@ -177,7 +202,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
       riskDollars,
       rewardDollarsTp2,
     };
-  }, [candles, stats, fibLevels, livePrice, symbol, accountBalance, riskPercent]);
+  }, [candles, stats, fibLevels, livePrice, symbol, accountBalance, riskPercent, priceDecimals, coinName]);
 
   // Combine deterministic live levels with AI Deep Scan overrides when available for the current symbol
   const activeSignal = useMemo(() => {
@@ -205,7 +230,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
       verdict: liveQuantLevels.verdict,
       verdictHeadline: liveQuantLevels.verdictSummary,
       buy1: liveQuantLevels.buyPoint1,
-      buy1Note: `Aligns with the 50%–61.8% Fibonacci Golden Pocket support ($${liveQuantLevels.fib618.toFixed(4)}) where institutional buyers historically step in on pullbacks.`,
+      buy1Note: `Aligns with the 50%–61.8% Fibonacci Golden Pocket support ($${liveQuantLevels.fib618.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })}) where institutional buyers historically step in on pullbacks.`,
       buy2: liveQuantLevels.buyPoint2,
       buy2Note: `Deep-value limit catcher near the lower 78.6% swing floor in case a fast stop-hunt wick sweeps lower before bouncing.`,
       stopLoss: liveQuantLevels.stopLoss,
@@ -213,13 +238,22 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
       sell1: liveQuantLevels.sellPoint1,
       sell2: liveQuantLevels.sellPoint2,
       sell3: liveQuantLevels.sellPoint3,
-      sellStrategyNote: `Scale out in 3 calm steps: sell 33% at Sell Point 1 ($${liveQuantLevels.sellPoint1.toFixed(4)}) and move your stop to breakeven; sell 33% at Sell Point 2 ($${liveQuantLevels.sellPoint2.toFixed(4)} for +$${liveQuantLevels.rewardDollarsTp2.toFixed(2)}); let the final 34% ride toward Sell Point 3 ($${liveQuantLevels.sellPoint3.toFixed(4)}).`,
-      liveMarketWhy: `${symbol === 'XRPUSDT' ? 'XRP/USDT' : 'XLM/USDT'} is currently trading at $${liveQuantLevels.safePrice.toFixed(4)} with 20 EMA at $${liveQuantLevels.ema20.toFixed(4)}, 50 SMA at $${liveQuantLevels.sma50.toFixed(4)}, and 14-bar RSI at ${liveQuantLevels.rsi14.toFixed(1)}. Latest candle clue: ${liveQuantLevels.latestPatternName}.`,
+      sellStrategyNote: `Scale out in 3 calm steps: sell 33% at Sell Point 1 ($${liveQuantLevels.sellPoint1.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })}) and move your stop to breakeven; sell 33% at Sell Point 2 ($${liveQuantLevels.sellPoint2.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })} for +$${liveQuantLevels.rewardDollarsTp2.toFixed(2)}); let the final 34% ride toward Sell Point 3 ($${liveQuantLevels.sellPoint3.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })}).`,
+      liveMarketWhy: `${coinName}/USDT is currently trading at $${liveQuantLevels.safePrice.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })} with 20 EMA at $${liveQuantLevels.ema20.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })}, 50 SMA at $${liveQuantLevels.sma50.toLocaleString(undefined, { minimumFractionDigits: priceDecimals, maximumFractionDigits: priceDecimals })}, and 14-bar RSI at ${liveQuantLevels.rsi14.toFixed(1)}. Latest candle clue: ${liveQuantLevels.latestPatternName}.`,
       riskDisclaimer:
         'USE AT YOUR OWN RISK: These Buy, Stop-Loss, and Sell points are algorithmic technical zones calculated from live chart structure. Markets can break any level on sudden macro news—never risk more than 2% ($0.10 per $5) on a single setup and never use high leverage.',
       isAiEnhanced: false,
     };
-  }, [aiScanResult, lastScannedSymbol, symbol, liveQuantLevels, accountBalance, riskPercent]);
+  }, [
+    aiScanResult,
+    lastScannedSymbol,
+    symbol,
+    liveQuantLevels,
+    accountBalance,
+    riskPercent,
+    priceDecimals,
+    coinName,
+  ]);
 
   const handleRunDeepAiScan = async () => {
     setIsScanningAi(true);
@@ -229,7 +263,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
         .slice(-6)
         .map(
           (c) =>
-            `[O:${c.open.toFixed(4)} H:${c.high.toFixed(4)} L:${c.low.toFixed(4)} C:${c.close.toFixed(4)}]`
+            `[O:${c.open.toFixed(priceDecimals)} H:${c.high.toFixed(priceDecimals)} L:${c.low.toFixed(priceDecimals)} C:${c.close.toFixed(priceDecimals)}]`
         )
         .join(' -> ');
 
@@ -239,15 +273,15 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
         body: JSON.stringify({
           symbol,
           timeframe,
-          livePrice: Number(liveQuantLevels.safePrice.toFixed(4)),
-          high24h: Number(liveQuantLevels.high24h.toFixed(4)),
-          low24h: Number(liveQuantLevels.low24h.toFixed(4)),
-          ema20: Number(liveQuantLevels.ema20.toFixed(4)),
-          sma50: Number(liveQuantLevels.sma50.toFixed(4)),
+          livePrice: Number(liveQuantLevels.safePrice.toFixed(priceDecimals)),
+          high24h: Number(liveQuantLevels.high24h.toFixed(priceDecimals)),
+          low24h: Number(liveQuantLevels.low24h.toFixed(priceDecimals)),
+          ema20: Number(liveQuantLevels.ema20.toFixed(priceDecimals)),
+          sma50: Number(liveQuantLevels.sma50.toFixed(priceDecimals)),
           rsi14: Number(liveQuantLevels.rsi14.toFixed(1)),
-          fib382: Number(liveQuantLevels.fib382.toFixed(4)),
-          fib500: Number(liveQuantLevels.fib500.toFixed(4)),
-          fib618: Number(liveQuantLevels.fib618.toFixed(4)),
+          fib382: Number(liveQuantLevels.fib382.toFixed(priceDecimals)),
+          fib500: Number(liveQuantLevels.fib500.toFixed(priceDecimals)),
+          fib618: Number(liveQuantLevels.fib618.toFixed(priceDecimals)),
           latestPattern: liveQuantLevels.latestPatternName,
           accountBalance,
           riskPercent,
@@ -292,7 +326,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
               LIVE AI BUY & SELL ZONE HELPER — USE AT YOUR OWN RISK DISCLOSURE
             </div>
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-              This AI helper examines the live market state right now (Moving Averages, RSI Momentum, Candlestick Patterns, and Fibonacci Zones) to recommend specific <strong>Buy Points</strong>, <strong>Safety Stop-Loss Points</strong>, and <strong>Sell (Take-Profit) Points</strong>. Crypto markets are volatile and no algorithm can guarantee future outcomes. <strong>Use these recommended Buy & Sell points strictly at your own risk</strong>, keep your keys in self-custody, and never risk more than <strong>2% ($0.10 per $5)</strong> on any trade.
+              This AI helper examines the live market state right now (Moving Averages, RSI Momentum, Candlestick Patterns, and Fibonacci Zones) across <strong>BTC</strong>, <strong>XRP</strong>, and <strong>XLM</strong> to recommend specific <strong>Buy Points</strong>, <strong>Safety Stop-Loss Points</strong>, and <strong>Sell (Take-Profit) Points</strong>. Crypto markets are volatile and no algorithm can guarantee future outcomes. <strong>Use these recommended Buy & Sell points strictly at your own risk</strong>, keep your keys in self-custody, and never risk more than <strong>2% ($0.10 per $5)</strong> on any trade.
             </p>
           </div>
         </div>
@@ -313,7 +347,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
             <Crosshair className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Real-Time Technical Signal Desk</span>
+            <span>Real-Time Technical Signal Desk (BTC · XRP · XLM)</span>
             <span aria-hidden="true">·</span>
             <span>Timeframe: {timeframe.toUpperCase()}</span>
             <span aria-hidden="true">·</span>
@@ -333,6 +367,17 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
             <button
               type="button"
+              onClick={() => onSelectSymbol('BTCUSDT')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                symbol === 'BTCUSDT'
+                  ? 'bg-amber-500 text-slate-950'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              BTC (${(btcLivePrice || 91450).toLocaleString(undefined, { maximumFractionDigits: 0 })})
+            </button>
+            <button
+              type="button"
               onClick={() => onSelectSymbol('XRPUSDT')}
               className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                 symbol === 'XRPUSDT'
@@ -340,7 +385,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              XRP (${xrpLivePrice.toFixed(4)})
+              XRP (${(xrpLivePrice || 2.42).toFixed(4)})
             </button>
             <button
               type="button"
@@ -351,7 +396,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              XLM (${xlmLivePrice.toFixed(4)})
+              XLM (${(xlmLivePrice || 0.415).toFixed(4)})
             </button>
           </div>
 
@@ -420,7 +465,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                 </span>
                 <span aria-hidden="true">·</span>
                 <span className="text-slate-600 dark:text-slate-400">
-                  Live {symbol === 'XRPUSDT' ? 'XRP' : 'XLM'}: ${liveQuantLevels.safePrice.toFixed(4)}
+                  Live {coinName}: ${fmtPrice(liveQuantLevels.safePrice)}
                 </span>
                 <span aria-hidden="true">·</span>
                 <span className="text-slate-600 dark:text-slate-400">
@@ -453,7 +498,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                     )
                   );
                   onApplyRecommendationToChart({
-                    entryPrice: Number(activeSignal.buy1.toFixed(4)),
+                    entryPrice: Number(activeSignal.buy1.toFixed(priceDecimals)),
                     stopDistancePct: stopDistPct,
                     rrRatio: 2,
                   });
@@ -471,10 +516,10 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
             <div className="lg:col-span-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950 p-4 flex flex-col justify-between space-y-3">
               <div className="flex items-center justify-between gap-2 text-xs">
                 <span className="font-bold text-white">
-                  Visual Buy & Sell Price Map ({symbol === 'XRPUSDT' ? 'XRP' : 'XLM'})
+                  Visual Buy & Sell Price Map ({coinName})
                 </span>
                 <span className="font-mono text-amber-300 tabular-nums">
-                  Now: ${liveQuantLevels.safePrice.toFixed(4)}
+                  Now: ${fmtPrice(liveQuantLevels.safePrice)}
                 </span>
               </div>
 
@@ -506,8 +551,8 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                 <text x="30" y="41" fill="#A7F3D0" fontSize="10" fontFamily="monospace">
                   SELL 3 (Breakout 1:3 R:R)
                 </text>
-                <text x="320" y="41" fill="#6EE7B7" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                  ${activeSignal.sell3.toFixed(4)}
+                <text x="305" y="41" fill="#6EE7B7" fontSize="10.5" fontWeight="bold" fontFamily="monospace">
+                  ${fmtPrice(activeSignal.sell3)}
                 </text>
 
                 {/* Sell 2 Line */}
@@ -515,8 +560,8 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                 <text x="30" y="68" fill="#A7F3D0" fontSize="10" fontWeight="bold" fontFamily="monospace">
                   SELL 2 (Core 1:2 Target)
                 </text>
-                <text x="320" y="68" fill="#34D399" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                  ${activeSignal.sell2.toFixed(4)}
+                <text x="305" y="68" fill="#34D399" fontSize="10.5" fontWeight="bold" fontFamily="monospace">
+                  ${fmtPrice(activeSignal.sell2)}
                 </text>
 
                 {/* Sell 1 Line */}
@@ -524,8 +569,8 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                 <text x="30" y="94" fill="#A7F3D0" fontSize="10" fontFamily="monospace">
                   SELL 1 (First 33% Lock-In)
                 </text>
-                <text x="320" y="94" fill="#A7F3D0" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                  ${activeSignal.sell1.toFixed(4)}
+                <text x="305" y="94" fill="#A7F3D0" fontSize="10.5" fontWeight="bold" fontFamily="monospace">
+                  ${fmtPrice(activeSignal.sell1)}
                 </text>
 
                 {/* BUY ZONE BAND (Middle-Lower Cyan/Sky Pullback Zone) */}
@@ -550,8 +595,8 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                 <text x="30" y="168" fill="#E0F2FE" fontSize="10" fontWeight="bold" fontFamily="monospace">
                   BUY POINT 1 (Primary Entry)
                 </text>
-                <text x="320" y="168" fill="#38BDF8" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                  ${activeSignal.buy1.toFixed(4)}
+                <text x="305" y="168" fill="#38BDF8" fontSize="10.5" fontWeight="bold" fontFamily="monospace">
+                  ${fmtPrice(activeSignal.buy1)}
                 </text>
 
                 {/* Buy 2 Line */}
@@ -559,8 +604,8 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                 <text x="30" y="194" fill="#BAE6FD" fontSize="10" fontFamily="monospace">
                   BUY POINT 2 (Deep Wick Bid)
                 </text>
-                <text x="320" y="194" fill="#7DD3FC" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                  ${activeSignal.buy2.toFixed(4)}
+                <text x="305" y="194" fill="#7DD3FC" fontSize="10.5" fontWeight="bold" fontFamily="monospace">
+                  ${fmtPrice(activeSignal.buy2)}
                 </text>
 
                 {/* SAFETY STOP-LOSS BAND (Bottom Red Protection Line) */}
@@ -580,13 +625,13 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                 <text x="30" y="236" fill="#FECDD3" fontSize="10" fontWeight="bold" fontFamily="monospace">
                   ■ SAFETY STOP-LOSS (2% Max Risk)
                 </text>
-                <text x="320" y="236" fill="#FB7185" fontSize="11" fontWeight="bold" fontFamily="monospace">
-                  ${activeSignal.stopLoss.toFixed(4)}
+                <text x="305" y="236" fill="#FB7185" fontSize="10.5" fontWeight="bold" fontFamily="monospace">
+                  ${fmtPrice(activeSignal.stopLoss)}
                 </text>
 
                 {/* DYNAMIC LIVE PRICE POINTER */}
                 <g transform={`translate(0, ${Math.min(130, Math.max(108, liveMarkerY))})`}>
-                  <rect x="115" y="-11" width="190" height="22" rx="4" fill="#F59E0B" />
+                  <rect x="105" y="-11" width="210" height="22" rx="4" fill="#F59E0B" />
                   <text
                     x="210"
                     y="4"
@@ -596,7 +641,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                     fontWeight="bold"
                     fontFamily="monospace"
                   >
-                    ★ LIVE NOW: ${liveQuantLevels.safePrice.toFixed(4)}
+                    ★ LIVE NOW: ${fmtPrice(liveQuantLevels.safePrice)}
                   </text>
                 </g>
               </svg>
@@ -627,7 +672,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                         Buy Point 1 (Primary)
                       </span>
                       <span className="font-mono text-sm font-bold text-sky-600 dark:text-sky-400 tabular-nums">
-                        ${activeSignal.buy1.toFixed(4)}
+                        ${fmtPrice(activeSignal.buy1)}
                       </span>
                     </div>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -641,7 +686,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                         Buy Point 2 (Deep Value)
                       </span>
                       <span className="font-mono text-sm font-bold text-sky-600 dark:text-sky-400 tabular-nums">
-                        ${activeSignal.buy2.toFixed(4)}
+                        ${fmtPrice(activeSignal.buy2)}
                       </span>
                     </div>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -669,7 +714,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                       Sell Point 1 (Sell 33%)
                     </div>
                     <div className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                      ${activeSignal.sell1.toFixed(4)}
+                      ${fmtPrice(activeSignal.sell1)}
                     </div>
                     <div className="text-[11px] text-slate-600 dark:text-slate-400">
                       1.5R Target · Move stop to breakeven
@@ -681,7 +726,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                       Sell Point 2 (Core 1:2)
                     </div>
                     <div className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                      ${activeSignal.sell2.toFixed(4)}
+                      ${fmtPrice(activeSignal.sell2)}
                     </div>
                     <div className="text-[11px] text-slate-600 dark:text-slate-400">
                       2.0R Target (+${liveQuantLevels.rewardDollarsTp2.toFixed(2)} on ${accountBalance})
@@ -693,7 +738,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                       Sell Point 3 (Runner 34%)
                     </div>
                     <div className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                      ${activeSignal.sell3.toFixed(4)}
+                      ${fmtPrice(activeSignal.sell3)}
                     </div>
                     <div className="text-[11px] text-slate-600 dark:text-slate-400">
                       3.0R Upper Breakout Target
@@ -712,7 +757,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
                   <div className="flex items-center gap-2 font-bold text-rose-800 dark:text-rose-300">
                     <ShieldCheck className="w-4 h-4 shrink-0" />
                     <span>
-                      3. RECOMMENDED SAFETY STOP-LOSS EXIT: ${activeSignal.stopLoss.toFixed(4)}
+                      3. RECOMMENDED SAFETY STOP-LOSS EXIT: ${fmtPrice(activeSignal.stopLoss)}
                     </span>
                   </div>
                   <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -738,7 +783,7 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
             </div>
             <div className="font-mono">
               <Target className="w-3.5 h-3.5 inline mr-1 text-sky-500" />
-              24h Range: ${liveQuantLevels.low24h.toFixed(4)} – ${liveQuantLevels.high24h.toFixed(4)}
+              24h Range: ${fmtPrice(liveQuantLevels.low24h)} – ${fmtPrice(liveQuantLevels.high24h)}
             </div>
           </div>
         </>

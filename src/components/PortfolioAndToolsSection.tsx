@@ -14,6 +14,7 @@ interface PortfolioAndToolsSectionProps {
   onSectionTabChange: (tab: 'portfolio' | 'wallets' | 'bot_sandbox' | 'alerts') => void;
   positions: PaperPosition[];
   onClosePosition: (id: string, exitPrice: number) => void;
+  btcPrice?: number;
   xrpPrice: number;
   xlmPrice: number;
   candles: Candle[];
@@ -33,6 +34,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
   onSectionTabChange,
   positions,
   onClosePosition,
+  btcPrice = 91450,
   xrpPrice,
   xlmPrice,
   watchedWallets,
@@ -48,7 +50,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
   // Wallet Form State
   const [walletLabel, setWalletLabel] = useState('My Android Xaman Wallet');
   const [walletNetwork, setWalletNetwork] = useState<
-    'Xaman Wallet (XRPL)' | 'XRPL' | 'Stellar' | 'TrustWallet Multi-Chain'
+    'Bitcoin' | 'Xaman Wallet (XRPL)' | 'XRPL' | 'Stellar' | 'TrustWallet Multi-Chain'
   >('Xaman Wallet (XRPL)');
   const [walletAddress, setWalletAddress] = useState('');
   const [isSyncingWallet, setIsSyncingWallet] = useState(false);
@@ -64,7 +66,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
   const [totpVerifiedMsg, setTotpVerifiedMsg] = useState<string | null>(null);
 
   const getLivePriceForSymbol = (sym: AssetSymbol) =>
-    sym === 'XRPUSDT' ? xrpPrice : xlmPrice;
+    sym === 'BTCUSDT' ? btcPrice : sym === 'XRPUSDT' ? xrpPrice : xlmPrice;
 
   const openPositions = positions.filter((p) => p.status === 'open');
   const closedPositions = positions.filter((p) => p.status === 'closed');
@@ -90,7 +92,9 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
     e.preventDefault();
     const addr =
       walletAddress.trim() ||
-      (walletNetwork === 'XRPL' || walletNetwork === 'Xaman Wallet (XRPL)'
+      (walletNetwork === 'Bitcoin'
+        ? 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh'
+        : walletNetwork === 'XRPL' || walletNetwork === 'Xaman Wallet (XRPL)'
         ? 'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh'
         : 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGSNFHEYVXM3XOJMDS674JZ');
     setIsSyncingWallet(true);
@@ -102,6 +106,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
       label: walletLabel.trim() || 'Public Read-Only Watch',
       network: walletNetwork,
       address: addr,
+      btcBalance: balances.btcBalance ?? 0,
       xrpBalance: balances.xrpBalance,
       xlmBalance: balances.xlmBalance,
       usdtBalance: balances.usdtBalance,
@@ -269,17 +274,24 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
                           {pos.side}
                         </td>
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                          {pos.quantity.toLocaleString()}
+                          {pos.symbol === 'BTCUSDT'
+                            ? pos.quantity.toFixed(6)
+                            : pos.quantity.toLocaleString()}
                         </td>
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                          ${pos.entryPrice.toFixed(4)}
+                          ${pos.entryPrice.toFixed(pos.symbol === 'BTCUSDT' ? 2 : 4)}
                         </td>
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                          <span className="text-rose-500">${pos.stopLoss.toFixed(4)}</span> /{' '}
-                          <span className="text-emerald-500">${pos.takeProfit.toFixed(4)}</span>
+                          <span className="text-rose-500">
+                            ${pos.stopLoss.toFixed(pos.symbol === 'BTCUSDT' ? 2 : 4)}
+                          </span>{' '}
+                          /{' '}
+                          <span className="text-emerald-500">
+                            ${pos.takeProfit.toFixed(pos.symbol === 'BTCUSDT' ? 2 : 4)}
+                          </span>
                         </td>
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                          ${mark.toFixed(4)}
+                          ${mark.toFixed(pos.symbol === 'BTCUSDT' ? 2 : 4)}
                         </td>
                         <td
                           className={`py-2.5 px-3 text-right font-semibold whitespace-nowrap ${
@@ -349,6 +361,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
                   onChange={(e) =>
                     setWalletNetwork(
                       e.target.value as
+                        | 'Bitcoin'
                         | 'Xaman Wallet (XRPL)'
                         | 'XRPL'
                         | 'Stellar'
@@ -357,6 +370,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
                   }
                   className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white"
                 >
+                  <option value="Bitcoin">Bitcoin Network (BTC / bc1...)</option>
                   <option value="Xaman Wallet (XRPL)">Xaman Wallet (Android / XRPL)</option>
                   <option value="XRPL">XRP Ledger (Trust Wallet / Native)</option>
                   <option value="Stellar">Stellar Network (XLM / Lobstr)</option>
@@ -366,13 +380,19 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
 
               <div>
                 <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
-                  Public Receive Address (`r...` / `G...`)
+                  Public Receive Address (`bc1...` / `r...` / `G...`)
                 </label>
                 <input
                   type="text"
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
-                  placeholder={walletNetwork === 'Stellar' ? 'G...' : 'r...'}
+                  placeholder={
+                    walletNetwork === 'Bitcoin'
+                      ? 'bc1...'
+                      : walletNetwork === 'Stellar'
+                      ? 'G...'
+                      : 'r...'
+                  }
                   className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white"
                 />
               </div>
@@ -392,6 +412,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
                   <th className="py-2.5 px-3 font-medium">Wallet & Network</th>
+                  <th className="py-2.5 px-3 font-medium text-right">BTC Holdings</th>
                   <th className="py-2.5 px-3 font-medium text-right">XRP Holdings</th>
                   <th className="py-2.5 px-3 font-medium text-right">XLM Holdings</th>
                   <th className="py-2.5 px-3 font-medium text-right">Est. Portfolio Value</th>
@@ -400,8 +421,12 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono tabular-nums">
                 {watchedWallets.map((w) => {
+                  const btcBal = w.btcBalance ?? 0;
                   const totalUsd =
-                    w.xrpBalance * xrpPrice + w.xlmBalance * xlmPrice + w.usdtBalance;
+                    btcBal * btcPrice +
+                    w.xrpBalance * xrpPrice +
+                    w.xlmBalance * xlmPrice +
+                    w.usdtBalance;
                   return (
                     <tr key={w.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                       <td className="py-2.5 px-3 font-sans">
@@ -411,6 +436,9 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                           {w.network} · {w.address.slice(0, 8)}...{w.address.slice(-6)}
                         </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                        {btcBal > 0 ? `${btcBal.toFixed(6)} BTC` : '0 BTC'}
                       </td>
                       <td className="py-2.5 px-3 text-right whitespace-nowrap">
                         {w.xrpBalance.toLocaleString(undefined, { maximumFractionDigits: 1 })} XRP
@@ -576,11 +604,16 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
                     const sym = e.target.value as AssetSymbol;
                     setAlertSymbol(sym);
                     setAlertTargetPrice(
-                      sym === 'XRPUSDT' ? (xrpPrice * 1.02).toFixed(4) : (xlmPrice * 1.02).toFixed(4)
+                      sym === 'BTCUSDT'
+                        ? (btcPrice * 1.02).toFixed(2)
+                        : sym === 'XRPUSDT'
+                        ? (xrpPrice * 1.02).toFixed(4)
+                        : (xlmPrice * 1.02).toFixed(4)
                     );
                   }}
                   className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white"
                 >
+                  <option value="BTCUSDT">BTC/USDT</option>
                   <option value="XRPUSDT">XRP/USDT</option>
                   <option value="XLMUSDT">XLM/USDT</option>
                 </select>
@@ -607,7 +640,7 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
                 </label>
                 <input
                   type="number"
-                  step="0.0001"
+                  step={alertSymbol === 'BTCUSDT' ? '0.01' : '0.0001'}
                   value={alertTargetPrice}
                   onChange={(e) => setAlertTargetPrice(e.target.value)}
                   className="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white"
@@ -652,7 +685,8 @@ export const PortfolioAndToolsSection: React.FC<PortfolioAndToolsSectionProps> =
                       {al.symbol}
                     </td>
                     <td className="py-2.5 px-3 font-mono tabular-nums">
-                      {al.condition === 'above' ? '≥' : '≤'} ${al.targetPrice.toFixed(4)}
+                      {al.condition === 'above' ? '≥' : '≤'} $
+                      {al.targetPrice.toFixed(al.symbol === 'BTCUSDT' ? 2 : 4)}
                     </td>
                     <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300">{al.note}</td>
                     <td className="py-2.5 px-3">

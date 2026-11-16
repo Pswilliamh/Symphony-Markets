@@ -19,6 +19,7 @@ import { createNoScamZonePdfBlob } from '../utils/pdfGuideGenerator';
 import { AssetSymbol, Candle } from '../types/market';
 import { AnalemmaEcosystemNodeCard } from './AnalemmaEcosystemNodeCard';
 import { CandlestickSymphonyComposer } from './CandlestickSymphonyComposer';
+import { CoinHistoryAndFoundersModule } from './CoinHistoryAndFoundersModule';
 import { KsbcGoldTrainingPage } from './KsbcGoldTrainingPage';
 import { LiveAiSignalHelper } from './LiveAiSignalHelper';
 import { MarketCyclesEducationModule } from './MarketCyclesEducationModule';
@@ -48,6 +49,7 @@ interface LandingPageViewProps {
   activePage: PublicPageTab;
   onNavigatePage: (page: PublicPageTab) => void;
   onEnterApp: (targetSectionId?: string) => void;
+  btcLivePrice?: number;
   xrpLivePrice: number;
   xlmLivePrice: number;
   symbol?: AssetSymbol;
@@ -389,6 +391,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   activePage,
   onNavigatePage,
   onEnterApp,
+  btcLivePrice = 91450,
   xrpLivePrice,
   xlmLivePrice,
   symbol = 'XRPUSDT',
@@ -962,7 +965,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           candles={candles || []}
           stats={null}
           fibLevels={[]}
-          livePrice={symbol === 'XLMUSDT' ? xlmLivePrice : xrpLivePrice}
+          livePrice={
+            symbol === 'BTCUSDT'
+              ? btcLivePrice
+              : symbol === 'XLMUSDT'
+              ? xlmLivePrice
+              : xrpLivePrice
+          }
+          btcLivePrice={btcLivePrice}
           xrpLivePrice={xrpLivePrice}
           xlmLivePrice={xlmLivePrice}
           accountBalance={5}
@@ -976,7 +986,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           onSelectSymbol={(sym) => onSelectSymbol && onSelectSymbol(sym)}
           candles={candles || []}
           fibLevels={[]}
-          livePrice={symbol === 'XLMUSDT' ? xlmLivePrice : xrpLivePrice}
+          livePrice={
+            symbol === 'BTCUSDT'
+              ? btcLivePrice
+              : symbol === 'XLMUSDT'
+              ? xlmLivePrice
+              : xrpLivePrice
+          }
+          btcLivePrice={btcLivePrice}
           xrpLivePrice={xrpLivePrice}
           xlmLivePrice={xlmLivePrice}
           accountBalance={5}
@@ -988,9 +1005,22 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           symbol={symbol}
           onSelectSymbol={onSelectSymbol}
           candles={candles}
+          btcLivePrice={btcLivePrice}
           xrpLivePrice={xrpLivePrice}
           xlmLivePrice={xlmLivePrice}
           onEnterApp={onEnterApp}
+        />
+
+        {/* Coin History, Purpose & Founders Classroom Section (BTC, XRP, XLM & KSBC Gold RWA) */}
+        <CoinHistoryAndFoundersModule
+          btcLivePrice={btcLivePrice}
+          xrpLivePrice={xrpLivePrice}
+          xlmLivePrice={xlmLivePrice}
+          onSelectSymbolAndTrain={(sym, targetId) => {
+            onSelectSymbol?.(sym);
+            onEnterApp(targetId || 'ten-set-auto-trader');
+          }}
+          onOpenKsbcGoldLedger={() => onNavigatePage('ksbc')}
         />
       </div>
     );
@@ -1058,7 +1088,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           symbol={symbol}
           onSelectSymbol={onSelectSymbol}
           candles={candles}
-          livePrice={symbol === 'XRPUSDT' ? xrpLivePrice : xlmLivePrice}
+          livePrice={
+            symbol === 'BTCUSDT'
+              ? btcLivePrice
+              : symbol === 'XRPUSDT'
+              ? xrpLivePrice
+              : xlmLivePrice
+          }
+          btcLivePrice={btcLivePrice}
           xrpLivePrice={xrpLivePrice}
           xlmLivePrice={xlmLivePrice}
         />
@@ -1796,6 +1833,18 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           </div>
         </div>
 
+        {/* Coin History, Purpose & Founders Classroom Section (BTC, XRP, XLM & KSBC Gold RWA) */}
+        <CoinHistoryAndFoundersModule
+          btcLivePrice={btcLivePrice}
+          xrpLivePrice={xrpLivePrice}
+          xlmLivePrice={xlmLivePrice}
+          onSelectSymbolAndTrain={(sym, targetId) => {
+            onSelectSymbol?.(sym);
+            onEnterApp(targetId || 'ten-set-auto-trader');
+          }}
+          onOpenKsbcGoldLedger={() => onNavigatePage('ksbc')}
+        />
+
         {/* Analemma Ventures · Systems Knowledge Engineering & Digital Visual Resume Pro 1.0 Cross-Link */}
         <AnalemmaEcosystemNodeCard onNavigatePage={onNavigatePage} onEnterApp={onEnterApp} />
       </div>
@@ -2049,6 +2098,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                 Paired with <em>The Sovereign Mind & The Honest Market</em> companion guide, this book explores the 4 foundational pillars behind Symphony Markets: <strong>The Sovereign Breath (Pneuma)</strong>, <strong>The Sacred Geometry of Risk</strong>, <strong>Machine Intelligence as a Shield</strong>, and <strong>Radical Ethics & The No-Scam Zone</strong>.
               </p>
+              <blockquote className="mt-2 pl-3 border-l-2 border-amber-400 text-xs italic text-slate-700 dark:text-slate-300 leading-relaxed">
+                “It’s not about making money—it’s about learning how to manage and understand what the system is doing.”
+              </blockquote>
             </div>
           </div>
 

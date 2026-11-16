@@ -8,6 +8,7 @@ interface CandlestickSymphonyComposerProps {
   onSelectSymbol?: (sym: AssetSymbol) => void;
   candles: Candle[];
   livePrice: number;
+  btcLivePrice?: number;
   xrpLivePrice?: number;
   xlmLivePrice?: number;
 }
@@ -62,6 +63,7 @@ export const CandlestickSymphonyComposer: React.FC<CandlestickSymphonyComposerPr
   onSelectSymbol,
   candles,
   livePrice,
+  btcLivePrice,
   xrpLivePrice,
   xlmLivePrice,
 }) => {
@@ -75,6 +77,7 @@ export const CandlestickSymphonyComposer: React.FC<CandlestickSymphonyComposerPr
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const stepTimerRef = useRef<number | null>(null);
+  const priceDecimals = symbol === 'BTCUSDT' ? 2 : 4;
 
   // Build the 8-Hour Historical Candlestick & Musical Note Dataset
   const musicBars: EightHourMusicBar[] = useMemo(() => {
@@ -82,15 +85,17 @@ export const CandlestickSymphonyComposer: React.FC<CandlestickSymphonyComposerPr
       candles && candles.length >= barCount
         ? candles.slice(-barCount)
         : Array.from({ length: barCount }, (_, idx) => {
-            const base = livePrice || (symbol === 'XRPUSDT' ? 2.42 : 0.415);
+            const base =
+              livePrice ||
+              (symbol === 'BTCUSDT' ? 91450 : symbol === 'XRPUSDT' ? 2.42 : 0.415);
             const wave =
               Math.sin(idx * 0.55) * base * 0.012 +
               Math.cos(idx * 0.28) * base * 0.008;
-            const open = Number((base + wave).toFixed(4));
+            const open = Number((base + wave).toFixed(priceDecimals));
             const delta = Math.sin(idx * 0.9 + 0.4) * base * 0.0065;
-            const close = Number((open + delta).toFixed(4));
-            const high = Number((Math.max(open, close) + base * 0.003).toFixed(4));
-            const low = Number((Math.min(open, close) - base * 0.003).toFixed(4));
+            const close = Number((open + delta).toFixed(priceDecimals));
+            const high = Number((Math.max(open, close) + base * 0.003).toFixed(priceDecimals));
+            const low = Number((Math.min(open, close) - base * 0.003).toFixed(priceDecimals));
             return {
               time: Date.now() - (barCount - idx) * (480 / barCount) * 60 * 1000,
               open,
@@ -448,7 +453,27 @@ export const CandlestickSymphonyComposer: React.FC<CandlestickSymphonyComposerPr
           {/* Asset & Window Resolution Controls */}
           <div className="flex flex-wrap items-center gap-2">
             {onSelectSymbol && (
-              <div className="flex items-center gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800 text-xs">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    onSelectSymbol('BTCUSDT');
+                  }}
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                    symbol === 'BTCUSDT'
+                      ? 'bg-amber-600 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  BTC Song{' '}
+                  {btcLivePrice
+                    ? `($${btcLivePrice.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })})`
+                    : ''}
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -748,7 +773,7 @@ export const CandlestickSymphonyComposer: React.FC<CandlestickSymphonyComposerPr
               </span>
               <span aria-hidden="true" className="text-slate-600">·</span>
               <span className="font-mono text-sky-300">
-                ${activeBar.close.toFixed(4)}
+                ${activeBar.close.toFixed(priceDecimals)}
               </span>
               <button
                 type="button"
@@ -829,7 +854,7 @@ export const CandlestickSymphonyComposer: React.FC<CandlestickSymphonyComposerPr
                     className="text-[10px] font-mono"
                     fill="#64748B"
                   >
-                    ${priceAtStaff.toFixed(4)}
+                    ${priceAtStaff.toFixed(priceDecimals)}
                   </text>
                 </g>
               );

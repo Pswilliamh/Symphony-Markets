@@ -52,8 +52,8 @@ export const RiskSimulatorPanel: React.FC<RiskSimulatorPanelProps> = ({
   onOpenPaperPosition,
 }) => {
   const [optionPremiumPct, setOptionPremiumPct] = useState<number>(3.5);
-  const baseAsset = symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
-  const decimals = 4;
+  const baseAsset = symbol === 'BTCUSDT' ? 'BTC' : symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
+  const decimals = symbol === 'BTCUSDT' ? 2 : 4;
 
   const calculations = useMemo(() => {
     const safeEntry = entryPrice > 0 ? entryPrice : livePrice;
@@ -154,7 +154,7 @@ export const RiskSimulatorPanel: React.FC<RiskSimulatorPanelProps> = ({
       entryPrice: Number(calculations.safeEntry.toFixed(decimals)),
       stopLoss: Number(calculations.stopLoss.toFixed(decimals)),
       takeProfit: Number(calculations.takeProfit.toFixed(decimals)),
-      quantity: Number(calculations.quantity.toFixed(2)),
+      quantity: Number(calculations.quantity.toFixed(symbol === 'BTCUSDT' ? 6 : 2)),
       notionalUsd: Number(calculations.notionalUsd.toFixed(2)),
       marginRequiredUsd: Number(calculations.marginRequiredUsd.toFixed(2)),
       leverage: instrument === 'spot' ? 1 : leverage,
@@ -503,7 +503,10 @@ export const RiskSimulatorPanel: React.FC<RiskSimulatorPanelProps> = ({
               Position Size ({baseAsset} Units)
             </span>
             <span className="font-semibold text-slate-900 dark:text-white">
-              {calculations.quantity.toLocaleString(undefined, { maximumFractionDigits: 2 })} {baseAsset}
+              {calculations.quantity.toLocaleString(undefined, {
+                maximumFractionDigits: symbol === 'BTCUSDT' ? 6 : 2,
+              })}{' '}
+              {baseAsset}
             </span>
           </div>
           <div className="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800/70">

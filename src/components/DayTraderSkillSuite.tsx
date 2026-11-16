@@ -188,16 +188,16 @@ export const DayTraderSkillSuite: React.FC<DayTraderSkillSuiteProps> = ({
   const [confirmInput, setConfirmInput] = useState<string>('');
   const [brokerFeedback, setBrokerFeedback] = useState<string | null>(null);
 
-  const baseAsset = symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
-  const decimals = 4;
+  const baseAsset = symbol === 'BTCUSDT' ? 'BTC' : symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
+  const decimals = symbol === 'BTCUSDT' ? 2 : 4;
 
   // Live Multi-Pair Scanner Fetch
   const runMarketScan = async () => {
     setIsScanning(true);
     const pairs = [
+      { sym: 'BTCUSDT', name: 'Bitcoin', sim: true },
       { sym: 'XRPUSDT', name: 'XRP Ledger', sim: true },
       { sym: 'XLMUSDT', name: 'Stellar Lumens', sim: true },
-      { sym: 'BTCUSDT', name: 'Bitcoin', sim: false },
       { sym: 'ETHUSDT', name: 'Ethereum', sim: false },
       { sym: 'SOLUSDT', name: 'Solana', sim: false },
       { sym: 'HBARUSDT', name: 'Hedera', sim: false },
@@ -222,7 +222,15 @@ export const DayTraderSkillSuite: React.FC<DayTraderSkillSuiteProps> = ({
 
       const mapped: ScannedTicker[] = pairs.map((meta) => {
         const row = data.find((d) => d.symbol === meta.sym);
-        const last = row ? parseFloat(row.lastPrice) : meta.sym === 'XRPUSDT' ? livePrice : 0.415;
+        const last = row
+          ? parseFloat(row.lastPrice)
+          : meta.sym === 'BTCUSDT'
+          ? symbol === 'BTCUSDT'
+            ? livePrice
+            : 91450
+          : meta.sym === 'XRPUSDT'
+          ? livePrice
+          : 0.415;
         const chg = row ? parseFloat(row.priceChangePercent) : 1.8;
         const high = row ? parseFloat(row.highPrice) : last * 1.03;
         const low = row ? parseFloat(row.lowPrice) : last * 0.97;
@@ -292,13 +300,13 @@ export const DayTraderSkillSuite: React.FC<DayTraderSkillSuiteProps> = ({
         {
           symbol: 'BTCUSDT',
           name: 'Bitcoin',
-          lastPrice: 94250,
+          lastPrice: symbol === 'BTCUSDT' ? livePrice : 91450,
           change24hPct: 1.15,
           volumeUsdM: 24800,
           rsi14: 61.2,
           setupLabel: 'High-Tight Flag Consolidation',
           bias: 'Bullish',
-          supportedInSim: false,
+          supportedInSim: true,
         },
         {
           symbol: 'SOLUSDT',

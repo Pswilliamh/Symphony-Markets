@@ -16,6 +16,7 @@ interface MarketCyclesEducationModuleProps {
   symbol?: AssetSymbol;
   onSelectSymbol?: (sym: AssetSymbol) => void;
   candles?: Candle[];
+  btcLivePrice?: number;
   xrpLivePrice: number;
   xlmLivePrice: number;
   onEnterApp?: (targetSectionId?: string) => void;
@@ -343,6 +344,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
   symbol = 'XRPUSDT',
   onSelectSymbol,
   candles = [],
+  btcLivePrice = 91450,
   xrpLivePrice,
   xlmLivePrice,
   onEnterApp,
@@ -373,7 +375,12 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
 
   // Live technical pulse from the active candle feed so learners see how the live chart connects to Bull/Bear structure
   const liveTechnicalPulse = useMemo(() => {
-    const activePrice = symbol === 'XRPUSDT' ? xrpLivePrice : xlmLivePrice;
+    const activePrice =
+      symbol === 'BTCUSDT'
+        ? btcLivePrice
+        : symbol === 'XRPUSDT'
+        ? xrpLivePrice
+        : xlmLivePrice;
     if (!candles || candles.length < 5) {
       return {
         activePrice,
@@ -1470,7 +1477,23 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
             </div>
 
             {onSelectSymbol && (
-              <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => onSelectSymbol('BTCUSDT')}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                    symbol === 'BTCUSDT'
+                      ? 'bg-amber-600 text-white'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  BTC ($
+                  {(btcLivePrice || 91450).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                  )
+                </button>
                 <button
                   type="button"
                   onClick={() => onSelectSymbol('XRPUSDT')}
@@ -1480,7 +1503,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
                       : 'text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  XRP (${xrpLivePrice.toFixed(4)})
+                  XRP (${(xrpLivePrice || 2.42).toFixed(4)})
                 </button>
                 <button
                   type="button"
@@ -1491,7 +1514,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
                       : 'text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  XLM (${xlmLivePrice.toFixed(4)})
+                  XLM (${(xlmLivePrice || 0.415).toFixed(4)})
                 </button>
               </div>
             )}
@@ -1516,10 +1539,16 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
                   <span className="font-semibold text-slate-900 dark:text-white">
-                    Live {symbol === 'XRPUSDT' ? 'XRP/USDT' : 'XLM/USDT'} Technical Pulse
+                    Live{' '}
+                    {symbol === 'BTCUSDT'
+                      ? 'BTC/USDT'
+                      : symbol === 'XRPUSDT'
+                      ? 'XRP/USDT'
+                      : 'XLM/USDT'}{' '}
+                    Technical Pulse
                   </span>
                   <span className="font-mono font-bold text-sky-600 dark:text-sky-400 tabular-nums">
-                    ${liveTechnicalPulse.activePrice.toFixed(4)}
+                    ${liveTechnicalPulse.activePrice.toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
                   </span>
                 </div>
 
@@ -1527,13 +1556,13 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
                   <div className="p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">
                     <div className="text-slate-500">20 EMA</div>
                     <div className="font-bold text-slate-900 dark:text-white">
-                      ${liveTechnicalPulse.ema20.toFixed(4)}
+                      ${liveTechnicalPulse.ema20.toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
                     </div>
                   </div>
                   <div className="p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">
                     <div className="text-slate-500">50 EMA</div>
                     <div className="font-bold text-slate-900 dark:text-white">
-                      ${liveTechnicalPulse.ema50.toFixed(4)}
+                      ${liveTechnicalPulse.ema50.toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
                     </div>
                   </div>
                   <div className="p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800">

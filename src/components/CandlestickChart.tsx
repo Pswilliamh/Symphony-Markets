@@ -105,7 +105,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     return fibLevels[Math.floor(fibLevels.length / 2)];
   }, [inspectedCandle, fibLevels]);
 
-  const decimals = symbol === 'XRPUSDT' ? 4 : 4;
+  const decimals = symbol === 'BTCUSDT' ? 2 : 4;
 
   const emaPoints = useMemo(() => {
     return visibleCandles

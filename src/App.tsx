@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CandleEducationDeck } from './components/CandleEducationDeck';
 import { CandlestickChart } from './components/CandlestickChart';
 import { CandlestickSymphonyComposer } from './components/CandlestickSymphonyComposer';
+import { CoinHistoryAndFoundersModule } from './components/CoinHistoryAndFoundersModule';
 import { DayTraderSkillSuite } from './components/DayTraderSkillSuite';
 import { DecentralizedAiDexDesk } from './components/DecentralizedAiDexDesk';
 import { LandingPageView, PublicPageTab } from './components/LandingPageView';
@@ -42,12 +43,14 @@ export default function App() {
   const [symbol, setSymbol] = useState<AssetSymbol>('XRPUSDT');
   const [timeframe, setTimeframe] = useState<Timeframe>('1h');
 
-  // Market State for XRP and XLM
+  // Market State for BTC, XRP, and XLM
   const [candlesBySymbol, setCandlesBySymbol] = useState<Record<AssetSymbol, Candle[]>>({
+    BTCUSDT: [],
     XRPUSDT: [],
     XLMUSDT: [],
   });
   const [statsBySymbol, setStatsBySymbol] = useState<Record<AssetSymbol, MarketStats | null>>({
+    BTCUSDT: null,
     XRPUSDT: null,
     XLMUSDT: null,
   });
@@ -68,7 +71,7 @@ export default function App() {
   const [tradeSide, setTradeSide] = useState<TradeSide>('long');
   const [instrument, setInstrument] = useState<InstrumentType>('spot');
   const [leverage, setLeverage] = useState<number>(1);
-  const [beginnerFocusMode, setBeginnerFocusMode] = useState<boolean>(false);
+  const [beginnerFocusMode, setBeginnerFocusMode] = useState<boolean>(true);
 
   // Bottom Workspace Section Tab
   const [activeBottomTab, setActiveBottomTab] = useState<
@@ -214,32 +217,47 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Fetch initial market data for both XRPUSDT and XLMUSDT
+  // Fetch initial market data for BTCUSDT, XRPUSDT, and XLMUSDT
   useEffect(() => {
     let cancelled = false;
-    async function loadBoth() {
+    async function loadAllCoins() {
       setIsLoading(true);
-      const [xrpData, xlmData] = await Promise.all([
+      const [btcData, xrpData, xlmData] = await Promise.all([
+        fetchMarketData('BTCUSDT', timeframe),
         fetchMarketData('XRPUSDT', timeframe),
         fetchMarketData('XLMUSDT', timeframe),
       ]);
       if (cancelled) return;
 
       setCandlesBySymbol({
+        BTCUSDT: btcData.candles,
         XRPUSDT: xrpData.candles,
         XLMUSDT: xlmData.candles,
       });
       setStatsBySymbol({
+        BTCUSDT: btcData.stats,
         XRPUSDT: xrpData.stats,
         XLMUSDT: xlmData.stats,
       });
 
-      const currentPrice = symbol === 'XRPUSDT' ? xrpData.stats.lastPrice : xlmData.stats.lastPrice;
-      setEntryPrice(Number(currentPrice.toFixed(4)));
-      setSelectedCandleIndex(xrpData.candles.length - 1);
+      const currentPrice =
+        symbol === 'BTCUSDT'
+          ? btcData.stats.lastPrice
+          : symbol === 'XRPUSDT'
+          ? xrpData.stats.lastPrice
+          : xlmData.stats.lastPrice;
+      const dec = symbol === 'BTCUSDT' ? 2 : 4;
+      setEntryPrice(Number(currentPrice.toFixed(dec)));
+      const activeList =
+        symbol === 'BTCUSDT'
+          ? btcData.candles
+          : symbol === 'XRPUSDT'
+          ? xrpData.candles
+          : xlmData.candles;
+      setSelectedCandleIndex(activeList.length - 1);
       setIsLoading(false);
     }
-    loadBoth();
+    loadAllCoins();
     return () => {
       cancelled = true;
     };
@@ -250,17 +268,20 @@ export default function App() {
     const interval = setInterval(() => {
       setCandlesBySymbol((prev) => {
         const next: Record<AssetSymbol, Candle[]> = { ...prev };
-        (['XRPUSDT', 'XLMUSDT'] as AssetSymbol[]).forEach((sym) => {
+        (['BTCUSDT', 'XRPUSDT', 'XLMUSDT'] as AssetSymbol[]).forEach((sym) => {
           const list = prev[sym];
           if (!list || list.length === 0) return;
+          const dec = sym === 'BTCUSDT' ? 2 : 4;
           const updated = [...list];
           const last = { ...updated[updated.length - 1] };
           const microDelta = (Math.random() - 0.492) * last.close * 0.0018;
-          const newClose = Number(Math.max(0.01, last.close + microDelta).toFixed(4));
+          const newClose = Number(Math.max(0.01, last.close + microDelta).toFixed(dec));
           last.close = newClose;
-          last.high = Number(Math.max(last.high, newClose).toFixed(4));
-          last.low = Number(Math.min(last.low, newClose).toFixed(4));
-          last.volume = Math.round(last.volume + Math.random() * 18000);
+          last.high = Number(Math.max(last.high, newClose).toFixed(dec));
+          last.low = Number(Math.min(last.low, newClose).toFixed(dec));
+          last.volume = Math.round(
+            last.volume + Math.random() * (sym === 'BTCUSDT' ? 18 : 18000)
+          );
           updated[updated.length - 1] = last;
           next[sym] = enrichCandlesWithIndicators(updated);
         });
@@ -269,7 +290,7 @@ export default function App() {
 
       setStatsBySymbol((prevStats) => {
         const nextStats = { ...prevStats };
-        (['XRPUSDT', 'XLMUSDT'] as AssetSymbol[]).forEach((sym) => {
+        (['BTCUSDT', 'XRPUSDT', 'XLMUSDT'] as AssetSymbol[]).forEach((sym) => {
           const st = prevStats[sym];
           const list = candlesBySymbol[sym];
           if (!st || !list || list.length === 0) return;
@@ -290,6 +311,7 @@ export default function App() {
 
   // Check Threshold Alerts against Live Prices
   useEffect(() => {
+    const btcNow = statsBySymbol.BTCUSDT?.lastPrice;
     const xrpNow = statsBySymbol.XRPUSDT?.lastPrice;
     const xlmNow = statsBySymbol.XLMUSDT?.lastPrice;
     if (!xrpNow || !xlmNow) return;
@@ -297,7 +319,12 @@ export default function App() {
     setAlerts((prev) =>
       prev.map((al) => {
         if (al.triggered) return al;
-        const price = al.symbol === 'XRPUSDT' ? xrpNow : xlmNow;
+        const price =
+          al.symbol === 'BTCUSDT'
+            ? btcNow ?? 91450
+            : al.symbol === 'XRPUSDT'
+            ? xrpNow
+            : xlmNow;
         const hit =
           (al.condition === 'above' && price >= al.targetPrice) ||
           (al.condition === 'below' && price <= al.targetPrice);
@@ -306,9 +333,10 @@ export default function App() {
             hour: '2-digit',
             minute: '2-digit',
           });
+          const dec = al.symbol === 'BTCUSDT' ? 2 : 4;
           setAlertBanner(
             `Alert Triggered: ${al.symbol} crossed ${al.condition} $${al.targetPrice.toFixed(
-              4
+              dec
             )} (${al.note})`
           );
           return { ...al, triggered: true, triggeredAt: timeStr };
@@ -316,14 +344,19 @@ export default function App() {
         return al;
       })
     );
-  }, [statsBySymbol.XRPUSDT?.lastPrice, statsBySymbol.XLMUSDT?.lastPrice]);
+  }, [
+    statsBySymbol.BTCUSDT?.lastPrice,
+    statsBySymbol.XRPUSDT?.lastPrice,
+    statsBySymbol.XLMUSDT?.lastPrice,
+  ]);
 
   const activeCandles = candlesBySymbol[symbol] || [];
   const activeStats = statsBySymbol[symbol];
   const livePrice =
     activeCandles.length > 0
       ? activeCandles[activeCandles.length - 1].close
-      : activeStats?.lastPrice || (symbol === 'XRPUSDT' ? 2.42 : 0.415);
+      : activeStats?.lastPrice ||
+        (symbol === 'BTCUSDT' ? 91450 : symbol === 'XRPUSDT' ? 2.42 : 0.415);
 
   const fibLevels = useMemo(() => calculateFibonacciLevels(activeCandles), [activeCandles]);
 
@@ -338,10 +371,14 @@ export default function App() {
   const handleSelectSymbol = (newSym: AssetSymbol) => {
     setSymbol(newSym);
     const list = candlesBySymbol[newSym];
+    const dec = newSym === 'BTCUSDT' ? 2 : 4;
     if (list && list.length > 0) {
       const latest = list[list.length - 1].close;
-      setEntryPrice(Number(latest.toFixed(4)));
+      setEntryPrice(Number(latest.toFixed(dec)));
       setSelectedCandleIndex(list.length - 1);
+    } else {
+      const fallback = newSym === 'BTCUSDT' ? 91450 : newSym === 'XRPUSDT' ? 2.42 : 0.415;
+      setEntryPrice(Number(fallback.toFixed(dec)));
     }
   };
 
@@ -356,10 +393,17 @@ export default function App() {
     };
     setPositions((prev) => [created, ...prev]);
     setActiveBottomTab('portfolio');
+    const coinLabel =
+      created.symbol === 'BTCUSDT' ? 'BTC' : created.symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
+    const priceDec = created.symbol === 'BTCUSDT' ? 2 : 4;
+    const qtyStr =
+      created.symbol === 'BTCUSDT'
+        ? created.quantity.toFixed(6)
+        : created.quantity.toLocaleString();
     setAlertBanner(
-      `Logged Simulated ${created.side.toUpperCase()} Position: ${created.quantity.toLocaleString()} ${
-        created.symbol === 'XRPUSDT' ? 'XRP' : 'XLM'
-      } at $${created.entryPrice.toFixed(4)} (2% Risk Cap)`
+      `Logged Simulated ${created.side.toUpperCase()} Position: ${qtyStr} ${coinLabel} at $${created.entryPrice.toFixed(
+        priceDec
+      )} (2% Risk Cap)`
     );
   };
 
@@ -403,6 +447,10 @@ export default function App() {
     setAlertBanner('Completed 10-bar historical candle simulation with 2% position sizing.');
   };
 
+  const btcLive =
+    candlesBySymbol.BTCUSDT.length > 0
+      ? candlesBySymbol.BTCUSDT[candlesBySymbol.BTCUSDT.length - 1].close
+      : statsBySymbol.BTCUSDT?.lastPrice ?? 91450;
   const xrpLive =
     candlesBySymbol.XRPUSDT.length > 0
       ? candlesBySymbol.XRPUSDT[candlesBySymbol.XRPUSDT.length - 1].close
@@ -419,7 +467,12 @@ export default function App() {
   };
 
   const handleEnterApp = (targetSectionId?: string) => {
-    if (targetSectionId === 'skill-desk' || targetSectionId === 'ai-dex-lab') {
+    if (
+      targetSectionId === 'skill-desk' ||
+      targetSectionId === 'ai-dex-lab' ||
+      targetSectionId === 'candlestick-guide' ||
+      targetSectionId === 'market-cycles'
+    ) {
       setBeginnerFocusMode(false);
     }
     setViewMode('app');
@@ -665,6 +718,7 @@ export default function App() {
             activePage={publicPage}
             onNavigatePage={navigatePublicPage}
             onEnterApp={handleEnterApp}
+            btcLivePrice={btcLive}
             xrpLivePrice={xrpLive}
             xlmLivePrice={xlmLive}
             symbol={symbol}
@@ -675,46 +729,12 @@ export default function App() {
       ) : (
         /* Main Training Workspace Container (1440px max-w) */
         <main id="workspace" className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 space-y-8">
-          {/* Quick In-App Jump Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="font-semibold text-slate-900 dark:text-white">Workspace Jump:</span>
-              <a href="#start-here" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                1. $5 Start Here Roadmap
-              </a>
-              <a href="#ai-buy-sell-helper" className="text-amber-700 dark:text-amber-400 font-bold hover:underline whitespace-nowrap">
-                ★ AI Buy & Sell Helper
-              </a>
-              <a href="#ten-set-auto-trader" className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline whitespace-nowrap">
-                ⚡ 10-Set Auto-Trader (Xaman / Trust)
-              </a>
-              <a href="#risk-chart" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                2. Live Chart & 2% Risk Simulator
-              </a>
-              <a href="#market-symphony" className="text-amber-700 dark:text-amber-400 font-semibold hover:underline whitespace-nowrap">
-                ♪ 8-Hour Music Graph
-              </a>
-              {!beginnerFocusMode && (
-                <>
-                  <a href="#skill-desk" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                    3. 11-Module Skill Desk
-                  </a>
-                  <a href="#ai-dex-lab" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                    4. 24/7 AI DEX Lab
-                  </a>
-                </>
-              )}
-              <a href="#candlestick-guide" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                Candlestick Guide
-              </a>
-              <a href="#market-cycles" className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline whitespace-nowrap">
-                Bull vs. Bear & 4-Year Cycles
-              </a>
-              <a href="#portfolio-ledger" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                Wallet Watch & Ledger
-              </a>
-            </div>
+          {/* Calm Step-by-Step Focus Switcher & Guiding Epigraph Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
             <div className="flex flex-wrap items-center gap-3">
+              <span className="italic text-slate-700 dark:text-slate-300">
+                “It’s not about making money—it’s about learning how to manage and understand what the system is doing.”
+              </span>
               <button
                 type="button"
                 onClick={() => navigatePublicPage('guide')}
@@ -722,7 +742,77 @@ export default function App() {
               >
                 Free Ebook (PDF & EPUB) →
               </button>
-              <span aria-hidden="true">·</span>
+            </div>
+
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setBeginnerFocusMode(true)}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                  beginnerFocusMode
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Calm Step-by-Step View
+              </button>
+              <button
+                type="button"
+                onClick={() => setBeginnerFocusMode(false)}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                  !beginnerFocusMode
+                    ? 'bg-sky-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Show All Labs
+              </button>
+            </div>
+          </div>
+
+          {/* Quick In-App Jump Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="font-semibold text-slate-900 dark:text-white">Step-by-Step Jump:</span>
+              <a href="#start-here" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
+                1. $5 Start Here
+              </a>
+              <a href="#ai-buy-sell-helper" className="text-amber-700 dark:text-amber-400 font-bold hover:underline whitespace-nowrap">
+                2. ★ AI Buy & Sell Helper
+              </a>
+              <a href="#ten-set-auto-trader" className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline whitespace-nowrap">
+                3. ⚡ 10-Set Auto-Trader & Wallet Sign
+              </a>
+              <a href="#coin-history" className="text-amber-700 dark:text-amber-400 font-semibold hover:underline whitespace-nowrap">
+                4. 🏛 Coin History & Founders
+              </a>
+              <a href="#risk-chart" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
+                5. Live Chart & 2% Risk
+              </a>
+              <a href="#market-symphony" className="text-amber-700 dark:text-amber-400 font-semibold hover:underline whitespace-nowrap">
+                6. ♪ 8-Hour Music Graph
+              </a>
+              <a href="#portfolio-ledger" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
+                7. Wallet Watch & Ledger
+              </a>
+              {!beginnerFocusMode && (
+                <>
+                  <a href="#skill-desk" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
+                    11-Module Skill Desk
+                  </a>
+                  <a href="#ai-dex-lab" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
+                    24/7 AI DEX Lab
+                  </a>
+                  <a href="#candlestick-guide" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
+                    Candlestick Guide
+                  </a>
+                  <a href="#market-cycles" className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline whitespace-nowrap">
+                    4-Year Cycles
+                  </a>
+                </>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => navigatePublicPage('story')}
@@ -758,7 +848,7 @@ export default function App() {
               setStopDistancePct(2.0);
               setRrRatio(2);
               setTradeSide('long');
-              setEntryPrice(Number(livePrice.toFixed(4)));
+              setEntryPrice(Number(livePrice.toFixed(symbol === 'BTCUSDT' ? 2 : 4)));
               setAlertBanner(
                 'Activated $5 Real-Wallet Learning Preset: $5.00 Budget · 1x Spot (Zero Leverage) · 10-Cent Safety Exit'
               );
@@ -782,6 +872,7 @@ export default function App() {
             stats={activeStats}
             fibLevels={fibLevels}
             livePrice={livePrice}
+            btcLivePrice={btcLive}
             xrpLivePrice={xrpLive}
             xlmLivePrice={xlmLive}
             accountBalance={accountBalance}
@@ -792,8 +883,9 @@ export default function App() {
               setRrRatio(recRr);
               setTradeSide('long');
               setShowRiskOverlay(true);
+              const dec = symbol === 'BTCUSDT' ? 2 : 4;
               setAlertBanner(
-                `Loaded AI Buy & Sell Points onto Live ${symbol} Chart: Buy $${recEntry.toFixed(4)} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
+                `Loaded AI Buy & Sell Points onto Live ${symbol} Chart: Buy $${recEntry.toFixed(dec)} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
               );
               document.getElementById('risk-chart')?.scrollIntoView({ behavior: 'smooth' });
             }}
@@ -808,6 +900,7 @@ export default function App() {
             candles={activeCandles}
             fibLevels={fibLevels}
             livePrice={livePrice}
+            btcLivePrice={btcLive}
             xrpLivePrice={xrpLive}
             xlmLivePrice={xlmLive}
             accountBalance={accountBalance}
@@ -816,11 +909,43 @@ export default function App() {
           />
         </section>
 
+        {/* Coin History, Purpose & Founders Classroom Module (BTC, XRP, XLM & KSBC Gold RWA) */}
+        <section id="coin-history">
+          <CoinHistoryAndFoundersModule
+            btcLivePrice={btcLive}
+            xrpLivePrice={xrpLive}
+            xlmLivePrice={xlmLive}
+            onSelectSymbolAndTrain={(sym, targetId) => {
+              handleSelectSymbol(sym);
+              if (targetId) {
+                document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            onOpenKsbcGoldLedger={() => navigatePublicPage('ksbc')}
+          />
+        </section>
+
         {/* Asset Selector & Live Telemetry Strip */}
         <section id="risk-chart" className="flex flex-wrap items-center justify-between gap-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4">
           <div className="flex flex-wrap items-center gap-3">
-            {/* XRP vs XLM Segmented Switcher */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+            {/* BTC vs XRP vs XLM Segmented Switcher */}
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => handleSelectSymbol('BTCUSDT')}
+                className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  symbol === 'BTCUSDT'
+                    ? 'bg-amber-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                BTC / USDT ($
+                {btcLive.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+                )
+              </button>
               <button
                 type="button"
                 onClick={() => handleSelectSymbol('XRPUSDT')}
@@ -865,7 +990,13 @@ export default function App() {
                 Live Mark Price
               </span>
               <span className="text-base font-bold text-slate-900 dark:text-white">
-                ${livePrice.toFixed(4)}
+                $
+                {symbol === 'BTCUSDT'
+                  ? livePrice.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  : livePrice.toFixed(4)}
               </span>
             </div>
             <div>
@@ -886,8 +1017,8 @@ export default function App() {
                 24h Range (Low – High)
               </span>
               <span className="text-slate-800 dark:text-slate-200">
-                ${(activeStats?.low24h ?? livePrice * 0.96).toFixed(4)} – $
-                {(activeStats?.high24h ?? livePrice * 1.04).toFixed(4)}
+                ${(activeStats?.low24h ?? livePrice * 0.96).toFixed(symbol === 'BTCUSDT' ? 2 : 4)} – $
+                {(activeStats?.high24h ?? livePrice * 1.04).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
               </span>
             </div>
             <div>
@@ -896,7 +1027,7 @@ export default function App() {
               </span>
               <span className="text-slate-800 dark:text-slate-200">
                 {(activeStats?.annualizedVolatilityPct ?? 54.2).toFixed(1)}% · $
-                {(activeStats?.atr14 ?? livePrice * 0.015).toFixed(4)}
+                {(activeStats?.atr14 ?? livePrice * 0.015).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
               </span>
             </div>
             <div>
@@ -974,6 +1105,7 @@ export default function App() {
             onSelectSymbol={handleSelectSymbol}
             candles={activeCandles}
             livePrice={livePrice}
+            btcLivePrice={btcLive}
             xrpLivePrice={xrpLive}
             xlmLivePrice={xlmLive}
           />
@@ -1008,7 +1140,9 @@ export default function App() {
                   ...prev,
                 ]);
                 setAlertBanner(
-                  `Armed Alert: ${newAl.symbol} ${newAl.condition} $${newAl.targetPrice.toFixed(4)}`
+                  `Armed Alert: ${newAl.symbol} ${newAl.condition} $${newAl.targetPrice.toFixed(
+                    newAl.symbol === 'BTCUSDT' ? 2 : 4
+                  )}`
                 );
               }}
             />
@@ -1035,29 +1169,46 @@ export default function App() {
           </section>
         )}
 
-        {/* Candlestick Pattern Learning Guide & Fibonacci Retracement Zones */}
-        <section id="candlestick-guide">
-          <CandleEducationDeck
-            symbol={symbol}
-            candles={activeCandles}
-            selectedCandleIndex={selectedCandleIndex}
-            onSelectCandle={setSelectedCandleIndex}
-            fibLevels={fibLevels}
-            livePrice={livePrice}
-            onUsePriceAsEntry={(price) => setEntryPrice(price)}
-          />
-        </section>
+        {/* Candlestick Pattern Learning Guide & 4-Year Cycles (Shown when Show All Labs is active) */}
+        {!beginnerFocusMode ? (
+          <>
+            <section id="candlestick-guide">
+              <CandleEducationDeck
+                symbol={symbol}
+                candles={activeCandles}
+                selectedCandleIndex={selectedCandleIndex}
+                onSelectCandle={setSelectedCandleIndex}
+                fibLevels={fibLevels}
+                livePrice={livePrice}
+                onUsePriceAsEntry={(price) => setEntryPrice(price)}
+              />
+            </section>
 
-        {/* Bull vs. Bear Markets, Seasonal Rhythms & 4-Year Halving Cycle Compass */}
-        <section id="market-cycles">
-          <MarketCyclesEducationModule
-            symbol={symbol}
-            onSelectSymbol={handleSelectSymbol}
-            candles={activeCandles}
-            xrpLivePrice={xrpLive}
-            xlmLivePrice={xlmLive}
-          />
-        </section>
+            <section id="market-cycles">
+              <MarketCyclesEducationModule
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                candles={activeCandles}
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+              />
+            </section>
+          </>
+        ) : (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <span className="text-slate-600 dark:text-slate-300">
+              <strong>Calm Step-by-Step View Active:</strong> 4 deep-reference modules (11-Module Skill Desk, 24/7 AI DEX Lab, Candlestick Pattern Reference, and 4-Year Cycles) are tucked away to keep your screen clean and uncluttered.
+            </span>
+            <button
+              type="button"
+              onClick={() => setBeginnerFocusMode(false)}
+              className="px-3.5 py-2 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              + Expand All 4 Reference & Advanced Labs
+            </button>
+          </div>
+        )}
 
         {/* Paper Portfolio, Read-Only Wallet Watch, Bot Sandbox & Alerts */}
         <section id="portfolio-ledger">
@@ -1066,6 +1217,7 @@ export default function App() {
             onSectionTabChange={setActiveBottomTab}
             positions={positions}
             onClosePosition={handleClosePosition}
+            btcPrice={btcLive}
             xrpPrice={xrpLive}
             xlmPrice={xlmLive}
             candles={activeCandles}

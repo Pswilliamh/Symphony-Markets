@@ -339,7 +339,8 @@ export function computeHistoricalMetrics(candles: Candle[]): {
 }
 
 function generateFallbackCandles(symbol: AssetSymbol, timeframe: Timeframe): Candle[] {
-  const basePrice = symbol === 'XRPUSDT' ? 2.42 : 0.415;
+  const basePrice = symbol === 'BTCUSDT' ? 91450 : symbol === 'XRPUSDT' ? 2.42 : 0.415;
+  const decimals = symbol === 'BTCUSDT' ? 2 : 4;
   const stepMs =
     timeframe === '15m'
       ? 15 * 60 * 1000
@@ -362,14 +363,16 @@ function generateFallbackCandles(symbol: AssetSymbol, timeframe: Timeframe): Can
     const close = Math.max(basePrice * 0.5, open + delta);
     const high = Math.max(open, close) + basePrice * (i % 7 === 0 ? 0.016 : 0.005);
     const low = Math.min(open, close) - basePrice * (i % 6 === 0 ? 0.017 : 0.005);
-    const volume = (symbol === 'XRPUSDT' ? 14_500_000 : 8_200_000) * (0.7 + ((i * 19) % 10) * 0.08);
+    const volume =
+      (symbol === 'BTCUSDT' ? 28_500 : symbol === 'XRPUSDT' ? 14_500_000 : 8_200_000) *
+      (0.7 + ((i * 19) % 10) * 0.08);
 
     candles.push({
       time,
-      open: Number(open.toFixed(4)),
-      high: Number(high.toFixed(4)),
-      low: Number(low.toFixed(4)),
-      close: Number(close.toFixed(4)),
+      open: Number(open.toFixed(decimals)),
+      high: Number(high.toFixed(decimals)),
+      low: Number(low.toFixed(decimals)),
+      close: Number(close.toFixed(decimals)),
       volume: Math.round(volume),
     });
     price = close;
@@ -382,6 +385,15 @@ export async function fetchMarketData(
   symbol: AssetSymbol,
   timeframe: Timeframe
 ): Promise<{ candles: Candle[]; stats: MarketStats }> {
+  const baseAsset: MarketStats['baseAsset'] =
+    symbol === 'BTCUSDT' ? 'BTC' : symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
+  const assetName =
+    symbol === 'BTCUSDT'
+      ? 'Bitcoin (BTC)'
+      : symbol === 'XRPUSDT'
+      ? 'XRP Ledger (XRP)'
+      : 'Stellar Lumens (XLM)';
+
   try {
     const [klinesRes, tickerRes] = await Promise.all([
       fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${timeframe}&limit=75`),
@@ -416,8 +428,8 @@ export async function fetchMarketData(
 
     const stats: MarketStats = {
       symbol,
-      baseAsset: symbol === 'XRPUSDT' ? 'XRP' : 'XLM',
-      name: symbol === 'XRPUSDT' ? 'XRP Ledger (XRP)' : 'Stellar Lumens (XLM)',
+      baseAsset,
+      name: assetName,
       lastPrice: parseFloat(tickerData.lastPrice),
       priceChange24h: parseFloat(tickerData.priceChange),
       priceChangePercent24h: parseFloat(tickerData.priceChangePercent),
@@ -426,8 +438,9 @@ export async function fetchMarketData(
       volume24hUsd: parseFloat(tickerData.quoteVolume),
       atr14,
       annualizedVolatilityPct,
-      dexSpreadBps: symbol === 'XRPUSDT' ? 4.2 : 6.8,
-      dexLiquidityUsd: symbol === 'XRPUSDT' ? 48_900_000 : 19_400_000,
+      dexSpreadBps: symbol === 'BTCUSDT' ? 1.8 : symbol === 'XRPUSDT' ? 4.2 : 6.8,
+      dexLiquidityUsd:
+        symbol === 'BTCUSDT' ? 185_000_000 : symbol === 'XRPUSDT' ? 48_900_000 : 19_400_000,
       isLiveStream: true,
     };
 
@@ -442,18 +455,24 @@ export async function fetchMarketData(
 
     const stats: MarketStats = {
       symbol,
-      baseAsset: symbol === 'XRPUSDT' ? 'XRP' : 'XLM',
-      name: symbol === 'XRPUSDT' ? 'XRP Ledger (XRP)' : 'Stellar Lumens (XLM)',
+      baseAsset,
+      name: assetName,
       lastPrice: last.close,
       priceChange24h: change,
       priceChangePercent24h: changePct,
       high24h: Math.max(...candles.slice(-24).map((c) => c.high)),
       low24h: Math.min(...candles.slice(-24).map((c) => c.low)),
-      volume24hUsd: symbol === 'XRPUSDT' ? 1_420_000_000 : 385_000_000,
+      volume24hUsd:
+        symbol === 'BTCUSDT'
+          ? 24_800_000_000
+          : symbol === 'XRPUSDT'
+          ? 1_420_000_000
+          : 385_000_000,
       atr14,
       annualizedVolatilityPct,
-      dexSpreadBps: symbol === 'XRPUSDT' ? 4.5 : 7.1,
-      dexLiquidityUsd: symbol === 'XRPUSDT' ? 46_200_000 : 18_750_000,
+      dexSpreadBps: symbol === 'BTCUSDT' ? 2.1 : symbol === 'XRPUSDT' ? 4.5 : 7.1,
+      dexLiquidityUsd:
+        symbol === 'BTCUSDT' ? 178_000_000 : symbol === 'XRPUSDT' ? 46_200_000 : 18_750_000,
       isLiveStream: false,
     };
 
@@ -462,11 +481,39 @@ export async function fetchMarketData(
 }
 
 export async function fetchPublicWalletBalance(
-  network: 'XRPL' | 'Xaman Wallet (XRPL)' | 'Stellar' | 'TrustWallet Multi-Chain',
+  network: 'Bitcoin' | 'XRPL' | 'Xaman Wallet (XRPL)' | 'Stellar' | 'TrustWallet Multi-Chain',
   address: string
-): Promise<{ xrpBalance: number; xlmBalance: number; usdtBalance: number; isLiveChain: boolean }> {
+): Promise<{
+  btcBalance: number;
+  xrpBalance: number;
+  xlmBalance: number;
+  usdtBalance: number;
+  isLiveChain: boolean;
+}> {
   const trimmed = address.trim();
   try {
+    if (
+      (trimmed.startsWith('bc1') || trimmed.startsWith('1') || trimmed.startsWith('3')) &&
+      trimmed.length >= 26
+    ) {
+      const res = await fetch(`https://mempool.space/api/address/${trimmed}`);
+      if (res.ok) {
+        const data = (await res.json()) as {
+          chain_stats?: { funded_txo_sum?: number; spent_txo_sum?: number };
+        };
+        const funded = Number(data?.chain_stats?.funded_txo_sum || 0);
+        const spent = Number(data?.chain_stats?.spent_txo_sum || 0);
+        const sats = Math.max(0, funded - spent);
+        return {
+          btcBalance: Number((sats / 100_000_000).toFixed(6)),
+          xrpBalance: 0,
+          xlmBalance: 0,
+          usdtBalance: 0,
+          isLiveChain: true,
+        };
+      }
+    }
+
     if (trimmed.startsWith('G') && trimmed.length >= 50) {
       const res = await fetch(`https://horizon.stellar.org/accounts/${trimmed}`);
       if (res.ok) {
@@ -479,10 +526,10 @@ export async function fetchPublicWalletBalance(
           if (b.asset_type === 'native') xlm += parseFloat(b.balance);
           if (b.asset_code === 'USDC' || b.asset_code === 'USDT') usdt += parseFloat(b.balance);
         }
-        return { xrpBalance: 0, xlmBalance: xlm, usdtBalance: usdt, isLiveChain: true };
+        return { btcBalance: 0, xrpBalance: 0, xlmBalance: xlm, usdtBalance: usdt, isLiveChain: true };
       }
       if (res.status === 404) {
-        return { xrpBalance: 0, xlmBalance: 0, usdtBalance: 0, isLiveChain: true };
+        return { btcBalance: 0, xrpBalance: 0, xlmBalance: 0, usdtBalance: 0, isLiveChain: true };
       }
     }
 
@@ -502,6 +549,7 @@ export async function fetchPublicWalletBalance(
         const drops = data?.result?.account_data?.Balance;
         if (drops) {
           return {
+            btcBalance: 0,
             xrpBalance: parseInt(drops, 10) / 1_000_000,
             xlmBalance: 0,
             usdtBalance: 0,
@@ -510,6 +558,7 @@ export async function fetchPublicWalletBalance(
         }
         if (data?.result?.error === 'actNotFound') {
           return {
+            btcBalance: 0,
             xrpBalance: 0,
             xlmBalance: 0,
             usdtBalance: 0,
@@ -526,9 +575,10 @@ export async function fetchPublicWalletBalance(
   const hash = trimmed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const isXrpFocused = network === 'XRPL' || network === 'Xaman Wallet (XRPL)';
   return {
-    xrpBalance: network !== 'Stellar' ? 1850 + (hash % 4200) : 0,
-    xlmBalance: !isXrpFocused ? 6400 + ((hash * 7) % 15000) : 0,
-    usdtBalance: 1200 + ((hash * 3) % 3800),
+    btcBalance: network === 'Bitcoin' ? Number((0.0005 + (hash % 120) / 100000).toFixed(6)) : 0,
+    xrpBalance: network !== 'Stellar' && network !== 'Bitcoin' ? 1850 + (hash % 4200) : 0,
+    xlmBalance: !isXrpFocused && network !== 'Bitcoin' ? 6400 + ((hash * 7) % 15000) : 0,
+    usdtBalance: network === 'Bitcoin' ? 0 : 1200 + ((hash * 3) % 3800),
     isLiveChain: false,
   };
 }
