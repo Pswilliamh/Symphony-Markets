@@ -15,6 +15,7 @@ import { createNoScamZonePdfBlob } from '../utils/pdfGuideGenerator';
 import { AssetSymbol, Candle } from '../types/market';
 import { CandlestickSymphonyComposer } from './CandlestickSymphonyComposer';
 import { KsbcGoldTrainingPage } from './KsbcGoldTrainingPage';
+import { MarketCyclesEducationModule } from './MarketCyclesEducationModule';
 import { ScamScreenXRayInspector } from './ScamScreenXRayInspector';
 import { SymphonyFrequencyBanners } from './SymphonyFrequencyBanners';
 import {
@@ -28,6 +29,7 @@ export type PublicPageTab =
   | 'welcome'
   | 'features'
   | 'symphony'
+  | 'cycles'
   | 'ksbc'
   | 'podcast'
   | 'story'
@@ -761,7 +763,61 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           >
             ♪ Symphony Music Module →
           </button>
+          <button
+            type="button"
+            onClick={() => onNavigatePage('cycles')}
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            Bull vs. Bear & 4-Year Cycles →
+          </button>
         </div>
+      </div>
+    );
+  }
+
+  /* ============================================================================
+   * PAGE 2E: STANDALONE BULL VS. BEAR & 4-YEAR MARKET CYCLES COMPASS PAGE
+   * ============================================================================ */
+  if (activePage === 'cycles') {
+    return (
+      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+              <button
+                type="button"
+                onClick={() => onNavigatePage('welcome')}
+                className="text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+              >
+                ← Back to Welcome Stage
+              </button>
+              <span aria-hidden="true">·</span>
+              <span>Visual Market Compass</span>
+              <span aria-hidden="true">·</span>
+              <span className="font-mono">2012–2028 Cycles & Monthly Seasonality</span>
+            </div>
+            <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+              Bull vs. Bear Markets, Seasonal Rhythms & The 4-Year Cycle Clock
+            </h1>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onEnterApp('market-cycles')}
+            className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+          >
+            Open Inside Full Workspace →
+          </button>
+        </div>
+
+        <MarketCyclesEducationModule
+          symbol={symbol}
+          onSelectSymbol={onSelectSymbol}
+          candles={candles}
+          xrpLivePrice={xrpLivePrice}
+          xlmLivePrice={xlmLivePrice}
+          onEnterApp={onEnterApp}
+        />
       </div>
     );
   }

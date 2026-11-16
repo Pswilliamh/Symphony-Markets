@@ -10,6 +10,7 @@ import { CandlestickSymphonyComposer } from './components/CandlestickSymphonyCom
 import { DayTraderSkillSuite } from './components/DayTraderSkillSuite';
 import { DecentralizedAiDexDesk } from './components/DecentralizedAiDexDesk';
 import { LandingPageView, PublicPageTab } from './components/LandingPageView';
+import { MarketCyclesEducationModule } from './components/MarketCyclesEducationModule';
 import { PortfolioAndToolsSection } from './components/PortfolioAndToolsSection';
 import { RiskSimulatorPanel } from './components/RiskSimulatorPanel';
 import { StartHereRoadmap } from './components/StartHereRoadmap';
@@ -464,6 +465,17 @@ export default function App() {
           </button>
           <button
             type="button"
+            onClick={() => navigatePublicPage('cycles')}
+            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              viewMode === 'landing' && publicPage === 'cycles'
+                ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                : 'hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Market Cycles
+          </button>
+          <button
+            type="button"
             onClick={() => navigatePublicPage('ksbc')}
             className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               viewMode === 'landing' && publicPage === 'ksbc'
@@ -494,17 +506,6 @@ export default function App() {
             }`}
           >
             Our Story
-          </button>
-          <button
-            type="button"
-            onClick={() => navigatePublicPage('guide')}
-            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              viewMode === 'landing' && publicPage === 'guide'
-                ? 'text-sky-600 dark:text-sky-400 font-semibold'
-                : 'hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            PDF Guide
           </button>
         </nav>
 
@@ -553,6 +554,17 @@ export default function App() {
           }`}
         >
           ♪ Symphony Music
+        </button>
+        <button
+          type="button"
+          onClick={() => navigatePublicPage('cycles')}
+          className={`whitespace-nowrap shrink-0 cursor-pointer ${
+            viewMode === 'landing' && publicPage === 'cycles'
+              ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+              : ''
+          }`}
+        >
+          Market Cycles
         </button>
         <button
           type="button"
@@ -675,6 +687,9 @@ export default function App() {
               )}
               <a href="#candlestick-guide" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
                 Candlestick Guide
+              </a>
+              <a href="#market-cycles" className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline whitespace-nowrap">
+                Bull vs. Bear & 4-Year Cycles
               </a>
               <a href="#portfolio-ledger" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
                 Wallet Watch & Ledger
@@ -957,6 +972,17 @@ export default function App() {
             fibLevels={fibLevels}
             livePrice={livePrice}
             onUsePriceAsEntry={(price) => setEntryPrice(price)}
+          />
+        </section>
+
+        {/* Bull vs. Bear Markets, Seasonal Rhythms & 4-Year Halving Cycle Compass */}
+        <section id="market-cycles">
+          <MarketCyclesEducationModule
+            symbol={symbol}
+            onSelectSymbol={handleSelectSymbol}
+            candles={activeCandles}
+            xrpLivePrice={xrpLive}
+            xlmLivePrice={xlmLive}
           />
         </section>
 
