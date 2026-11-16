@@ -33,6 +33,17 @@ interface TenSetAutoTraderLabProps {
 
 type ExecutionMode = 'simulated' | 'trust_wallet_live';
 
+interface VerifiedLiveWallet {
+  address: string;
+  shortAddress: string;
+  walletLabel: string;
+  coinTicker: 'XRP' | 'XLM';
+  totalCoins: number;
+  reservedCoins: number;
+  spendableCoins: number;
+  checkedAt: string;
+}
+
 interface AutomatedTradeSet {
   setNumber: number;
   setupName: string;
@@ -43,9 +54,14 @@ interface AutomatedTradeSet {
   quantity: number;
   riskUsd: number;
   pnlUsd: number;
+  pnlCoins: number;
+  effectiveRMultiple: number;
   rMultiple: number;
   outcome: 'WIN_TARGET_HIT' | 'CONTROLLED_1R_STOP';
+  startingCoinsBefore: number;
+  cumulativeCoinsAfter: number;
   cumulativeBalanceAfter: number;
+  cappedBySpotWallet: boolean;
   whatItDid: string;
   whyItBought: string;
   whyItSold: string;
@@ -99,6 +115,8 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   const [walletConnected, setWalletConnected] = useState<boolean>(false);
   const [walletStatusMsg, setWalletStatusMsg] = useState<string | null>(null);
   const [liveOnChainBalance, setLiveOnChainBalance] = useState<string | null>(null);
+  const [verifiedWallet, setVerifiedWallet] = useState<VerifiedLiveWallet | null>(null);
+  const [useLiveWalletSizing, setUseLiveWalletSizing] = useState<boolean>(true);
   const [isCheckingWallet, setIsCheckingWallet] = useState<boolean>(false);
   const [signedSetNumbers, setSignedSetNumbers] = useState<number[]>([]);
 
@@ -107,11 +125,27 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   const [aiExplanation, setAiExplanation] = useState<AiTenSetExplanation | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  // Build the 10 educational & algorithmic Buy/Sell Sets dynamically from the current asset's live price & candle volatility
+  const activeCoinTicker: 'XRP' | 'XLM' = symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
+  const effectiveBasePrice =
+    livePrice > 0 ? livePrice : symbol === 'XRPUSDT' ? 2.42 : 0.415;
+
+  // Determine whether the 10-Set math is actively sized from the user's real connected wallet coins
+  const isSizingFromLiveWallet =
+    executionMode === 'trust_wallet_live' &&
+    walletConnected &&
+    useLiveWalletSizing &&
+    verifiedWallet !== null &&
+    verifiedWallet.coinTicker === activeCoinTicker &&
+    verifiedWallet.spendableCoins > 0;
+
+  // Build the 10 educational & algorithmic Buy/Sell Sets dynamically from either the Live Connected Wallet Spendable Coins OR Classroom Budget
   const tenSets = useMemo<AutomatedTradeSet[]>(() => {
-    const basePrice = livePrice > 0 ? livePrice : symbol === 'XRPUSDT' ? 2.42 : 0.415;
-    const coinTicker = symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
-    const startBal = Math.max(5, accountBalance);
+    const basePrice = effectiveBasePrice;
+    const coinTicker = activeCoinTicker;
+    const startCoins = isSizingFromLiveWallet
+      ? verifiedWallet.spendableCoins
+      : Math.max(5, accountBalance) / basePrice;
+    const startBal = Number((startCoins * basePrice).toFixed(2));
     const riskPctDecimal = Math.max(0.005, Math.min(0.05, riskPercent / 100));
 
     const blueprints: Array<{
@@ -268,9 +302,11 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     ];
 
     let runningBalance = startBal;
+    let runningCoins = startCoins;
 
     return blueprints.map((bp, idx) => {
       const setNum = idx + 1;
+      const startingCoinsBefore = Number(runningCoins.toFixed(4));
       const buyPrice = Number((basePrice * (1 + bp.entryOffsetPct)).toFixed(4));
       const stopLossPrice = Number((buyPrice * (1 - bp.stopDistPct)).toFixed(4));
       const priceRiskPerCoin = Math.max(0.0001, buyPrice - stopLossPrice);
@@ -279,26 +315,50 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
           ? Number((buyPrice + priceRiskPerCoin * bp.rMultiple).toFixed(4))
           : stopLossPrice;
 
-      const riskUsd = Number((runningBalance * riskPctDecimal).toFixed(2));
-      const quantity = Number((riskUsd / priceRiskPerCoin).toFixed(2));
-      const pnlUsd = Number((riskUsd * bp.rMultiple).toFixed(2));
-      runningBalance = Number((runningBalance + pnlUsd).toFixed(2));
+      const targetRiskUsd = runningBalance * riskPctDecimal;
+      const idealRiskQuantity = targetRiskUsd / priceRiskPerCoin;
+      // In a real 1x Spot self-custody wallet (no leverage!), you can NEVER trade more coins than your spendable wallet balance
+      const maxSpotUnitsInWallet = runningBalance / Math.max(buyPrice, 0.0001);
+      const cappedBySpotWallet = idealRiskQuantity > maxSpotUnitsInWallet;
+      const quantity = Number(Math.min(idealRiskQuantity, maxSpotUnitsInWallet).toFixed(2));
+
+      const actualRiskUsd = Number((quantity * priceRiskPerCoin).toFixed(2));
+      const rawPnlUsd =
+        bp.outcome === 'WIN_TARGET_HIT'
+          ? quantity * (sellPrice - buyPrice)
+          : -quantity * (buyPrice - stopLossPrice);
+      const pnlUsd = Number(rawPnlUsd.toFixed(2));
+      const pnlCoins = Number((pnlUsd / Math.max(basePrice, 0.0001)).toFixed(4));
+
+      runningBalance = Number(Math.max(0, runningBalance + pnlUsd).toFixed(2));
+      runningCoins = Number((runningBalance / Math.max(basePrice, 0.0001)).toFixed(4));
+
+      const walletSourceTag = isSizingFromLiveWallet
+        ? `[Sized from Live Wallet: ${startingCoinsBefore.toFixed(2)} ${coinTicker} available] `
+        : '';
 
       const whatItDid =
         bp.outcome === 'WIN_TARGET_HIT'
-          ? `Bought ${quantity.toLocaleString()} ${coinTicker} at $${buyPrice.toFixed(4)} (Stop at $${stopLossPrice.toFixed(4)}) and Sold at $${sellPrice.toFixed(4)} for +$${pnlUsd.toFixed(2)} (+${bp.rMultiple.toFixed(1)}R).`
-          : `Bought ${quantity.toLocaleString()} ${coinTicker} at $${buyPrice.toFixed(4)} and exited automatically at the $${stopLossPrice.toFixed(4)} Safety Stop-Loss for ${pnlUsd.toFixed(2)} (${bp.rMultiple.toFixed(1)}R).`;
+          ? `${walletSourceTag}Allocated ${quantity.toLocaleString()} ${coinTicker} at $${buyPrice.toFixed(4)} (Safety Stop $${stopLossPrice.toFixed(4)}) and Sold at $${sellPrice.toFixed(4)} for +$${pnlUsd.toFixed(2)} (+${pnlCoins.toFixed(2)} ${coinTicker} / +${bp.rMultiple.toFixed(1)}R).`
+          : `${walletSourceTag}Allocated ${quantity.toLocaleString()} ${coinTicker} at $${buyPrice.toFixed(4)} and exited at the $${stopLossPrice.toFixed(4)} Safety Stop-Loss for $${pnlUsd.toFixed(2)} (${pnlCoins.toFixed(2)} ${coinTicker} / -1.0R).`;
 
       const trustWalletTxPayload = JSON.stringify(
         {
           network: symbol === 'XRPUSDT' ? 'XRPL_MAINNET' : 'STELLAR_PUBLIC',
+          executionState: signedSetNumbers.includes(setNum)
+            ? 'STAGED_AWAITING_WALLET_SIGNATURE'
+            : 'PREVIEW_NOT_BROADCAST_ON_CHAIN',
+          sizingSource: isSizingFromLiveWallet
+            ? `LIVE_WALLET_SPENDABLE (${verifiedWallet?.spendableCoins.toFixed(2)} ${coinTicker})`
+            : 'CLASSROOM_SANDBOX_BUDGET',
           set: setNum,
           pair: `${coinTicker}/USD`,
           buyLimitOffer: buyPrice,
           stopLossGuard: stopLossPrice,
           takeProfitOffer: sellPrice,
-          quantity,
-          selfCustodySigner: trustWalletAddress || 'USER_TRUST_WALLET',
+          quantityCoins: quantity,
+          projectedWalletSpendableAfter: `${runningCoins.toFixed(2)} ${coinTicker} ($${runningBalance.toFixed(2)})`,
+          selfCustodySigner: trustWalletAddress || 'USER_SELF_CUSTODY_WALLET',
         },
         null,
         2
@@ -312,11 +372,16 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         stopLossPrice,
         sellPrice,
         quantity,
-        riskUsd,
+        riskUsd: actualRiskUsd,
         pnlUsd,
+        pnlCoins,
+        effectiveRMultiple: bp.rMultiple,
         rMultiple: bp.rMultiple,
         outcome: bp.outcome,
+        startingCoinsBefore,
+        cumulativeCoinsAfter: runningCoins,
         cumulativeBalanceAfter: runningBalance,
+        cappedBySpotWallet,
         whatItDid,
         whyItBought: bp.whyItBought,
         whyItSold: bp.whyItSold,
@@ -324,7 +389,17 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         trustWalletTxPayload,
       };
     });
-  }, [livePrice, symbol, accountBalance, riskPercent, trustWalletAddress]);
+  }, [
+    effectiveBasePrice,
+    activeCoinTicker,
+    isSizingFromLiveWallet,
+    verifiedWallet,
+    accountBalance,
+    riskPercent,
+    symbol,
+    trustWalletAddress,
+    signedSetNumbers,
+  ]);
 
   // Auto-Run Stepper Effect when student clicks "Auto-Run All 10 Sets"
   useEffect(() => {
@@ -354,29 +429,45 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   );
 
   const batchSummary = useMemo(() => {
-    const startBal = Math.max(5, accountBalance);
+    const startCoins = isSizingFromLiveWallet
+      ? verifiedWallet.spendableCoins
+      : Math.max(5, accountBalance) / effectiveBasePrice;
+    const startBal = Number((startCoins * effectiveBasePrice).toFixed(2));
     const wins = visibleSets.filter((s) => s.outcome === 'WIN_TARGET_HIT').length;
     const losses = visibleSets.filter((s) => s.outcome === 'CONTROLLED_1R_STOP').length;
     const endBal =
       visibleSets.length > 0
         ? visibleSets[visibleSets.length - 1].cumulativeBalanceAfter
         : startBal;
+    const endCoins =
+      visibleSets.length > 0
+        ? visibleSets[visibleSets.length - 1].cumulativeCoinsAfter
+        : startCoins;
     const netPnl = Number((endBal - startBal).toFixed(2));
+    const netCoins = Number((endCoins - startCoins).toFixed(2));
     const totalR = Number(visibleSets.reduce((acc, s) => acc + s.rMultiple, 0).toFixed(1));
     return {
       startBal,
+      startCoins: Number(startCoins.toFixed(2)),
       endBal,
+      endCoins: Number(endCoins.toFixed(2)),
       netPnl,
+      netCoins,
       wins,
       losses,
       totalR,
     };
-  }, [visibleSets, accountBalance]);
+  }, [visibleSets, accountBalance, isSizingFromLiveWallet, verifiedWallet, effectiveBasePrice]);
 
-  // Connect Active Trust Wallet (Browser Extension or Public XRPL/Stellar Address Lookup)
+  // Connect Active Xaman / Trust Wallet (Browser Extension or Public XRPL/Stellar Address Lookup)
   const handleConnectTrustWallet = async () => {
     setIsCheckingWallet(true);
     setWalletStatusMsg(null);
+    const checkedTime = new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
     try {
       const provider = window.trustwallet || window.ethereum;
       if (walletNetwork === 'EVM_TrustExtension' && provider?.request) {
@@ -386,6 +477,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         if (accounts && accounts.length > 0) {
           setTrustWalletAddress(accounts[0]);
           setWalletConnected(true);
+          setVerifiedWallet(null);
           setLiveOnChainBalance('Connected via Active Trust Wallet Browser Extension');
           setWalletStatusMsg(
             `Active Trust Wallet Extension connected (${accounts[0].slice(0, 8)}...${accounts[0].slice(-6)}). Zero private keys shared.`
@@ -407,6 +499,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         (walletNetwork === 'Xaman_XRPL' || walletNetwork === 'XRPL')
       ) {
         setWalletConnected(false);
+        setVerifiedWallet(null);
         setLiveOnChainBalance('Warning: 0x EVM/BEP-20 Address Detected');
         setWalletStatusMsg(
           'Heads-up: That 0x... address is BNB Smart Chain / Ethereum (wrapped XRP), NOT native XRP Ledger! Open Xaman on Android (or select Native XRP Ledger in Trust Wallet) and copy your address starting with lowercase r...'
@@ -417,6 +510,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
       // Live XRPL (Xaman / Trust Wallet) or Stellar Public Ledger Verification
       if (trimmed.startsWith('r') && trimmed.length >= 25) {
+        onSelectSymbol('XRPUSDT');
         const res = await fetch('https://xrplcluster.com/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -427,24 +521,50 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         });
         const data = await res.json();
         const drops = data?.result?.account_data?.Balance;
+        const walletLabelName =
+          walletNetwork === 'Xaman_XRPL' ? 'Xaman Wallet (XRPL)' : 'Trust Wallet (XRPL)';
+        const shortAddr = `${trimmed.slice(0, 8)}...${trimmed.slice(-6)}`;
+
         if (drops) {
-          const xrpBal = (Number(drops) / 1_000_000).toFixed(2);
-          const spendable = Math.max(0, Number(drops) / 1_000_000 - 1).toFixed(2);
+          const totalXrp = Number((Number(drops) / 1_000_000).toFixed(4));
+          const spendableXrp = Number(Math.max(0, totalXrp - 1).toFixed(4));
+          setVerifiedWallet({
+            address: trimmed,
+            shortAddress: shortAddr,
+            walletLabel: walletLabelName,
+            coinTicker: 'XRP',
+            totalCoins: totalXrp,
+            reservedCoins: Math.min(1, totalXrp),
+            spendableCoins: spendableXrp,
+            checkedAt: checkedTime,
+          });
+          setUseLiveWalletSizing(true);
           setLiveOnChainBalance(
-            `${xrpBal} XRP on XRPL (${spendable} XRP spendable after 1 XRP reserve)`
+            `${totalXrp.toFixed(2)} XRP on XRPL (${spendableXrp.toFixed(2)} XRP spendable after 1 XRP reserve)`
           );
         } else if (data?.result?.error === 'actNotFound') {
+          setVerifiedWallet({
+            address: trimmed,
+            shortAddress: shortAddr,
+            walletLabel: walletLabelName,
+            coinTicker: 'XRP',
+            totalCoins: 0,
+            reservedCoins: 0,
+            spendableCoins: 0,
+            checkedAt: checkedTime,
+          });
           setLiveOnChainBalance('0.00 XRP on XRPL (Send ≥1 XRP to activate 1 XRP Base Reserve)');
         } else {
+          setVerifiedWallet(null);
           setLiveOnChainBalance('Public XRPL address linked (Read-Only Non-Custodial Mode)');
         }
         setWalletConnected(true);
-        const walletLabelName =
-          walletNetwork === 'Xaman_XRPL' ? 'Xaman Wallet (XRPL)' : 'Trust Wallet (XRPL)';
         setWalletStatusMsg(
-          `Connected to ${walletLabelName} (${trimmed.slice(0, 8)}...${trimmed.slice(-6)}). Personal r... wallet = NO Destination Tag needed for self-custody transfers!`
+          `Connected to ${walletLabelName} (${shortAddr}). All 10 Buy/Sell blocks below are now sized directly from your live spendable XRP!`
         );
       } else if (trimmed.startsWith('G') && trimmed.length >= 50) {
+        onSelectSymbol('XLMUSDT');
+        const shortAddr = `${trimmed.slice(0, 8)}...${trimmed.slice(-6)}`;
         const res = await fetch(`https://horizon.stellar.org/accounts/${trimmed}`);
         if (res.ok) {
           const data = await res.json();
@@ -452,21 +572,37 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
             (b: { asset_type?: string }) => b.asset_type === 'native'
           );
           if (native?.balance) {
+            const totalXlm = Number(Number(native.balance).toFixed(4));
+            const spendableXlm = Number(Math.max(0, totalXlm - 1).toFixed(4));
+            setVerifiedWallet({
+              address: trimmed,
+              shortAddress: shortAddr,
+              walletLabel: 'Stellar Self-Custody Wallet',
+              coinTicker: 'XLM',
+              totalCoins: totalXlm,
+              reservedCoins: Math.min(1, totalXlm),
+              spendableCoins: spendableXlm,
+              checkedAt: checkedTime,
+            });
+            setUseLiveWalletSizing(true);
             setLiveOnChainBalance(
-              `${Number(native.balance).toFixed(2)} XLM verified on live Stellar Mainnet`
+              `${totalXlm.toFixed(2)} XLM on Stellar (${spendableXlm.toFixed(2)} XLM spendable after 1 XLM reserve)`
             );
           } else {
+            setVerifiedWallet(null);
             setLiveOnChainBalance('Public Stellar address linked');
           }
         } else {
+          setVerifiedWallet(null);
           setLiveOnChainBalance('Public Stellar address linked (Read-Only Non-Custodial Mode)');
         }
         setWalletConnected(true);
         setWalletStatusMsg(
-          `Connected to active Stellar Trust Wallet address (${trimmed.slice(0, 8)}...${trimmed.slice(-6)}). 10-Set SDEX Offer payloads ready.`
+          `Connected to active Stellar Wallet (${shortAddr}). All 10 Buy/Sell blocks below are sized from your live spendable XLM!`
         );
       } else {
         setWalletConnected(true);
+        setVerifiedWallet(null);
         setLiveOnChainBalance('Active Self-Custody Wallet Linked (Non-Custodial)');
         setWalletStatusMsg(
           `Linked public wallet address (${trimmed.slice(0, 10)}...). Ready to stage 10-Set Buy & Sell orders.`
@@ -474,9 +610,10 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
       }
     } catch {
       setWalletConnected(true);
+      setVerifiedWallet(null);
       setLiveOnChainBalance('Active Trust Wallet Linked (Non-Custodial Signing Mode)');
       setWalletStatusMsg(
-        'Trust Wallet linked in non-custodial mode. Every live order requires your explicit approval in Trust Wallet.'
+        'Wallet linked in non-custodial mode. Every live order requires your explicit approval in your wallet app.'
       );
     } finally {
       setIsCheckingWallet(false);
@@ -697,10 +834,88 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
           </div>
 
           {walletStatusMsg && (
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-300 bg-white/80 dark:bg-slate-900/80 px-3.5 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-500/30">
-              <span>{walletStatusMsg}</span>
-              {liveOnChainBalance && (
-                <span className="font-mono font-bold">{liveOnChainBalance}</span>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-300 bg-white/85 dark:bg-slate-900/85 px-3.5 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-500/30">
+                <span>{walletStatusMsg}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {liveOnChainBalance && (
+                    <span className="font-mono font-bold">{liveOnChainBalance}</span>
+                  )}
+                  <button
+                    type="button"
+                    disabled={isCheckingWallet}
+                    onClick={handleConnectTrustWallet}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[11px] font-semibold text-emerald-900 dark:text-emerald-200 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isCheckingWallet ? 'animate-spin' : ''}`} />
+                    <span>Re-Check On-Chain</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Crystal-Clear Live Wallet Resource & Non-Custodial Execution Truth Panel */}
+              {verifiedWallet && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+                  <div className="lg:col-span-6 space-y-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                        1. Is the 10-Set Math Sizing From Your Live Wallet?
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setUseLiveWalletSizing((v) => !v)}
+                        className="text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+                      >
+                        {useLiveWalletSizing
+                          ? 'Switch to $5 Classroom Preset'
+                          : `Use My Live ${verifiedWallet.spendableCoins.toFixed(2)} ${verifiedWallet.coinTicker} Balance`}
+                      </button>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                      {isSizingFromLiveWallet ? (
+                        <>
+                          <strong>YES — Live Balance Sizing Active:</strong> All 10 Buy & Sell blocks below start directly from your real{' '}
+                          <strong className="font-mono text-slate-900 dark:text-white">
+                            {verifiedWallet.spendableCoins.toFixed(2)} {verifiedWallet.coinTicker}
+                          </strong>{' '}
+                          spendable balance (
+                          <strong className="font-mono text-emerald-700 dark:text-emerald-400">
+                            ${(verifiedWallet.spendableCoins * effectiveBasePrice).toFixed(2)} USD
+                          </strong>{' '}
+                          at ${effectiveBasePrice.toFixed(4)}), while keeping your{' '}
+                          <span className="font-mono">{verifiedWallet.reservedCoins.toFixed(2)} {verifiedWallet.coinTicker}</span>{' '}
+                          reserve locked ({verifiedWallet.totalCoins.toFixed(2)} {verifiedWallet.coinTicker} total on-chain).
+                        </>
+                      ) : (
+                        <>
+                          <strong>Currently Using Classroom Preset (${Math.max(5, accountBalance).toFixed(2)}):</strong>{' '}
+                          {verifiedWallet.spendableCoins <= 0
+                            ? `Your wallet (${verifiedWallet.shortAddress}) currently has 0.00 spendable ${verifiedWallet.coinTicker}.`
+                            : verifiedWallet.coinTicker !== activeCoinTicker
+                            ? `Switch the coin toggle below back to ${verifiedWallet.coinTicker} to size directly from your ${verifiedWallet.spendableCoins.toFixed(2)} ${verifiedWallet.coinTicker} wallet.`
+                            : 'Click above to switch back to sizing from your live wallet balance.'}
+                        </>
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="lg:col-span-6 space-y-1.5 lg:border-l lg:border-slate-200 dark:lg:border-slate-800 lg:pl-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-bold text-amber-700 dark:text-amber-400">
+                        2. Did “Auto-Run” Spend Real Coins On-Chain Yet?
+                      </span>
+                      <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                        Checked {verifiedWallet.checkedAt}
+                      </span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                      <strong>NO — 0.00 {verifiedWallet.coinTicker} Moved Automatically (100% Non-Custodial):</strong>{' '}
+                      Clicking <em>Auto-Run All 10 Sets</em> calculates your step-by-step Buy & Sell plan using your real{' '}
+                      <span className="font-mono">{verifiedWallet.spendableCoins.toFixed(2)} {verifiedWallet.coinTicker}</span>{' '}
+                      balance, <strong>without touching your live wallet coins</strong>. Because Symphony Markets never holds your private keys, real on-chain trades only execute when you sign an order inside <strong>Xaman</strong> or <strong>Trust Wallet</strong>!
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -818,13 +1033,20 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         </div>
       </div>
 
-      {/* 10-Set Batch Scoreboard Strip */}
+      {/* 10-Set Batch Scoreboard Strip (Shows Exact Live Wallet Coins + USD When Connected!) */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 font-mono tabular-nums text-xs">
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60">
-          <div className="font-sans text-slate-500 dark:text-slate-400">Sets Executed</div>
+          <div className="font-sans text-slate-500 dark:text-slate-400">
+            {isSizingFromLiveWallet ? 'Sets Planned (Non-Custodial)' : 'Sets Executed'}
+          </div>
           <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
             {completedSetsCount} / 10 Sets
           </div>
+          {isSizingFromLiveWallet && (
+            <div className="font-sans text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+              {signedSetNumbers.length} / 10 Staged to Sign
+            </div>
+          )}
         </div>
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60">
           <div className="font-sans text-slate-500 dark:text-slate-400">Win / Stop Ratio</div>
@@ -839,18 +1061,38 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
           </div>
         </div>
         <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60">
-          <div className="font-sans text-slate-500 dark:text-slate-400">Starting Budget</div>
-          <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
-            ${batchSummary.startBal.toFixed(2)}
+          <div className="font-sans text-slate-500 dark:text-slate-400">
+            {isSizingFromLiveWallet
+              ? `Live Wallet Spendable (${verifiedWallet.shortAddress.slice(0, 6)}..)`
+              : 'Starting Budget'}
           </div>
+          <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+            {isSizingFromLiveWallet
+              ? `${batchSummary.startCoins.toFixed(2)} ${activeCoinTicker} ($${batchSummary.startBal.toFixed(2)})`
+              : `$${batchSummary.startBal.toFixed(2)}`}
+          </div>
+          {isSizingFromLiveWallet && (
+            <div className="font-sans text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              +{verifiedWallet.reservedCoins.toFixed(2)} {activeCoinTicker} locked = {verifiedWallet.totalCoins.toFixed(2)} on-chain
+            </div>
+          )}
         </div>
         <div className="p-3.5 rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/25 col-span-2 sm:col-span-1">
           <div className="font-sans text-emerald-800 dark:text-emerald-300 font-semibold">
-            Ending Balance
+            {isSizingFromLiveWallet ? 'Projected Spendable After Sets' : 'Ending Balance'}
           </div>
           <div className="text-base font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
-            ${batchSummary.endBal.toFixed(2)} (+${batchSummary.netPnl.toFixed(2)})
+            {isSizingFromLiveWallet
+              ? `${batchSummary.endCoins.toFixed(2)} ${activeCoinTicker} ($${batchSummary.endBal.toFixed(2)})`
+              : `$${batchSummary.endBal.toFixed(2)} (+$${batchSummary.netPnl.toFixed(2)})`}
           </div>
+          {isSizingFromLiveWallet && (
+            <div className="font-sans text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5">
+              Net: {batchSummary.netCoins >= 0 ? '+' : ''}
+              {batchSummary.netCoins.toFixed(2)} {activeCoinTicker} ({batchSummary.netPnl >= 0 ? '+' : ''}$
+              {batchSummary.netPnl.toFixed(2)}) · Live wallet still {verifiedWallet.totalCoins.toFixed(2)} {activeCoinTicker} until signed
+            </div>
+          )}
         </div>
       </div>
 
@@ -965,17 +1207,27 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                   {isWin ? `+${setItem.rMultiple}R` : '-1.0R Stop'}
                 </text>
 
-                {/* Cumulative Balance Footer */}
+                {/* Cumulative Balance Footer (Shows Live Coin Progression + USD When Connected!) */}
                 <text
                   x={xCenter}
-                  y="182"
+                  y="174"
                   textAnchor="middle"
                   fill="#E2E8F0"
-                  fontSize="9.5"
+                  fontSize="9"
                   fontWeight="bold"
                   fontFamily="monospace"
                 >
                   ${setItem.cumulativeBalanceAfter.toFixed(2)}
+                </text>
+                <text
+                  x={xCenter}
+                  y="185"
+                  textAnchor="middle"
+                  fill="#38BDF8"
+                  fontSize="7.8"
+                  fontFamily="monospace"
+                >
+                  {setItem.cumulativeCoinsAfter.toFixed(2)} {activeCoinTicker}
                 </text>
               </g>
             );
@@ -1102,9 +1354,17 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
               {selectedSet.whatItDid}
             </p>
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 font-mono text-[11px] text-slate-500 space-y-0.5">
+              <div>
+                Set Size: {selectedSet.quantity.toFixed(2)} {activeCoinTicker}
+                {selectedSet.cappedBySpotWallet ? ' (1x Spot Wallet Cap)' : ''}
+              </div>
               <div>Buy Entry: ${selectedSet.buyPrice.toFixed(4)}</div>
               <div>Safety Stop: ${selectedSet.stopLossPrice.toFixed(4)}</div>
               <div>Sell Exit: ${selectedSet.sellPrice.toFixed(4)}</div>
+              <div className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                Balance After Set: {selectedSet.cumulativeCoinsAfter.toFixed(2)} {activeCoinTicker} ($
+                {selectedSet.cumulativeBalanceAfter.toFixed(2)})
+              </div>
             </div>
           </div>
 
@@ -1227,10 +1487,14 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
             <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400">
               <th className="py-2.5 px-3 font-semibold">Set #</th>
               <th className="py-2.5 px-3 font-semibold">Technical Setup & Clue</th>
+              <th className="py-2.5 px-3 font-semibold font-mono">Size ({activeCoinTicker})</th>
               <th className="py-2.5 px-3 font-semibold font-mono">Buy Point</th>
               <th className="py-2.5 px-3 font-semibold font-mono">Safety Stop</th>
               <th className="py-2.5 px-3 font-semibold font-mono">Sell Point</th>
               <th className="py-2.5 px-3 font-semibold font-mono">Result</th>
+              <th className="py-2.5 px-3 font-semibold font-mono">
+                {isSizingFromLiveWallet ? 'Live Wallet Plan After' : 'Balance After'}
+              </th>
               <th className="py-2.5 px-3 font-semibold">Why It Bought & Sold (Summary)</th>
             </tr>
           </thead>
@@ -1254,6 +1518,9 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                   <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">
                     {row.patternBadge}
                   </td>
+                  <td className="py-2.5 px-3 font-mono text-slate-800 dark:text-slate-200 tabular-nums whitespace-nowrap">
+                    {row.quantity.toFixed(2)} {activeCoinTicker}
+                  </td>
                   <td className="py-2.5 px-3 font-mono text-sky-600 dark:text-sky-400 tabular-nums whitespace-nowrap">
                     ${row.buyPrice.toFixed(4)}
                   </td>
@@ -1271,6 +1538,9 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                     }`}
                   >
                     {isWin ? `+${row.rMultiple}R (+$${row.pnlUsd.toFixed(2)})` : `-1.0R ($${row.pnlUsd.toFixed(2)})`}
+                  </td>
+                  <td className="py-2.5 px-3 font-mono font-semibold text-slate-900 dark:text-white tabular-nums whitespace-nowrap">
+                    {row.cumulativeCoinsAfter.toFixed(2)} {activeCoinTicker} (${row.cumulativeBalanceAfter.toFixed(2)})
                   </td>
                   <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 max-w-md truncate">
                     {row.whyItBought}
