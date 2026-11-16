@@ -348,6 +348,101 @@ Provide specific numerical Recommended Buy Zone 1 (Primary Pullback/Support Buy)
     }
   });
 
+  app.post('/api/ten-set-ai-explainer', async (req, res) => {
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        res.status(500).json({
+          error:
+            'GEMINI_API_KEY is not configured. Please check Settings > Secrets in AI Studio.',
+        });
+        return;
+      }
+
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
+
+      const {
+        symbol,
+        executionMode,
+        startingBalance,
+        endingBalance,
+        winCount,
+        lossCount,
+        netPnlUsd,
+        setsSummary,
+      } = req.body ?? {};
+
+      const prompt = `An advanced student just ran the 10-Set Automated Buy & Sell Sequencer on ${symbol} (Mode: ${executionMode}).
+Starting Wallet Balance: $${startingBalance} -> Ending Balance after 10 Sets: $${endingBalance} (Net PnL: $${netPnlUsd}, Wins: ${winCount}, Controlled 1R Stops: ${lossCount}).
+
+Here are the 10 Buy & Sell Sets executed:
+${setsSummary}
+
+Write a crystal-clear, encouraging Masterclass Explanation teaching the student:
+1. Overall 10-Set Executive Summary: What the automated engine did across all 10 sets and why thinking in "10-Set Batches" (Law of Large Numbers with 1:2 Risk-to-Reward) beats emotional single-trade gambling.
+2. Why the Winning Buy & Sell Points Worked: How Fibonacci pullbacks, EMA support, and RSI confluence selected the entries and exits.
+3. Why the Controlled Stop-Losses Were Essential: How the small 1R stops protected the wallet so the 2R/3R winners could compound.
+4. Three Advanced Takeaways for Live Trust Wallet Self-Custody Execution.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-4-hydrogen',
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'You are a quantitative trading mentor for advanced students at Symphony Markets. Explain clearly what the 10-Set Automated Buy & Sell engine did and why each mathematical decision (Fibonacci entries, 1:2 R:R profit targets, and 2% stop-loss protection) teaches market mastery. Always remind students that automated tools are used at their own risk and that self-custody in Trust Wallet keeps them in full control of their keys.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              headline: {
+                type: Type.STRING,
+                description: '1-sentence headline summarizing the 10-Set run and its core lesson.',
+              },
+              whatTheEngineDid: {
+                type: Type.STRING,
+                description:
+                  'Clear explanation of how the automation selected the 10 buy and sell points.',
+              },
+              whyTenSetsMatter: {
+                type: Type.STRING,
+                description:
+                  'Why executing in 10-trade sets with 1:2 R:R removes emotion and builds consistency.',
+              },
+              stopLossLesson: {
+                type: Type.STRING,
+                description:
+                  'Why the 1-2 controlled stop-loss sets in the batch were actually a victory for risk management.',
+              },
+              advancedStudentTakeaways: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.STRING,
+                },
+                description: '3 actionable lessons for the student from this 10-set run.',
+              },
+            },
+          },
+        },
+      });
+
+      const rawText = (response.text ?? '{}').trim();
+      res.json(JSON.parse(rawText));
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Unexpected error generating 10-Set AI Masterclass explanation.';
+      res.status(500).json({ error: message });
+    }
+  });
+
   const guideSignups: Array<{ email: string; requestedAt: string }> = [];
 
   app.post('/api/free-guide-signup', (req, res) => {
@@ -365,11 +460,17 @@ Provide specific numerical Recommended Buy Zone 1 (Primary Pullback/Support Buy)
     });
   });
 
-  // Default Google Drive Asset IDs from the shared Symphony Markets folder
+  // Default Google Drive Asset IDs from the shared Symphony Markets folder & Video Media subfolder
   // Folder: https://drive.google.com/drive/folders/1hPDCoTd5K4163HsDW7_LtQXXB8VvBkv3
+  // Video Media Subfolder: https://drive.google.com/drive/folders/1UbpPHFwQ9WSu7X1-O8qmNk7UCyroS5og
   const DEFAULT_DRIVE_VIDEO_ID = '1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw'; // Symphony_Markets__The_No-Scam_Sandbox.mp4
   const ANTIDOTE_DRIVE_VIDEO_ID = '1vgJ0QiwY1aVtJwr-iPtKLdxTdcVqTTnr'; // Symphony_Markets__The_Antidote_to_Predation.mp4
   const BLUEPRINT_DRIVE_VIDEO_ID = '1RNomMOr0irdvq0nsbm8nQh2fhooCPoBp'; // Symphony_Markets__The__5_Blueprint.mp4
+  // Newly added 10-second Promo Series streamed via /api/drive-video/:fileId:
+  // - 1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7 (Promo 1: KSBC Gold RWA & Open Math Proof)
+  // - 1IANyjDSGVeC_7ksdot8cmAuNcZrSO8nO (Promo 2: 11-Module Day-Trader-Skill Sandbox)
+  // - 1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g (Promo 3: Symphony Harp Candlesticks & 10-Cent Cap)
+  // - 1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl (Promo 4: Transparent Crystalline AMM x * y = k)
   const DEFAULT_DRIVE_PDF_ID = '1mMH2ngPd4gWPjFYEOAHtpv9XZm-v9McN'; // no-scam-zone-manifesto.pdf
   const MAX_VIDEO_CHUNK_BYTES = 2 * 1024 * 1024; // 2 MB chunks keep every HTTP response well under Cloud Run's 32 MB limit
 

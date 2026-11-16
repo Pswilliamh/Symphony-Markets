@@ -7,6 +7,7 @@ import {
   PaperPosition,
   TradeSide,
 } from '../types/market';
+import { SectionPromoVideoBanner } from './SectionPromoVideoBanner';
 
 type DexVenueId = 'xrpl_dex' | 'stellar_sdex' | 'solar_depin_dex';
 
@@ -584,6 +585,34 @@ export const DecentralizedAiDexDesk: React.FC<DecentralizedAiDexDeskProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Dedicated Antidote to Predation / On-Chain AMM (x * y = k) Promo Video */}
+      <SectionPromoVideoBanner
+        sectionBadge="Antidote to Predation · On-Chain AMM Section Video"
+        headline="Symphony Markets — Antidote to Predation (x · y = k Open AMM)"
+        description="Watch how transparent crystalline AMM liquidity pools (Asset A · Asset B = k) replace predatory middlemen with open, auditable on-chain math."
+        accentTone="emerald"
+        tracks={[
+          {
+            id: 'predation_amm_promo',
+            tabLabel: '01 · Predation AMM Promo',
+            title: 'Symphony Markets Promo — Antidote to Predation',
+            duration: '0:10',
+            videoSrc: '/api/drive-video/1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+            driveFileId: '1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+            posterSrc: dexAmmPoolImg,
+          },
+          {
+            id: 'predation_full_video',
+            tabLabel: '02 · Full Antidote Walkthrough',
+            title: 'Symphony Markets: The Antidote to Predation',
+            duration: '6:04',
+            videoSrc: '/assets/symphony-antidote.mp4',
+            driveFileId: '1vgJ0QiwY1aVtJwr-iPtKLdxTdcVqTTnr',
+            posterSrc: dexAmmPoolImg,
+          },
+        ]}
+      />
 
       {/* DEX AMM + Orderbook Friction Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono tabular-nums">

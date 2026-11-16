@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
   Coins,
+  Eye,
   FileCheck2,
   FileWarning,
   KeyRound,
   Lock,
+  Play,
   Scale,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Wallet,
 } from 'lucide-react';
 import goldRwaBlueprintImg from '../assets/images/infographic_gold_rwa_blueprint_1794621089543.jpg';
+import { SectionPromoVideoBanner } from './SectionPromoVideoBanner';
 
 interface KsbcGoldTrainingPageProps {
   onEnterApp: (targetSectionId?: string) => void;
@@ -20,6 +24,8 @@ interface KsbcGoldTrainingPageProps {
 }
 
 type LessonStep = 1 | 2 | 3 | 4;
+
+const KSBC_PROMO_VIDEO_SRC = '/api/drive-video/1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7';
 
 const STEP_META: Array<{
   step: LessonStep;
@@ -29,31 +35,31 @@ const STEP_META: Array<{
 }> = [
   {
     step: 1,
-    shortTitle: 'Step 1 · Visual Overview',
-    headline: 'How Physical Gold Becomes an Honest Digital Receipt',
+    shortTitle: 'Step 1 · Crystalline Overview & Video',
+    headline: 'Open Source Abundance: Gold in Transparent Crystalline Columns',
     summary:
-      'KSBC (Kingdom Symphony Bible Coin) is our personal-learning blueprint (not a live coin yet) showing the 3 visual building blocks of Real-World Asset tokenization.',
+      'KSBC (Kingdom Symphony Bible Coin) is our personal-learning blueprint (not a live coin yet) replacing closed steel vaults with illuminated crystalline columns—symbolizing wealth that is 100% visible, verifiable, and active on-chain.',
   },
   {
     step: 2,
-    shortTitle: 'Step 2 · Interactive Mint Map',
-    headline: 'Drag the Slider to Watch Gold Map Onto the XRP Ledger',
+    shortTitle: 'Step 2 · Crystalline Mint Map',
+    headline: 'Drag the Slider to Illuminate Crystalline Gold Columns on XRPL',
     summary:
-      'See visually how physical gold weight translates into token units—and how the XRPL Trustline Gate protects your wallet from spam.',
+      'Watch physical 999.9 gold bars light up inside transparent glass cylinders wired directly to the XRP Ledger—and see how the XRPL Trustline Gate blocks spam.',
   },
   {
     step: 3,
-    shortTitle: 'Step 3 · Visual Scam Spotter',
-    headline: 'Spot the Difference in 5 Seconds: Fake Hype vs. Honest RWA',
+    shortTitle: 'Step 3 · Closed Vaults vs. Crystal Proof',
+    headline: 'Spot the Difference in 5 Seconds: Opaque Hype vs. Crystalline RWA',
     summary:
-      'Compare the visual red flags of fake "gold coin" websites against transparent, self-custody standards.',
+      'Contrast closed "secret steel vault" scam claims against transparent crystalline reserves and 100% self-custody standards.',
   },
   {
     step: 4,
-    shortTitle: 'Step 4 · Visual Safety Cushion',
-    headline: 'See Why a Safety Cushion Beats 20x Casino Leverage',
+    shortTitle: 'Step 4 · Crystalline Safety Cushion',
+    headline: 'See Why an Illuminated Equity Cushion Beats 20x Casino Leverage',
     summary:
-      'Move the sliders and watch the green safety bar resize in real time—showing how asset backing protects against wipeouts.',
+      'Move the sliders to watch the transparent crystalline collateral column resize in real time—showing how visible asset backing prevents wipeouts.',
   },
 ];
 
@@ -61,11 +67,12 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
   onEnterApp,
   xrpLivePrice,
 }) => {
+  const promoVideoRef = useRef<HTMLVideoElement | null>(null);
   const [activeStep, setActiveStep] = useState<LessonStep>(1);
-  const [blueprintImgError, setBlueprintImgError] = useState<boolean>(false);
+  const [promoPlaying, setPromoPlaying] = useState<boolean>(false);
 
   // Step 2 Hypothetical Minting Sandbox State
-  const [goldOunces, setGoldOunces] = useState<number>(3);
+  const [goldOunces, setGoldOunces] = useState<number>(3.5);
   const [unitMode, setUnitMode] = useState<'gram' | 'hundredth_oz'>('gram');
   const referenceGoldSpotUsd = 2650;
 
@@ -95,7 +102,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
 
   return (
     <div className="max-w-[1180px] w-full mx-auto px-4 sm:px-6 py-6 lg:py-8 space-y-6">
-      {/* Compact Header */}
+      {/* Compact Header with Transparent Sandbox Disclaimer */}
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2 text-xs text-amber-700 dark:text-amber-400 font-semibold">
@@ -104,14 +111,33 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
             <span>Visual RWA Training Sandbox (Hypothetical · Not Live or Government-Certified)</span>
           </div>
           <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-            Gold Real-World Asset (RWA) Visual Classroom
+            Gold Real-World Asset (RWA) Crystalline Classroom
           </h1>
         </div>
 
         <div className="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
-          Visual Lesson {activeStep} of 4
+          Visual Lesson {activeStep} of 4 · Open Source Abundance
         </div>
       </div>
+
+      {/* Dedicated KSBC Gold Section Promo Video ("KSBC Gold Symphony markets promo") */}
+      <SectionPromoVideoBanner
+        sectionBadge="KSBC Gold Section Video · Synced From Google Drive"
+        headline="KSBC Gold — Symphony Markets Promo"
+        description="Watch how physical 999.9 fine gold bars encased in transparent crystalline columns map 1:1 onto public ledger proofs with open-source Automated Market Maker (x · y = k) math."
+        accentTone="amber"
+        tracks={[
+          {
+            id: 'ksbc_gold_promo',
+            tabLabel: 'KSBC Gold Promo',
+            title: 'KSBC Gold Symphony Markets Promo',
+            duration: '0:10',
+            videoSrc: KSBC_PROMO_VIDEO_SRC,
+            driveFileId: '1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7',
+            posterSrc: goldRwaBlueprintImg,
+          },
+        ]}
+      />
 
       {/* 4-Step Visual Stepper */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -157,109 +183,158 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
         </div>
 
         {/* =====================================================================
-         * STEP 1: VISUAL 3-STAGE ILLUSTRATED PIPELINE DIAGRAM
+         * STEP 1: HERO KSBC GOLD RWA PROMO VIDEO + 3-STAGE CRYSTALLINE PIPELINE
          * ===================================================================== */}
         {activeStep === 1 && (
           <div className="space-y-6">
-            {/* Illustrated 3-Step Visual Diagram */}
+            {/* Hero KSBC Gold RWA Promo Video + Open Source Abundance Thesis */}
+            <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-amber-300/60 dark:border-amber-500/30 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-6">
+                <div className="relative aspect-16/9 w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-sm">
+                  <video
+                    ref={promoVideoRef}
+                    src={KSBC_PROMO_VIDEO_SRC}
+                    poster={goldRwaBlueprintImg}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    onPlay={() => setPromoPlaying(true)}
+                    onPause={() => setPromoPlaying(false)}
+                    onEnded={() => setPromoPlaying(false)}
+                    className="w-full h-full object-contain bg-slate-950"
+                  />
+                  {!promoPlaying && (
+                    <div className="pointer-events-none absolute inset-x-0 top-0 bottom-11 bg-gradient-to-t from-black/70 via-black/20 to-black/30 flex items-center justify-center p-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const el = promoVideoRef.current;
+                          if (el) {
+                            void el.play();
+                          }
+                        }}
+                        className="pointer-events-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-bold shadow-lg transition-transform duration-150 hover:scale-105 cursor-pointer"
+                      >
+                        <Play className="w-4 h-4 fill-current shrink-0" />
+                        <span>Play KSBC Gold RWA Promo (0:10)</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-2 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                  <span>Official Promo · KSBC Gold RWA & Open Math Proof (x · y = k)</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(2)}
+                    className="text-amber-700 dark:text-amber-400 font-sans font-semibold hover:underline cursor-pointer"
+                  >
+                    Try Interactive Mint Map →
+                  </button>
+                </div>
+              </div>
+
+              <div className="lg:col-span-6 space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span>Visual Language · Transparent Crystalline Columns vs. Closed Vaults</span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Why KSBC Uses Illuminated Glass Columns ("Open Source Abundance")
+                </h3>
+                <p>
+                  Old financial institutions and crypto scams hide behind <strong>closed steel vault doors</strong>—demanding blind trust while concealing whether reserves actually exist. While a locked brass safe is the right metaphor for guarding your <em>personal 12-word private key</em>, Real-World Asset reserves belong in <strong>transparent, crystalline columns</strong>.
+                </p>
+                <p>
+                  <strong>KSBC (Kingdom Symphony Bible Coin)</strong> is a transparent personal-learning blueprint (not a live coin yet) demonstrating <strong>100% verifiable reserves</strong>: physical 999.9 fine gold encased in illuminated glass cylinders directly wired to public XRP Ledger blocks so anyone can verify supply in real time.
+                </p>
+              </div>
+            </div>
+
+            {/* Illustrated 3-Step Crystalline Pipeline Diagram */}
             <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-stretch">
-              {/* Stage 1 Visual Card: Physical Gold Ingot SVG */}
-              <div className="md:col-span-3 p-5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-300/60 dark:border-amber-500/30 flex flex-col items-center text-center justify-between gap-4">
-                <div className="text-xs font-mono font-semibold text-amber-800 dark:text-amber-400">
-                  01 · Physical Metal
+              {/* Stage 1 Visual Card: Illuminated Transparent Crystalline Gold Column SVG */}
+              <div className="md:col-span-3 p-5 rounded-xl bg-amber-50/70 dark:bg-slate-950 border border-amber-300/60 dark:border-cyan-500/30 flex flex-col items-center text-center justify-between gap-4">
+                <div className="text-xs font-mono font-semibold text-amber-800 dark:text-amber-300">
+                  01 · Crystalline Reserve
                 </div>
 
-                {/* Custom Illustrated Gold Bullion SVG */}
+                {/* Custom Illustrated Illuminated Glass Cylinder Encasing 999.9 Gold Bar */}
                 <svg
-                  viewBox="0 0 180 100"
-                  className="w-40 h-24"
+                  viewBox="0 0 180 116"
+                  className="w-44 h-28"
                   role="img"
-                  aria-label="Physical 999.9 fine gold bar illustration"
+                  aria-label="Physical 999.9 fine gold bar encased inside an illuminated transparent crystalline glass column"
                 >
                   <defs>
-                    <linearGradient id="goldTop" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FDE68A" />
-                      <stop offset="50%" stopColor="#F59E0B" />
-                      <stop offset="100%" stopColor="#D97706" />
+                    <linearGradient id="crystalGlassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.32" />
+                      <stop offset="50%" stopColor="#E0F2FE" stopOpacity="0.10" />
+                      <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.28" />
                     </linearGradient>
-                    <linearGradient id="goldSide" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#D97706" />
-                      <stop offset="100%" stopColor="#92400E" />
+                    <linearGradient id="goldIngotGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FEF08A" />
+                      <stop offset="55%" stopColor="#F59E0B" />
+                      <stop offset="100%" stopColor="#B45309" />
                     </linearGradient>
                   </defs>
-                  {/* Base Shadow */}
-                  <ellipse cx="90" cy="84" rx="68" ry="8" fill="rgba(146,64,14,0.18)" />
-                  {/* 3D Trapezoid Ingot Base */}
-                  <polygon points="24,74 156,74 140,42 40,42" fill="url(#goldSide)" />
-                  {/* Top Face */}
-                  <polygon
-                    points="40,42 140,42 130,24 50,24"
-                    fill="url(#goldTop)"
-                    stroke="#FEF3C7"
-                    strokeWidth="1.5"
-                  />
-                  {/* Front Bevel */}
-                  <polygon points="24,74 156,74 140,42 40,42" fill="url(#goldTop)" opacity="0.82" />
-                  <text
-                    x="90"
-                    y="62"
-                    textAnchor="middle"
-                    fontSize="11"
-                    fontWeight="bold"
-                    fontFamily="monospace"
-                    fill="#78350F"
-                  >
-                    999.9 FINE GOLD
+                  {/* Illuminated Ledger Pedestal */}
+                  <ellipse cx="90" cy="102" rx="54" ry="9" fill="#0EA5E9" fillOpacity="0.22" stroke="#38BDF8" strokeWidth="1.2" />
+                  {/* Vertical Optical Light Beam */}
+                  <rect x="52" y="18" width="76" height="84" fill="url(#crystalGlassGrad)" />
+                  {/* 999.9 Gold Bars Visible Inside the Transparent Glass Column */}
+                  <polygon points="62,86 118,86 111,68 69,68" fill="url(#goldIngotGrad)" stroke="#FEF3C7" strokeWidth="1" />
+                  <polygon points="66,65 114,65 108,48 72,48" fill="url(#goldIngotGrad)" stroke="#FEF3C7" strokeWidth="1" />
+                  <text x="90" y="81" textAnchor="middle" fontSize="8" fontWeight="bold" fontFamily="monospace" fill="#78350F">
+                    999.9 GOLD
                   </text>
+                  {/* Crystalline Cylinder Walls & Top Rim */}
+                  <line x1="52" y1="18" x2="52" y2="102" stroke="#38BDF8" strokeWidth="1.8" />
+                  <line x1="128" y1="18" x2="128" y2="102" stroke="#38BDF8" strokeWidth="1.8" />
+                  <line x1="64" y1="22" x2="64" y2="98" stroke="#FFFFFF" strokeOpacity="0.55" strokeWidth="1.2" />
+                  <ellipse cx="90" cy="18" rx="38" ry="7" fill="#E0F2FE" fillOpacity="0.25" stroke="#38BDF8" strokeWidth="1.5" />
                 </svg>
 
                 <div className="space-y-1">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Real Gold Exists First
+                    Visible Crystalline Column
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Starts with tangible bullion measured by real weight and purity—never thin air.
+                    Physical bullion sits in open, auditable view—never hidden behind opaque doors.
                   </p>
                 </div>
               </div>
 
               {/* Visual Connector Arrow 1 */}
-              <div className="md:col-span-1 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <div className="md:col-span-1 flex items-center justify-center text-sky-600 dark:text-sky-400">
                 <ArrowRight className="w-6 h-6 rotate-90 md:rotate-0" />
               </div>
 
-              {/* Stage 2 Visual Card: Assay & Scale Verification SVG */}
+              {/* Stage 2 Visual Card: Crystalline Optical Assay & 1:1 Scale SVG */}
               <div className="md:col-span-3 p-5 rounded-xl bg-sky-50/70 dark:bg-sky-950/20 border border-sky-300/60 dark:border-sky-500/30 flex flex-col items-center text-center justify-between gap-4">
                 <div className="text-xs font-mono font-semibold text-sky-800 dark:text-sky-400">
-                  02 · Honest Proof
+                  02 · Open Math Proof
                 </div>
 
-                {/* Custom Illustrated Balance Scale + Verification Shield SVG */}
+                {/* Custom Illustrated Crystalline Cylinders on Precision Balance Scale */}
                 <svg
-                  viewBox="0 0 180 100"
-                  className="w-40 h-24"
+                  viewBox="0 0 180 116"
+                  className="w-44 h-28"
                   role="img"
-                  aria-label="Precision balance scale matching gold weight to digital supply"
+                  aria-label="Two transparent crystalline columns balanced 1 to 1 on an optical ledger scale"
                 >
-                  {/* Pillar & Base */}
-                  <rect x="70" y="80" width="40" height="6" rx="3" fill="#0284C7" />
-                  <rect x="87" y="24" width="6" height="58" rx="2" fill="#0284C7" />
-                  {/* Balance Beam */}
-                  <line x1="38" y1="34" x2="142" y2="34" stroke="#0369A1" strokeWidth="4" strokeLinecap="round" />
-                  {/* Left Pan (Gold) */}
-                  <line x1="44" y1="34" x2="34" y2="58" stroke="#38BDF8" strokeWidth="1.8" />
-                  <line x1="44" y1="34" x2="54" y2="58" stroke="#38BDF8" strokeWidth="1.8" />
-                  <path d="M28,58 Q44,68 60,58 Z" fill="#0284C7" />
-                  <rect x="36" y="49" width="16" height="8" rx="1.5" fill="#F59E0B" />
-                  {/* Right Pan (1:1 Proof) */}
-                  <line x1="136" y1="34" x2="126" y2="58" stroke="#38BDF8" strokeWidth="1.8" />
-                  <line x1="136" y1="34" x2="146" y2="58" stroke="#38BDF8" strokeWidth="1.8" />
-                  <path d="M120,58 Q136,68 152,58 Z" fill="#0284C7" />
-                  <circle cx="136" cy="52" r="6" fill="#10B981" />
-                  {/* Center Check */}
-                  <circle cx="90" cy="24" r="9" fill="#10B981" />
+                  <rect x="68" y="94" width="44" height="6" rx="3" fill="#0284C7" />
+                  <rect x="87" y="30" width="6" height="66" rx="2" fill="#0284C7" />
+                  <line x1="34" y1="42" x2="146" y2="42" stroke="#38BDF8" strokeWidth="3.5" strokeLinecap="round" />
+                  {/* Left Crystal Cylinder (Gold) */}
+                  <rect x="26" y="46" width="28" height="34" rx="4" fill="#38BDF8" fillOpacity="0.18" stroke="#38BDF8" strokeWidth="1.4" />
+                  <rect x="31" y="62" width="18" height="14" rx="2" fill="#F59E0B" />
+                  {/* Right Crystal Cylinder (On-Chain Supply) */}
+                  <rect x="126" y="46" width="28" height="34" rx="4" fill="#10B981" fillOpacity="0.18" stroke="#10B981" strokeWidth="1.4" />
+                  <circle cx="140" cy="67" r="7" fill="#10B981" />
+                  {/* Center Verification Check */}
+                  <circle cx="90" cy="28" r="9" fill="#10B981" />
                   <polyline
-                    points="85,24 88.5,27.5 95,20.5"
+                    points="85,28 88.5,31.5 95,24.5"
                     fill="none"
                     stroke="#FFFFFF"
                     strokeWidth="2.2"
@@ -270,42 +345,40 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
 
                 <div className="space-y-1">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    1:1 Weight Match
+                    1:1 Verifiable Parity
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Independent assay & proof-of-reserve confirm every unit matches real metal.
+                    Optical proof-of-reserve confirms token supply equals exact assayed gram weight.
                   </p>
                 </div>
               </div>
 
               {/* Visual Connector Arrow 2 */}
-              <div className="md:col-span-1 flex items-center justify-center text-sky-600 dark:text-sky-400">
+              <div className="md:col-span-1 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                 <ArrowRight className="w-6 h-6 rotate-90 md:rotate-0" />
               </div>
 
               {/* Stage 3 Visual Card: XRPL Digital Receipt SVG */}
               <div className="md:col-span-3 p-5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-300/60 dark:border-emerald-500/30 flex flex-col items-center text-center justify-between gap-4">
                 <div className="text-xs font-mono font-semibold text-emerald-800 dark:text-emerald-400">
-                  03 · XRPL Digital Token
+                  03 · Active XRPL Ledger
                 </div>
 
                 {/* Custom Illustrated Token Receipt on Ledger SVG */}
                 <svg
-                  viewBox="0 0 180 100"
-                  className="w-40 h-24"
+                  viewBox="0 0 180 116"
+                  className="w-44 h-28"
                   role="img"
-                  aria-label="Divisible KSBC digital token on the XRP Ledger"
+                  aria-label="Divisible KSBC digital token wired directly to the XRP Ledger"
                 >
-                  {/* Ledger Grid Lines */}
-                  <line x1="25" y1="50" x2="155" y2="50" stroke="#10B981" strokeWidth="1.5" strokeDasharray="4 4" />
-                  <rect x="24" y="38" width="24" height="24" rx="5" fill="#D1FAE5" stroke="#059669" strokeWidth="1.5" />
-                  <rect x="132" y="38" width="24" height="24" rx="5" fill="#D1FAE5" stroke="#059669" strokeWidth="1.5" />
-                  {/* Center Token Coin */}
-                  <circle cx="90" cy="50" r="28" fill="#059669" />
-                  <circle cx="90" cy="50" r="22" fill="#10B981" stroke="#A7F3D0" strokeWidth="1.5" />
+                  <line x1="22" y1="58" x2="158" y2="58" stroke="#10B981" strokeWidth="1.8" strokeDasharray="4 4" />
+                  <rect x="20" y="44" width="26" height="28" rx="5" fill="#D1FAE5" stroke="#059669" strokeWidth="1.5" />
+                  <rect x="134" y="44" width="26" height="28" rx="5" fill="#D1FAE5" stroke="#059669" strokeWidth="1.5" />
+                  <circle cx="90" cy="58" r="29" fill="#059669" />
+                  <circle cx="90" cy="58" r="23" fill="#10B981" stroke="#A7F3D0" strokeWidth="1.5" />
                   <text
                     x="90"
-                    y="48"
+                    y="56"
                     textAnchor="middle"
                     fontSize="11"
                     fontWeight="bold"
@@ -316,7 +389,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                   </text>
                   <text
                     x="90"
-                    y="60"
+                    y="68"
                     textAnchor="middle"
                     fontSize="8"
                     fontFamily="monospace"
@@ -331,47 +404,16 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                     Divisible Ledger Receipt
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Moves on XRPL in 3–4 seconds for ~$0.0001 while holders keep self-custody.
+                    Settles on XRPL in 3–4 seconds for ~$0.0001 while holders keep full self-custody.
                   </p>
                 </div>
-              </div>
-            </div>
-
-            {/* Blueprint Infographic + Thorough Plain-English Walkthrough */}
-            <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              <div className="lg:col-span-5">
-                {!blueprintImgError ? (
-                  <img
-                    src={goldRwaBlueprintImg}
-                    alt="Architectural blueprint illustration showing fine gold bullion bars on an analytical assay balance connected to distributed ledger blocks"
-                    referrerPolicy="no-referrer"
-                    onError={() => setBlueprintImgError(true)}
-                    className="w-full aspect-16/9 object-cover rounded-lg border border-slate-200 dark:border-slate-800"
-                  />
-                ) : (
-                  <div className="w-full aspect-16/9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center p-4 text-xs font-mono text-slate-600 dark:text-slate-400">
-                    Assay Scale Verification → 1:1 XRPL Distributed Ledger Blocks
-                  </div>
-                )}
-              </div>
-
-              <div className="lg:col-span-7 space-y-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                  Full Plain-English Explanation · Why KSBC Starts as an Educational Blueprint
-                </div>
-                <p>
-                  <strong>KSBC (Kingdom Symphony Bible Coin)</strong> was originally envisioned as an honest exchange mechanism for Real-World Asset (RWA) gold. Right now, KSBC is <strong>not a live trading coin</strong> and makes zero claims of government certification—everything here is a transparent personal-learning blueprint for people who want to understand how physical gold can become a real digital asset in the future.
-                </p>
-                <p>
-                  Instead of printing tokens out of thin air, genuine RWA tokenization follows a strict sequence: <strong>(1) Physical Metal</strong> is weighed and assayed for purity (such as 999.9 fine gold), <strong>(2) Independent Proof-of-Reserve</strong> locks that exact weight in an audited vault, and <strong>(3) Divisible Ledger Receipts</strong> are issued 1-to-1 on the XRP Ledger so everyday holders can transfer fractional gold weight in 3–4 seconds for ~$0.0001.
-                </p>
               </div>
             </div>
           </div>
         )}
 
         {/* =====================================================================
-         * STEP 2: INTERACTIVE VISUAL GOLD TRAY & XRPL TRUSTLINE GATE
+         * STEP 2: INTERACTIVE 10-COLUMN ILLUMINATED CRYSTALLINE RESERVE CHAMBER
          * ===================================================================== */}
         {activeStep === 2 && (
           <div className="space-y-6">
@@ -383,7 +425,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                     htmlFor="gold-oz-slider"
                     className="font-semibold text-slate-800 dark:text-slate-200"
                   >
-                    Drag to Add Hypothetical Gold Bars:
+                    Drag to Illuminate Crystalline Gold Columns:
                   </label>
                   <span className="font-mono font-bold text-amber-700 dark:text-amber-400 tabular-nums">
                     {goldOunces} Troy Oz ({totalGrams.toFixed(1)} grams)
@@ -403,7 +445,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
 
               <div className="md:col-span-5 space-y-1.5">
                 <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
-                  Choose Token Size:
+                  Choose Token Denomination:
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -432,49 +474,151 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
               </div>
             </div>
 
-            {/* Live Visual Pipeline: Gold Bar Tray -> XRPL Trustline Gate -> Self-Custody Wallet */}
-            <div className="grid grid-cols-1 lg:grid-cols-11 gap-4 items-stretch">
-              {/* Visual Box 1: Live Gold Ingot Tray */}
-              <div className="lg:col-span-4 p-5 rounded-xl border border-amber-300/60 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/15 flex flex-col justify-between gap-4">
+            {/* Live Visual Pipeline: 10 Crystalline Columns -> XRPL Trustline Gate -> Self-Custody Wallet */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              {/* Visual Box 1: Illuminated 10-Column Crystalline Reserve Chamber */}
+              <div className="lg:col-span-5 p-5 rounded-xl border border-sky-400/50 dark:border-sky-500/40 bg-slate-950 text-white flex flex-col justify-between gap-4">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-1.5">
-                    <Scale className="w-4 h-4" />
-                    Physical Vault Tray
+                  <span className="font-semibold text-sky-300 flex items-center gap-1.5">
+                    <Eye className="w-4 h-4 text-amber-300 shrink-0" />
+                    <span>Crystalline Reserve Columns (Visible Proof)</span>
                   </span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+                  <span className="font-mono font-bold text-amber-300 tabular-nums">
                     ~${estimatedGoldValueUsd.toLocaleString()}
                   </span>
                 </div>
 
-                {/* Dynamic 10-Slot Gold Bar Grid */}
-                <div className="grid grid-cols-5 gap-2 py-2">
+                {/* 10 Illuminated Transparent Glass Cylinders Housing Gold Bars */}
+                <div className="grid grid-cols-5 gap-2.5 py-1">
                   {Array.from({ length: 10 }).map((_, idx) => {
                     const isFull = idx < fullBarsCount;
                     const isHalf = idx === fullBarsCount && hasHalfBar;
+                    const isLit = isFull || isHalf;
                     return (
-                      <div
-                        key={idx}
-                        className={`h-11 rounded-md border flex flex-col items-center justify-center text-[10px] font-mono font-bold transition-all ${
-                          isFull
-                            ? 'bg-gradient-to-b from-amber-300 to-amber-500 border-amber-600 text-amber-950 shadow-xs'
-                            : isHalf
-                            ? 'bg-gradient-to-r from-amber-400 via-amber-300/60 to-slate-100 dark:to-slate-800 border-amber-500/70 text-amber-950 dark:text-amber-200'
-                            : 'bg-slate-100/70 dark:bg-slate-900/60 border-dashed border-slate-300 dark:border-slate-700 text-slate-400'
-                        }`}
-                      >
-                        <span>{isFull ? '1 oz' : isHalf ? '0.5' : '—'}</span>
+                      <div key={idx} className="flex flex-col items-center gap-1">
+                        <svg
+                          viewBox="0 0 48 76"
+                          className="w-full h-16"
+                          role="img"
+                          aria-label={`Crystalline reserve column ${idx + 1}: ${
+                            isFull ? '1 troy ounce gold bar' : isHalf ? '0.5 troy ounce gold bar' : 'empty transparent column'
+                          }`}
+                        >
+                          {/* Top Glass Rim */}
+                          <ellipse
+                            cx="24"
+                            cy="8"
+                            rx="16"
+                            ry="4"
+                            fill={isLit ? '#38BDF8' : '#1E293B'}
+                            fillOpacity={isLit ? 0.35 : 0.4}
+                            stroke={isLit ? '#7DD3FC' : '#475569'}
+                            strokeWidth="1.2"
+                          />
+                          {/* Transparent Glass Cylinder Body */}
+                          <rect
+                            x="8"
+                            y="8"
+                            width="32"
+                            height="54"
+                            fill={isLit ? '#0EA5E9' : '#0F172A'}
+                            fillOpacity={isLit ? 0.16 : 0.35}
+                          />
+                          {/* Illuminated Gold Bullion Core */}
+                          {isFull && (
+                            <rect
+                              x="13"
+                              y="20"
+                              width="22"
+                              height="36"
+                              rx="3"
+                              fill="#F59E0B"
+                              stroke="#FEF08A"
+                              strokeWidth="1.2"
+                            />
+                          )}
+                          {isHalf && (
+                            <rect
+                              x="13"
+                              y="38"
+                              width="22"
+                              height="18"
+                              rx="2.5"
+                              fill="#FBBF24"
+                              stroke="#FEF08A"
+                              strokeWidth="1.2"
+                            />
+                          )}
+                          {/* Glass Specular Highlight + Walls */}
+                          <line
+                            x1="8"
+                            y1="8"
+                            x2="8"
+                            y2="62"
+                            stroke={isLit ? '#7DD3FC' : '#334155'}
+                            strokeWidth="1.2"
+                          />
+                          <line
+                            x1="40"
+                            y1="8"
+                            x2="40"
+                            y2="62"
+                            stroke={isLit ? '#7DD3FC' : '#334155'}
+                            strokeWidth="1.2"
+                          />
+                          <line
+                            x1="13"
+                            y1="11"
+                            x2="13"
+                            y2="59"
+                            stroke="#FFFFFF"
+                            strokeOpacity={isLit ? 0.45 : 0.12}
+                            strokeWidth="1"
+                          />
+                          {/* Ledger Optical Pedestal + Connection Node */}
+                          <ellipse
+                            cx="24"
+                            cy="62"
+                            rx="16"
+                            ry="4"
+                            fill={isLit ? '#38BDF8' : '#1E293B'}
+                            fillOpacity={isLit ? 0.45 : 0.5}
+                            stroke={isLit ? '#38BDF8' : '#475569'}
+                            strokeWidth="1.2"
+                          />
+                          {isLit && (
+                            <line
+                              x1="24"
+                              y1="66"
+                              x2="24"
+                              y2="75"
+                              stroke="#34D399"
+                              strokeWidth="1.8"
+                            />
+                          )}
+                        </svg>
+                        <span
+                          className={`text-[10px] font-mono font-bold tabular-nums ${
+                            isLit ? 'text-amber-300' : 'text-slate-500'
+                          }`}
+                        >
+                          {isFull ? '1.0 oz' : isHalf ? '0.5 oz' : 'Empty'}
+                        </span>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="text-xs text-slate-600 dark:text-slate-400">
-                  Each lit gold bar = <strong>1 Troy Oz</strong> (31.1g) of verified physical metal.
+                <div className="text-[11px] text-slate-300 pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <span>
+                    Each lit glass cylinder = <strong>1 Troy Oz</strong> (31.1g) wired to ledger
+                  </span>
+                  <span className="font-mono text-emerald-400">100% Auditable</span>
                 </div>
               </div>
 
               {/* Arrow */}
-              <div className="lg:col-span-1 flex items-center justify-center text-amber-600 dark:text-amber-400">
+              <div className="lg:col-span-1 flex items-center justify-center text-sky-600 dark:text-sky-400">
                 <ArrowRight className="w-6 h-6 rotate-90 lg:rotate-0" />
               </div>
 
@@ -487,13 +631,13 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
 
                 <div className="divide-y divide-sky-200/70 dark:divide-slate-800 my-auto">
                   <div className="pb-3 flex items-start gap-2.5 text-xs">
-                    <Lock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <Scale className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <strong className="block text-slate-900 dark:text-white">
-                        Offline Issuer Key
+                        1:1 Crystalline Cap
                       </strong>
                       <span className="text-slate-600 dark:text-slate-400">
-                        Mints exact 1:1 cap only
+                        Zero unbacked minting allowed
                       </span>
                     </div>
                   </div>
@@ -502,7 +646,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
                       <strong className="block text-slate-900 dark:text-white">
-                        Holder Trustline Opt-In
+                        Holder TrustSet Opt-In
                       </strong>
                       <span className="text-slate-600 dark:text-slate-400 font-mono tabular-nums">
                         {xrplTrustlineReserveXrp} XRP (~${xrplTrustlineReserveUsd.toFixed(2)}) anti-spam lock
@@ -512,7 +656,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                 </div>
 
                 <div className="text-xs text-slate-600 dark:text-slate-400 pt-2 border-t border-sky-200/70 dark:border-slate-800">
-                  Blocks fake airdrop scams automatically.
+                  Blocks unsolicited scam airdrops automatically.
                 </div>
               </div>
 
@@ -541,7 +685,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                 </div>
 
                 <div className="text-[11px] text-slate-600 dark:text-slate-400">
-                  100% matched to {totalGrams.toFixed(1)}g gold.
+                  100% matched to {totalGrams.toFixed(1)}g visible gold.
                 </div>
               </div>
             </div>
@@ -550,48 +694,86 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
             <div className="p-4 sm:p-5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               <div>
                 <strong className="block text-slate-900 dark:text-white mb-1">
-                  1. Cold Issuer Account vs. Hot Distribution
+                  1. Open-Source Abundance vs. Secret Vaults
                 </strong>
-                On the XRP Ledger, honest issuers separate the <strong>Cold Issuing Address</strong> (kept offline, strictly minting tokens when new verified metal enters the vault) from the operational distribution account so nobody can secretly inflate supply.
+                Every lit crystalline cylinder represents physical gold accompanied by public assay serial numbers and on-chain proof-of-reserve—so learners verify math instead of trusting marketing promises.
               </div>
               <div>
                 <strong className="block text-slate-900 dark:text-white mb-1">
                   2. Why XRPL Requires a 0.2 XRP Trustline
                 </strong>
-                Unlike networks where scammers drop fake tokens into your wallet uninvited, XRPL requires you to sign an explicit <span className="font-mono">TrustSet</span> opt-in (temporarily locking {xrplTrustlineReserveXrp} XRP in your own wallet) before you can hold any RWA token.
+                Unlike networks where scammers drop fake tokens into your wallet uninvited, XRPL requires you to sign an explicit <span className="font-mono">TrustSet</span> opt-in (temporarily locking {xrplTrustlineReserveXrp} XRP in your own wallet) before holding any RWA token.
               </div>
               <div>
                 <strong className="block text-slate-900 dark:text-white mb-1">
-                  3. Redemption Burns the Digital Receipt
+                  3. Redemption Extinguishes the Receipt
                 </strong>
-                If a holder redeems physical gold from the vault, those exact tokens are returned to the issuer address and permanently extinguished so the ledger supply never exceeds the real metal on the shelf.
+                When physical gold is redeemed from a crystalline reserve column, those exact digital receipts are returned and burned on-chain so ledger supply never exceeds real metal.
               </div>
             </div>
           </div>
         )}
 
         {/* =====================================================================
-         * STEP 3: VISUAL SIDE-BY-SIDE SCAM SPOTTER CARDS
+         * STEP 3: OPAQUE STEEL VAULTS VS. TRANSPARENT CRYSTALLINE COLUMNS
          * ===================================================================== */}
         {activeStep === 3 && (
-          <div className="space-y-4">
+          <div className="space-y-5">
+            {/* Visual Architectural Contrast Banner */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-rose-300/60 dark:border-rose-500/30 bg-rose-50/50 dark:bg-rose-950/15 flex items-center gap-4">
+                <svg viewBox="0 0 88 80" className="w-20 h-20 shrink-0" aria-hidden="true">
+                  <rect x="12" y="10" width="64" height="60" rx="8" fill="#334155" stroke="#F43F5E" strokeWidth="2" />
+                  <circle cx="44" cy="40" r="15" fill="#1E293B" stroke="#FB7185" strokeWidth="2" />
+                  <text x="44" y="46" textAnchor="middle" fontSize="16" fontWeight="bold" fill="#FDA4AF">
+                    ?
+                  </text>
+                </svg>
+                <div className="space-y-1 text-xs">
+                  <div className="font-bold text-rose-700 dark:text-rose-400">
+                    ✕ Closed Steel Vault Mythology (Opaque)
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Uses heavy steel vault stock photos to project authority while hiding unbacked token printing and freezing customer withdrawals.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-emerald-300/70 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/15 flex items-center gap-4">
+                <svg viewBox="0 0 88 80" className="w-20 h-20 shrink-0" aria-hidden="true">
+                  <ellipse cx="44" cy="68" rx="26" ry="5" fill="#10B981" fillOpacity="0.3" stroke="#10B981" strokeWidth="1.5" />
+                  <rect x="22" y="14" width="44" height="54" fill="#38BDF8" fillOpacity="0.18" stroke="#38BDF8" strokeWidth="1.8" />
+                  <rect x="30" y="30" width="28" height="30" rx="3" fill="#F59E0B" stroke="#FEF08A" strokeWidth="1.2" />
+                  <ellipse cx="44" cy="14" rx="22" ry="5" fill="#E0F2FE" fillOpacity="0.3" stroke="#38BDF8" strokeWidth="1.5" />
+                </svg>
+                <div className="space-y-1 text-xs">
+                  <div className="font-bold text-emerald-700 dark:text-emerald-400">
+                    ✓ Illuminated Crystalline Column (Verifiable)
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Symbolizes <strong>Open Source Abundance</strong>: reserves visible through glass, wired 1:1 to public XRPL ledger state while you hold your own private wallet key.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {[
               {
-                topic: 'Vault & Backing Claims',
+                topic: 'Reserve Visibility',
                 scamIcon: FileWarning,
-                scamText: 'Flashes fake government seals or "secret vaults" nobody can audit.',
+                scamText: 'Flashes fake government seals or closed "secret vaults" nobody can audit.',
                 honestIcon: FileCheck2,
                 honestText:
-                  'States clearly when a concept (like KSBC today) is an educational prototype—and publishes real assay audits before launching.',
+                  'States clearly when a concept (like KSBC today) is an educational prototype—and requires transparent crystalline proof-of-reserve audits before launch.',
               },
               {
-                topic: 'Who Holds Your Wallet Keys?',
+                topic: 'Private Key vs. Reserve',
                 scamIcon: Lock,
                 scamText:
-                  'Forces you to deposit money into their website where withdrawals can be frozen.',
+                  'Locks YOUR funds inside their custodial website while keeping their own reserves hidden.',
                 honestIcon: KeyRound,
                 honestText:
-                  '100% self-custody on the XRP Ledger—your keys and tokens stay in your own wallet.',
+                  'Your private key stays locked in your personal brass safe (your phone), while gold reserves stay 100% public inside transparent crystalline columns.',
               },
               {
                 topic: 'Token Supply Discipline',
@@ -600,7 +782,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                   'Prints millions of unbacked presale tokens and promises "guaranteed daily yield."',
                 honestIcon: Coins,
                 honestText:
-                  'Strict 1:1 reserve math: zero tokens minted without matching physical weight.',
+                  'Strict 1:1 reserve math: zero tokens minted without matching physical gram weight.',
               },
             ].map((row) => {
               const ScamIcon = row.scamIcon;
@@ -632,7 +814,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                     <HonestIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                     <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                       <strong className="block text-emerald-700 dark:text-emerald-400 mb-0.5">
-                        ✓ No-Scam Zone Standard
+                        ✓ No-Scam Zone Crystalline Standard
                       </strong>
                       {row.honestText}
                     </div>
@@ -644,7 +826,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
         )}
 
         {/* =====================================================================
-         * STEP 4: LIVE PROPORTIONAL SAFETY BAR VS. 20X LEVERAGE WIPEOUT BAR
+         * STEP 4: CRYSTALLINE COLLATERAL COLUMN VS. 20X LEVERAGE WIPEOUT
          * ===================================================================== */}
         {activeStep === 4 && (
           <div className="space-y-6">
@@ -656,7 +838,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                     htmlFor="collateral-usd-slider"
                     className="font-semibold text-slate-800 dark:text-slate-200"
                   >
-                    1. Hypothetical Gold Value
+                    1. Hypothetical Crystalline Gold Reserve Value
                   </label>
                   <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
                     ${collateralGoldUsd.toLocaleString()}
@@ -680,7 +862,7 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
                     htmlFor="ltv-slider"
                     className="font-semibold text-slate-800 dark:text-slate-200"
                   >
-                    2. Borrow Ratio (LTV) vs. Safety Cushion
+                    2. Borrow Ratio (LTV) vs. Crystalline Safety Cushion
                   </label>
                   <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
                     {ltvPercent}% Credit / {safetyBufferPct}% Cushion
@@ -699,72 +881,122 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
               </div>
             </div>
 
-            {/* Visual Bar Comparison: RWA Cushion vs. 20x Futures Wipeout */}
-            <div className="space-y-5">
-              {/* Bar 1: Conservative Gold RWA Bar */}
-              <div className="p-5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Conservative Gold Backing (${collateralGoldUsd.toLocaleString()} Total Asset)
-                  </span>
-                  <span className="font-mono text-slate-600 dark:text-slate-300 tabular-nums">
-                    Est. 5% Interest: ${annualSimpleInterestUsd.toFixed(0)}/yr
-                  </span>
+            {/* Visual Crystalline Column + Stacked Bar Comparison */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+              {/* Left 4 Cols: Live Vertical Crystalline Collateral Column SVG */}
+              <div className="lg:col-span-4 p-5 rounded-xl bg-slate-950 border border-sky-500/30 flex flex-col items-center justify-between gap-3 text-white">
+                <div className="text-xs font-semibold text-sky-300 text-center">
+                  Live Crystalline Reserve Column
                 </div>
-
-                {/* Live Proportional Stacked Bar */}
-                <div className="w-full h-11 rounded-lg overflow-hidden flex border border-slate-300 dark:border-slate-700 font-mono text-xs font-bold tabular-nums">
-                  <div
-                    style={{ width: `${ltvPercent}%` }}
-                    className="bg-amber-400 text-amber-950 flex items-center justify-center px-2 whitespace-nowrap overflow-hidden"
-                  >
-                    Credit ${maxConservativeBorrowUsd.toFixed(0)} ({ltvPercent}%)
-                  </div>
-                  <div
-                    style={{ width: `${safetyBufferPct}%` }}
-                    className="bg-emerald-600 text-white flex items-center justify-center px-2 whitespace-nowrap overflow-hidden"
-                  >
-                    Safety Cushion ${safetyEquityBufferUsd.toFixed(0)} ({safetyBufferPct}%)
-                  </div>
-                </div>
-              </div>
-
-              {/* Bar 2: Visual Contrast Against Dangerous 20x Crypto Leverage */}
-              <div className="p-5 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-                    <ShieldAlert className="w-4 h-4" />
-                    Compare: Dangerous 20x Futures Leverage Trap
-                  </span>
-                  <span className="font-mono text-rose-700 dark:text-rose-400">
-                    5% price drop = 100% Account Wiped Out
-                  </span>
-                </div>
-
-                <div className="w-full h-9 rounded-lg overflow-hidden flex border border-rose-400/50 font-mono text-xs font-bold">
-                  <div
-                    style={{ width: '5%' }}
-                    className="bg-slate-700 text-white flex items-center justify-center text-[10px]"
-                    title="5% tiny margin"
-                  >
-                    5%
-                  </div>
-                  <div
-                    style={{ width: '95%' }}
-                    className="bg-rose-600 text-white flex items-center justify-center px-3 whitespace-nowrap"
-                  >
-                    95% Borrowed Debt Zone (Instant Liquidation Danger)
-                  </div>
+                <svg
+                  viewBox="0 0 160 190"
+                  className="w-36 h-44"
+                  role="img"
+                  aria-label="Illuminated crystalline collateral column showing emerald safety cushion above golden credit base"
+                >
+                  <ellipse cx="80" cy="172" rx="46" ry="8" fill="#0EA5E9" fillOpacity="0.28" stroke="#38BDF8" strokeWidth="1.4" />
+                  {/* Outer Glass Column */}
+                  <rect x="34" y="20" width="92" height="152" fill="#0EA5E9" fillOpacity="0.12" stroke="#7DD3FC" strokeWidth="1.6" />
+                  {/* Top Emerald Safety Cushion Segment */}
+                  <rect
+                    x="42"
+                    y={26}
+                    width="76"
+                    height={Math.round((140 * safetyBufferPct) / 100)}
+                    rx="3"
+                    fill="#10B981"
+                    fillOpacity="0.82"
+                  />
+                  {/* Bottom Golden Credit Segment */}
+                  <rect
+                    x="42"
+                    y={26 + Math.round((140 * safetyBufferPct) / 100)}
+                    width="76"
+                    height={Math.round((140 * ltvPercent) / 100)}
+                    rx="3"
+                    fill="#F59E0B"
+                    fillOpacity="0.9"
+                  />
+                  <line x1="48" y1="24" x2="48" y2="168" stroke="#FFFFFF" strokeOpacity="0.45" strokeWidth="1.5" />
+                  <ellipse cx="80" cy="20" rx="46" ry="8" fill="#E0F2FE" fillOpacity="0.25" stroke="#7DD3FC" strokeWidth="1.4" />
+                </svg>
+                <div className="text-[11px] font-mono text-center text-slate-300">
+                  <span className="text-emerald-400 font-bold">{safetyBufferPct}% Cushion</span> ·{' '}
+                  <span className="text-amber-300 font-bold">{ltvPercent}% Credit</span>
                 </div>
               </div>
 
-              {/* Detailed Plain-English Explanation of Over-Collateralization vs. Leverage */}
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                <strong className="text-slate-900 dark:text-white">
-                  Why the Green Safety Cushion Protects Families & Learners:
-                </strong>{' '}
-                In hypothetical RWA collateral models, borrowing at a conservative <strong>{ltvPercent}% Loan-to-Value (LTV)</strong> against ${collateralGoldUsd.toLocaleString()} of verified asset value leaves a <strong>${safetyEquityBufferUsd.toFixed(0)} ({safetyBufferPct}%) equity cushion</strong> so normal market dips do not wipe you out. By contrast, 20x crypto futures use 95% borrowed debt with only 5% margin—meaning a routine 5% market wiggle liquidates 100% of a beginner’s account.
+              {/* Right 8 Cols: Horizontal Comparison Bars */}
+              <div className="lg:col-span-8 space-y-4 flex flex-col justify-between">
+                {/* Bar 1: Conservative Gold RWA Bar */}
+                <div className="p-5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Conservative Crystalline Backing (${collateralGoldUsd.toLocaleString()} Asset)
+                    </span>
+                    <span className="font-mono text-slate-600 dark:text-slate-300 tabular-nums">
+                      Est. 5% Interest: ${annualSimpleInterestUsd.toFixed(0)}/yr
+                    </span>
+                  </div>
+
+                  <div className="w-full h-11 rounded-lg overflow-hidden flex border border-slate-300 dark:border-slate-700 font-mono text-xs font-bold tabular-nums">
+                    <div
+                      style={{ width: `${ltvPercent}%` }}
+                      className="bg-amber-400 text-amber-950 flex items-center justify-center px-2 whitespace-nowrap overflow-hidden"
+                    >
+                      Credit ${maxConservativeBorrowUsd.toFixed(0)} ({ltvPercent}%)
+                    </div>
+                    <div
+                      style={{ width: `${safetyBufferPct}%` }}
+                      className="bg-emerald-600 text-white flex items-center justify-center px-2 whitespace-nowrap overflow-hidden"
+                    >
+                      Safety Cushion ${safetyEquityBufferUsd.toFixed(0)} ({safetyBufferPct}%)
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bar 2: Visual Contrast Against Dangerous 20x Crypto Leverage */}
+                <div className="p-5 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                      <ShieldAlert className="w-4 h-4" />
+                      Compare: Dangerous 20x Futures Leverage Trap
+                    </span>
+                    <span className="font-mono text-rose-700 dark:text-rose-400">
+                      5% price drop = 100% Account Wiped Out
+                    </span>
+                  </div>
+
+                  <div className="w-full h-9 rounded-lg overflow-hidden flex border border-rose-400/50 font-mono text-xs font-bold">
+                    <div
+                      style={{ width: '5%' }}
+                      className="bg-slate-700 text-white flex items-center justify-center text-[10px]"
+                      title="5% tiny margin"
+                    >
+                      5%
+                    </div>
+                    <div
+                      style={{ width: '95%' }}
+                      className="bg-rose-600 text-white flex items-center justify-center px-3 whitespace-nowrap"
+                    >
+                      95% Borrowed Debt Zone (Instant Liquidation Danger)
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <strong className="text-slate-900 dark:text-white">
+                    Why Visible Equity Cushions Protect Families & Learners:
+                  </strong>{' '}
+                  In hypothetical RWA collateral models, borrowing at a conservative{' '}
+                  <strong>{ltvPercent}% LTV</strong> against ${collateralGoldUsd.toLocaleString()}{' '}
+                  of visible crystalline reserve value leaves a{' '}
+                  <strong>
+                    ${safetyEquityBufferUsd.toFixed(0)} ({safetyBufferPct}%) equity cushion
+                  </strong>{' '}
+                  so normal dips do not trigger liquidation—unlike 20x casino leverage where 95% debt wipes out beginners on a routine 5% wiggle.
+                </div>
               </div>
             </div>
           </div>

@@ -374,11 +374,14 @@ export const SymphonyFrequencyBanners: React.FC<SymphonyFrequencyBannersProps> =
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
               <span>♪ Visual & Musical Analogy</span>
               <span aria-hidden="true">·</span>
-              <span>Why Candlesticks Flow Like Musical Notes</span>
+              <span>Emotional Regulation & Calm Pattern Recognition</span>
             </div>
             <h2 className="font-editorial text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-snug">
               When You Learn the Market Properly, You Hear a Symphony—Not Scam Panic
             </h2>
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              <strong>Why Music Matters for Beginners:</strong> Most retail trading apps trigger adrenaline, anxiety, and impulsive panic-selling. Turning green candles into rising harp notes (♪) and red candles into calm cello rests (♩) actively trains patience, nervous-system calm, and disciplined pattern recognition.
+            </p>
           </div>
 
           {/* Mobile-Friendly Wrapping Sound Comparison Buttons (Never Clips on Mobile) */}

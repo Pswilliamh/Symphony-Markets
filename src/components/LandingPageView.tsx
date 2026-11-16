@@ -1,23 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
+  BookOpen,
   Compass,
+  Download,
+  ExternalLink,
   Layers,
   MessageSquareText,
   ShieldCheck,
   SlidersHorizontal,
 } from 'lucide-react';
 import founderDeskImg from '../assets/images/founder_desk_story_1794561548330.jpg';
+import goldRwaBlueprintImg from '../assets/images/infographic_gold_rwa_blueprint_1794621089543.jpg';
 import noScamCompassImg from '../assets/images/no_scam_compass_1794561548457.jpg';
 import videoCoverStopsImg from '../assets/images/video_cover_stops_1794561549253.jpg';
 import videoCoverWalletImg from '../assets/images/video_cover_wallet_1794561551281.jpg';
 import { createNoScamZonePdfBlob } from '../utils/pdfGuideGenerator';
 import { AssetSymbol, Candle } from '../types/market';
+import { AnalemmaEcosystemNodeCard } from './AnalemmaEcosystemNodeCard';
 import { CandlestickSymphonyComposer } from './CandlestickSymphonyComposer';
 import { KsbcGoldTrainingPage } from './KsbcGoldTrainingPage';
 import { LiveAiSignalHelper } from './LiveAiSignalHelper';
 import { MarketCyclesEducationModule } from './MarketCyclesEducationModule';
 import { ScamScreenXRayInspector } from './ScamScreenXRayInspector';
+import { SectionPromoVideoBanner } from './SectionPromoVideoBanner';
 import { SymphonyFrequencyBanners } from './SymphonyFrequencyBanners';
 import {
   SymphonyCandlestickBackdrop,
@@ -25,6 +31,8 @@ import {
   symphonyHarpEmblemImg,
 } from './SymphonyHarpLogo';
 import { SymphonyPodcastPlayer } from './SymphonyPodcastPlayer';
+import { TenSecondSymphonyPreviewStrip } from './TenSecondSymphonyPreviewStrip';
+import { TenSetAutoTraderLab } from './TenSetAutoTraderLab';
 
 export type PublicPageTab =
   | 'welcome'
@@ -102,6 +110,18 @@ const HOMEPAGE_DRIVE_VIDEO_URL =
   'https://drive.google.com/file/d/1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw/view';
 const ANTIDOTE_DRIVE_VIDEO_URL =
   'https://drive.google.com/file/d/1vgJ0QiwY1aVtJwr-iPtKLdxTdcVqTTnr/view';
+const KSBC_GOLD_PROMO_VIDEO_URL =
+  'https://drive.google.com/file/d/1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7/view';
+const FIVE_DOLLAR_PROMO_VIDEO_URL =
+  'https://drive.google.com/file/d/1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX/view';
+const SANDBOX_DESK_PROMO_VIDEO_URL =
+  'https://drive.google.com/file/d/1IANyjDSGVeC_7ksdot8cmAuNcZrSO8nO/view';
+const SYMPHONY_MUSIC_PROMO_VIDEO_URL =
+  'https://drive.google.com/file/d/1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g/view';
+const PREDATION_PROMO_VIDEO_URL =
+  'https://drive.google.com/file/d/1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl/view';
+const VIDEO_MEDIA_DRIVE_FOLDER_URL =
+  'https://drive.google.com/drive/folders/1UbpPHFwQ9WSu7X1-O8qmNk7UCyroS5og';
 const MANIFESTO_DRIVE_PDF_VIEW_URL =
   'https://drive.google.com/file/d/1mMH2ngPd4gWPjFYEOAHtpv9XZm-v9McN/view';
 const CERTIFICATE_DRIVE_PDF_VIEW_URL =
@@ -192,27 +212,39 @@ const SANCTUARY_DOCUMENTS: SanctuaryDocumentItem[] = [
 const WELCOME_PLAYLIST = [
   {
     id: 'blueprint',
-    shortLabel: '01 · The $5 Blueprint',
+    shortLabel: '01 · $5 Blueprint',
     fullTitle: 'Symphony Markets: The $5 Blueprint',
     duration: '4:40',
     url: FIVE_DOLLAR_BLUEPRINT_VIDEO_URL,
     poster: videoCoverWalletImg,
+    pairedActionLabel: 'Open $5 Blueprint →',
   },
   {
     id: 'sandbox',
-    shortLabel: '02 · The No-Scam Sandbox',
+    shortLabel: '02 · No-Scam Sandbox',
     fullTitle: 'Symphony Markets: The No-Scam Sandbox',
     duration: '5:45',
     url: HOMEPAGE_DRIVE_VIDEO_URL,
     poster: founderDeskImg,
+    pairedActionLabel: 'Open Skill Sandbox →',
   },
   {
     id: 'antidote',
-    shortLabel: '03 · Antidote to Predation',
-    fullTitle: 'Symphony Markets: The Antidote to Predation',
+    shortLabel: '03 · Symphony & Antidote',
+    fullTitle: 'Symphony Markets: Antidote to Predation & Market Harmony',
     duration: '6:04',
     url: ANTIDOTE_DRIVE_VIDEO_URL,
     poster: noScamCompassImg,
+    pairedActionLabel: 'Open ♪ Symphony Music →',
+  },
+  {
+    id: 'ksbc_gold',
+    shortLabel: '04 · KSBC Gold RWA',
+    fullTitle: 'KSBC Gold RWA: Crystalline Proof-of-Reserve & Open Math',
+    duration: '0:10',
+    url: KSBC_GOLD_PROMO_VIDEO_URL,
+    poster: goldRwaBlueprintImg,
+    pairedActionLabel: 'Open KSBC Gold RWA →',
   },
 ] as const;
 
@@ -249,6 +281,61 @@ const INITIAL_LESSONS: VideoLessonItem[] = [
     coverSrc: noScamCompassImg,
     coverAlt: 'Solid brass compass and optical glass lens resting on travertine stone',
     driveUrl: ANTIDOTE_DRIVE_VIDEO_URL,
+  },
+  {
+    id: 'vid_promo_ksbc_gold',
+    number: 'Promo 04 · 0m 10s',
+    title: 'KSBC Gold Symphony Markets Promo: Crystalline Proof-of-Reserve & Open Math (x · y = k)',
+    duration: '10s Promo Reel · Ready',
+    description:
+      'Official KSBC Gold section promo showcasing physical 999.9 fine gold in transparent crystalline reserves paired with open AMM pricing math.',
+    coverSrc: goldRwaBlueprintImg,
+    coverAlt: 'Architectural gold bullion and ledger tokenization blueprint',
+    driveUrl: KSBC_GOLD_PROMO_VIDEO_URL,
+  },
+  {
+    id: 'vid_promo_symphony_music',
+    number: 'Promo 05 · 0m 10s',
+    title: 'Scam Free Symphony Markets Promo: Golden Harp Notes & 10-Cent Safety Net',
+    duration: '10s Promo Reel · Ready',
+    description:
+      'Official Scam-Free & Symphony Music section promo demonstrating floating Golden Harp and Deep Cello notes above live candlesticks.',
+    coverSrc: videoCoverStopsImg,
+    coverAlt: 'Interactive chart with stop-loss and musical candlestick harmony',
+    driveUrl: SYMPHONY_MUSIC_PROMO_VIDEO_URL,
+  },
+  {
+    id: 'vid_promo_five_dollar',
+    number: 'Promo 06 · 0m 10s',
+    title: 'Symphony Markets Five Dollar Promo: $5 Real-Wallet Roadmap & 11-Module Skill Desk',
+    duration: '10s Promo Reel · Ready',
+    description:
+      'Official $5 Blueprint section promo touring the sub-penny XRPL/Stellar self-custody workflow, 2,500-path Time Machine, and 2% risk threshold.',
+    coverSrc: videoCoverWalletImg,
+    coverAlt: 'Symphony Markets Five Dollar Promo preview',
+    driveUrl: FIVE_DOLLAR_PROMO_VIDEO_URL,
+  },
+  {
+    id: 'vid_promo_predation',
+    number: 'Promo 07 · 0m 10s',
+    title: 'Symphony Markets Promo Predation: Exposing Fake Stop Buttons & Extraction Traps',
+    duration: '10s Promo Reel · Ready',
+    description:
+      'Official Antidote to Predation section promo contrasting rigged custodial traps against 100% open-source self-custody math.',
+    coverSrc: noScamCompassImg,
+    coverAlt: 'Symphony Markets Promo Predation preview',
+    driveUrl: PREDATION_PROMO_VIDEO_URL,
+  },
+  {
+    id: 'vid_promo_skill_desk_alt',
+    number: 'Promo 08 · 0m 10s',
+    title: 'Day-Trader-Skill 11-Module Suite & 2,500-Path Time Machine (Alternate Reel)',
+    duration: '10s Promo Reel · Ready',
+    description:
+      'Companion $5 Sandbox reel highlighting the 11-module interactive risk desk and XRPUSDT historical replay Time Machine.',
+    coverSrc: founderDeskImg,
+    coverAlt: 'Day-Trader-Skill 11-Module Interactive Suite preview',
+    driveUrl: SANDBOX_DESK_PROMO_VIDEO_URL,
   },
 ];
 
@@ -521,6 +608,8 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                           ? founderDeskImg
                           : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
                           ? noScamCompassImg
+                          : customVideoUrl === KSBC_GOLD_PROMO_VIDEO_URL
+                          ? goldRwaBlueprintImg
                           : undefined
                       }
                       controls
@@ -534,6 +623,8 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                           setCustomVideoUrl(HOMEPAGE_DRIVE_VIDEO_URL);
                         } else if (customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL) {
                           setCustomVideoUrl(ANTIDOTE_DRIVE_VIDEO_URL);
+                        } else if (customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL) {
+                          setCustomVideoUrl(KSBC_GOLD_PROMO_VIDEO_URL);
                         }
                       }}
                       className="w-full h-full object-contain bg-slate-950"
@@ -577,7 +668,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                             : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
                             ? '▶ Play Video 2: The No-Scam Sandbox'
                             : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
-                            ? '▶ Play Video 3: The Antidote to Predation'
+                            ? '▶ Play Video 3: Symphony & Antidote'
+                            : customVideoUrl === KSBC_GOLD_PROMO_VIDEO_URL
+                            ? '▶ Play Video 4: KSBC Gold RWA (0:10)'
                             : '▶ Play Welcome Video'}
                         </button>
                       </div>
@@ -633,6 +726,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               )}
             </div>
 
+            {/* 10-Second Audio-Visual Candlestick Symphony Hook right on the Landing Stage */}
+            <TenSecondSymphonyPreviewStrip
+              onOpenSymphonyModule={() => onNavigatePage('symphony')}
+            />
+
             {/* Compact Transport Bar */}
             <div className="py-2.5 px-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 space-y-2">
               {!embeddedCustomVideo && (
@@ -678,13 +776,39 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-300">
                     <span className="font-semibold text-slate-900 dark:text-white">
                       {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
-                        ? 'Video 1 of 3 · Symphony Markets: The $5 Blueprint'
+                        ? 'Video 1 of 4 · The $5 Blueprint'
                         : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
-                        ? 'Video 2 of 3 · Symphony Markets: The No-Scam Sandbox'
+                        ? 'Video 2 of 4 · The No-Scam Sandbox'
                         : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
-                        ? 'Video 3 of 3 · Symphony Markets: The Antidote to Predation'
+                        ? 'Video 3 of 4 · Symphony & Antidote'
+                        : customVideoUrl === KSBC_GOLD_PROMO_VIDEO_URL
+                        ? 'Video 4 of 4 · KSBC Gold RWA (Crystalline Reserves)'
                         : 'Custom Welcome Video'}
                     </span>
+                    <span aria-hidden="true">·</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL) {
+                          onEnterApp('start-here');
+                        } else if (customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL) {
+                          onEnterApp('skill-desk');
+                        } else if (customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL) {
+                          onNavigatePage('symphony');
+                        } else {
+                          onNavigatePage('ksbc');
+                        }
+                      }}
+                      className="text-amber-700 dark:text-amber-400 font-semibold hover:underline cursor-pointer whitespace-nowrap"
+                    >
+                      {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                        ? 'Launch $5 Blueprint →'
+                        : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
+                        ? 'Launch Skill Sandbox →'
+                        : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
+                        ? 'Open ♪ Symphony Module →'
+                        : 'Open KSBC Gold Tab →'}
+                    </button>
                     <span aria-hidden="true">·</span>
                     <button
                       type="button"
@@ -694,6 +818,8 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                           setCustomVideoUrl(HOMEPAGE_DRIVE_VIDEO_URL);
                         } else if (customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL) {
                           setCustomVideoUrl(ANTIDOTE_DRIVE_VIDEO_URL);
+                        } else if (customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL) {
+                          setCustomVideoUrl(KSBC_GOLD_PROMO_VIDEO_URL);
                         } else {
                           setCustomVideoUrl(FIVE_DOLLAR_BLUEPRINT_VIDEO_URL);
                         }
@@ -701,10 +827,12 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                       className="text-sky-600 dark:text-sky-400 font-medium hover:underline cursor-pointer whitespace-nowrap"
                     >
                       {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
-                        ? 'Next: Video 2 (Sandbox) →'
+                        ? 'Next: 02 Sandbox →'
                         : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
-                        ? 'Next: Video 3 (Antidote) →'
-                        : '↺ Back to Video 1 ($5 Blueprint)'}
+                        ? 'Next: 03 Symphony →'
+                        : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
+                        ? 'Next: 04 KSBC Gold →'
+                        : '↺ Back to 01 Blueprint'}
                     </button>
                   </div>
                 )}
@@ -748,35 +876,43 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           </div>
         </section>
 
-        {/* Single Clean Entry Button to Step Behind the Welcome Stage */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        {/* Clean Entry Actions Aligned With the 4-Part Video Series + Free Ebook */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
           <button
             type="button"
             onClick={() => onEnterApp()}
-            className="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             Enter Symphony Markets →
           </button>
           <button
             type="button"
             onClick={() => onNavigatePage('symphony')}
-            className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            ♪ Symphony Music Module →
+            ♪ Symphony Music →
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigatePage('ksbc')}
+            className="px-4 py-2.5 border border-amber-400/70 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-sm font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            KSBC Gold RWA →
           </button>
           <button
             type="button"
             onClick={() => onNavigatePage('cycles')}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            Bull vs. Bear & 4-Year Cycles →
+            4-Year Cycle GPS →
           </button>
           <button
             type="button"
-            onClick={() => onEnterApp('ai-buy-sell-helper')}
-            className="px-5 py-2.5 border border-amber-400/80 bg-slate-900 hover:bg-slate-800 text-amber-300 text-sm font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            onClick={() => onNavigatePage('guide')}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 border border-emerald-500/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-sm font-bold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            ★ Live AI Buy & Sell Helper →
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span>Free Ebook (PDF & EPUB) →</span>
           </button>
         </div>
       </div>
@@ -834,6 +970,20 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           onApplyRecommendationToChart={() => onEnterApp('risk-chart')}
         />
 
+        {/* Advanced Student 10-Set Automated Buy & Sell Sequencer (Simulated or Active Trust Wallet) */}
+        <TenSetAutoTraderLab
+          symbol={symbol || 'XRPUSDT'}
+          onSelectSymbol={(sym) => onSelectSymbol && onSelectSymbol(sym)}
+          candles={candles || []}
+          fibLevels={[]}
+          livePrice={symbol === 'XLMUSDT' ? xlmLivePrice : xrpLivePrice}
+          xrpLivePrice={xrpLivePrice}
+          xlmLivePrice={xlmLivePrice}
+          accountBalance={5}
+          riskPercent={2.0}
+          onLogSetPositionToPortfolio={() => onEnterApp('portfolio-ledger')}
+        />
+
         <MarketCyclesEducationModule
           symbol={symbol}
           onSelectSymbol={onSelectSymbol}
@@ -880,6 +1030,25 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             Open Inside Full Workspace →
           </button>
         </div>
+
+        {/* Section-Matched Promo Video: Scam Free Symphony markets promo */}
+        <SectionPromoVideoBanner
+          sectionBadge="Section Promo Video · Scam Free Symphony Markets"
+          headline="Watch: Scam-Free Symphony Markets — Candlesticks as Rising Harp & Calm Cello Notes"
+          description="Instead of anxiety-inducing sirens and scam hype, Symphony Markets translates green upward candles into ascending Golden Harp notes and red pullbacks into grounding Cello rests—training calm pattern recognition alongside the 10-cent risk cap."
+          accentTone="amber"
+          tracks={[
+            {
+              id: 'scam_free_symphony_promo',
+              tabLabel: 'Scam Free Symphony Promo',
+              title: 'Scam Free Symphony markets promo',
+              duration: '0:10',
+              videoSrc: '/api/drive-video/1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
+              driveFileId: '1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
+              posterSrc: videoCoverStopsImg,
+            },
+          ]}
+        />
 
         {/* Visual Candlestick-to-Musical-Notes Analogy Banners & Symphony Audio Cards */}
         <SymphonyFrequencyBanners />
@@ -1014,6 +1183,61 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             Enter Training App →
           </button>
         </div>
+
+        {/* Section-Matched Promo Video Banner: Scam-Free Sandbox & All Section Reels */}
+        <SectionPromoVideoBanner
+          sectionBadge="Section Promo Videos · No-Scam Sandbox & Module Highlights"
+          headline="Watch Every Symphony Markets Section Promo Straight From Our Video Media Vault"
+          description="Preview the Scam-Free Sandbox, $5 Real-Wallet Blueprint, KSBC Gold Crystalline Reserves, and Antidote to Predation reels before launching any module inside the training workspace."
+          accentTone="sky"
+          tracks={[
+            {
+              id: 'features_scam_free',
+              tabLabel: '01 · Scam Free Promo',
+              title: 'Scam Free Symphony markets promo',
+              duration: '0:10',
+              videoSrc: '/api/drive-video/1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
+              driveFileId: '1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
+              posterSrc: videoCoverStopsImg,
+            },
+            {
+              id: 'features_five_dollar',
+              tabLabel: '02 · $5 Blueprint Promo',
+              title: 'Symphony markets five dollar',
+              duration: '0:10',
+              videoSrc: '/api/drive-video/1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
+              driveFileId: '1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
+              posterSrc: videoCoverWalletImg,
+            },
+            {
+              id: 'features_ksbc_gold',
+              tabLabel: '03 · KSBC Gold Promo',
+              title: 'KSBC Gold Symphony markets promo',
+              duration: '0:10',
+              videoSrc: '/api/drive-video/1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7',
+              driveFileId: '1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7',
+              posterSrc: goldRwaBlueprintImg,
+            },
+            {
+              id: 'features_predation',
+              tabLabel: '04 · Predation Promo',
+              title: 'Symphony markets promo predation',
+              duration: '0:10',
+              videoSrc: '/api/drive-video/1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+              driveFileId: '1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+              posterSrc: noScamCompassImg,
+            },
+            {
+              id: 'features_full_sandbox',
+              tabLabel: 'Full Walkthrough',
+              title: 'Symphony Markets: The No-Scam Sandbox',
+              duration: '5:45',
+              videoSrc: '/assets/symphony-welcome.mp4',
+              driveFileId: '1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw',
+              posterSrc: founderDeskImg,
+            },
+          ]}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* Card 01: $5 Real-Wallet Guided Training Roadmap */}
@@ -1237,6 +1461,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Analemma Ventures · Systems Knowledge Engineering & Digital Visual Resume Pro 1.0 Node */}
+        <AnalemmaEcosystemNodeCard onNavigatePage={onNavigatePage} onEnterApp={onEnterApp} />
       </div>
     );
   }
@@ -1247,6 +1474,34 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   if (activePage === 'story') {
     return (
       <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+        {/* Section-Matched Promo Video: Symphony markets promo predation */}
+        <SectionPromoVideoBanner
+          sectionBadge="Section Promo Video · Antidote to Predation"
+          headline="Watch: Symphony Markets Promo — The Antidote to Financial Predation"
+          description="Built in direct response to a fake 'Stop-Trading' scam, this section exposes how rigged platforms extract money from beginners—and why radical self-custody, open-source math, and the No-Scam Zone Covenant are the antidote."
+          accentTone="emerald"
+          tracks={[
+            {
+              id: 'story_predation_promo',
+              tabLabel: 'Predation Promo',
+              title: 'Symphony markets promo predation',
+              duration: '0:10',
+              videoSrc: '/api/drive-video/1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+              driveFileId: '1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+              posterSrc: noScamCompassImg,
+            },
+            {
+              id: 'story_antidote_full',
+              tabLabel: 'Full Antidote Film',
+              title: 'Symphony Markets: The Antidote to Predation',
+              duration: '6:04',
+              videoSrc: '/assets/symphony-antidote.mp4',
+              driveFileId: '1vgJ0QiwY1aVtJwr-iPtKLdxTdcVqTTnr',
+              posterSrc: founderDeskImg,
+            },
+          ]}
+        />
+
         <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 sm:p-8 space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5">
@@ -1399,14 +1654,22 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   Walkthrough & Short 60-Second How-To Video Guides
                 </h2>
               </div>
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex flex-wrap items-center gap-4 text-xs">
+                <a
+                  href={VIDEO_MEDIA_DRIVE_FOLDER_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-amber-700 dark:text-amber-400 hover:underline"
+                >
+                  Open Promo Videos Drive Folder ↗
+                </a>
                 <a
                   href={SHARED_DRIVE_FOLDER_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-medium text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 hover:underline"
                 >
-                  Open Shared Google Drive Folder ↗
+                  Open Free Ebook & Docs Folder ↗
                 </a>
                 <button
                   type="button"
@@ -1532,6 +1795,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Analemma Ventures · Systems Knowledge Engineering & Digital Visual Resume Pro 1.0 Cross-Link */}
+        <AnalemmaEcosystemNodeCard onNavigatePage={onNavigatePage} onEnterApp={onEnterApp} />
       </div>
     );
   }
@@ -1544,31 +1810,43 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
   return (
     <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 lg:py-8 flex flex-col gap-6">
-      {/* Top Hero Card: Email Unlock + Instant Access to All 4 Google Drive Publications */}
+      {/* Top Hero Card: Instant 1-Click Free Download PDF & Free Download EPUB (No Gate!) */}
       <div className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-6 sm:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-7 space-y-4">
-            <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              100% Free Sanctuary Library · Synced From Google Drive · Nothing For Sale, Ever
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <span>Free Ebook & Sanctuary Documents</span>
+              <span aria-hidden="true">·</span>
+              <span>Instant Free Download (PDF & EPUB)</span>
+              <span aria-hidden="true">·</span>
+              <span>Nothing For Sale, Ever</span>
             </div>
             <h1
               className="font-editorial text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-tight"
               style={{ textWrap: 'balance' }}
             >
-              The “No-Scam Zone” Manifesto, Ethical Covenant & Quantum Analemma Library
+              Free Ebook: Quantum Analemma A.I. Technology Cycle & No-Scam Zone Library
             </h1>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-[65ch]">
-              Every official PDF and e-book in our shared community Google Drive is 100% free. Download the{' '}
-              <strong>No-Scam Zone Manifesto</strong>, the official{' '}
-              <strong>Certificate of Commitment & Ethical Agreement</strong>, the{' '}
-              <strong>Sovereign Mind & Honest Market Reader’s Companion</strong>, and the complete{' '}
-              <strong>Quantum Analemma A.I. Technology Cycle</strong> book (PDF & EPUB).
+              Every official book and guide in our Google Drive documents folder is <strong>100% free with instant one-click download</strong>—no paywall and no email required. Grab your copy of{' '}
+              <strong>Quantum Analemma A.I. Technology Cycle</strong> in <strong>PDF</strong> or <strong>EPUB</strong>, plus the{' '}
+              <strong>No-Scam Zone Manifesto</strong>,{' '}
+              <strong>Certificate of Commitment</strong>, and{' '}
+              <strong>Sovereign Mind Reader’s Companion</strong>.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-200 dark:border-slate-800 text-xs">
               <div className="space-y-1">
                 <strong className="block text-slate-900 dark:text-white">
-                  1. Manifesto & Starter Guide
+                  1. Free Ebook (PDF & EPUB)
+                </strong>
+                <span className="text-slate-500 dark:text-slate-400">
+                  Full edition of Quantum Analemma A.I. Technology Cycle by Ambassador William Hardrick, DQP-KS.
+                </span>
+              </div>
+              <div className="space-y-1">
+                <strong className="block text-slate-900 dark:text-white">
+                  2. Manifesto & Starter Guide
                 </strong>
                 <span className="text-slate-500 dark:text-slate-400">
                   Spotting fake stop-loss buttons, gas-card bots, and $5 10-cent risk sizing.
@@ -1576,130 +1854,165 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               </div>
               <div className="space-y-1">
                 <strong className="block text-slate-900 dark:text-white">
-                  2. Certificate of Commitment
+                  3. Ethical Covenant & Companion
                 </strong>
                 <span className="text-slate-500 dark:text-slate-400">
-                  “If you’re looking for a scam, you won’t find one here.” — 4-Pillar Ethical Covenant.
-                </span>
-              </div>
-              <div className="space-y-1">
-                <strong className="block text-slate-900 dark:text-white">
-                  3. Quantum Analemma + Bonus
-                </strong>
-                <span className="text-slate-500 dark:text-slate-400">
-                  Full book (PDF & EPUB) + 4-Pillar Student Companion by Ambassador William Hardrick.
+                  Official No-Scam Zone Certificate + 4-Pillar Sovereign Mind Study Companion.
                 </span>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-5">
-            {unlockedForEmail ? (
-              <div className="p-6 rounded-xl bg-emerald-500/5 border border-emerald-500/30 space-y-4">
-                <div className="space-y-1">
-                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                    ✓ Complete 4-Document Sanctuary Library Unlocked ({unlockedForEmail})
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Download any of the 4 official Google Drive PDFs or the EPUB e-book below, open them in the inline reader right on this page, or step inside the live training workspace.
-                  </p>
+            <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-950 border border-emerald-500/35 space-y-4">
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  Instant Direct Downloads · Zero Registration Required
                 </div>
-
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleDownloadSanctuaryDoc('manifesto', 'no-scam-zone-manifesto.pdf')
-                    }
-                    disabled={downloadingDocKey === 'manifesto'}
-                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                  >
-                    {downloadingDocKey === 'manifesto'
-                      ? 'Downloading Manifesto...'
-                      : 'Download Manifesto PDF'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onEnterApp()}
-                    className="px-4 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
-                  >
-                    Enter App →
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-500/20 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setShowPdfPreview((p) => !p)}
-                    className="font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
-                  >
-                    {showPdfPreview ? 'Hide Inline PDF Reader' : 'Open Inline PDF Reader'}
-                  </button>
-                  <a
-                    href={SHARED_DRIVE_FOLDER_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-slate-600 dark:text-slate-400 hover:underline"
-                  >
-                    Open Full Google Drive Folder ↗
-                  </a>
-                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Choose <strong>Free Download PDF</strong> (printable desktop/mobile edition) or <strong>Free Download EPUB</strong> (Apple Books, Kindle & e-readers), or open the full Google Drive folder directly.
+                </p>
               </div>
-            ) : (
-              <form
-                onSubmit={handleRequestFreeGuide}
-                noValidate
-                className="p-6 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-4"
-              >
-                <div>
-                  <label
-                    htmlFor="free-guide-email"
-                    className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5"
-                  >
-                    Email Address for Instant Free Access (Or Preview Directly Below)
-                  </label>
-                  <input
-                    id="free-guide-email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                </div>
 
-                {emailError && (
-                  <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
-                    {emailError}
-                  </p>
-                )}
-
+              {/* Primary Free Ebook Download Buttons: PDF + EPUB */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <button
-                  type="submit"
-                  disabled={isSubmittingEmail}
-                  className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  type="button"
+                  onClick={() =>
+                    handleDownloadSanctuaryDoc(
+                      'book_pdf',
+                      'quantum-analemma-a-i-technology-cycle.pdf'
+                    )
+                  }
+                  disabled={downloadingDocKey === 'book_pdf'}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs sm:text-sm font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  {isSubmittingEmail
-                    ? 'Preparing Your Free Sanctuary Library...'
-                    : 'Unlock & Download All 4 Free PDFs'}
+                  <Download className="w-4 h-4 shrink-0" />
+                  <span>
+                    {downloadingDocKey === 'book_pdf'
+                      ? 'Downloading PDF...'
+                      : 'Free Download PDF'}
+                  </span>
                 </button>
 
-                <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>Zero paid courses · 100% Free Forever</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUnlockedForEmail('Sanctuary Guest');
-                      setShowPdfPreview(true);
-                    }}
-                    className="font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
-                  >
-                    Read Inline Now →
-                  </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDownloadSanctuaryDoc(
+                      'book_epub',
+                      'quantum-analemma-a-i-technology-cycle.epub'
+                    )
+                  }
+                  disabled={downloadingDocKey === 'book_epub'}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 text-xs sm:text-sm font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  <Download className="w-4 h-4 shrink-0" />
+                  <span>
+                    {downloadingDocKey === 'book_epub'
+                      ? 'Downloading EPUB...'
+                      : 'Free Download EPUB'}
+                  </span>
+                </button>
+              </div>
+
+              {/* Quick 1-Click Companion Document PDFs */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDownloadSanctuaryDoc('manifesto', 'no-scam-zone-manifesto.pdf')
+                  }
+                  disabled={downloadingDocKey === 'manifesto'}
+                  className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-sky-500 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  {downloadingDocKey === 'manifesto' ? 'Saving...' : '⬇ Manifesto PDF'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDownloadSanctuaryDoc('certificate', 'no-scam-zone-certificate.pdf')
+                  }
+                  disabled={downloadingDocKey === 'certificate'}
+                  className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-sky-500 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  {downloadingDocKey === 'certificate' ? 'Saving...' : '⬇ Certificate PDF'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDownloadSanctuaryDoc('companion', 'quantum-analemma-companion.pdf')
+                  }
+                  disabled={downloadingDocKey === 'companion'}
+                  className="px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-sky-500 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  {downloadingDocKey === 'companion' ? 'Saving...' : '⬇ Companion PDF'}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-200 dark:border-slate-800 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDocKey('book_pdf');
+                    setShowPdfPreview((p) => !p);
+                  }}
+                  className="font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+                >
+                  {showPdfPreview ? 'Hide Inline PDF Reader' : 'Read Free Ebook Inline →'}
+                </button>
+                <a
+                  href={SHARED_DRIVE_FOLDER_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+                >
+                  <span>Open Documents Drive Folder</span>
+                  <ExternalLink className="w-3 h-3 shrink-0" />
+                </a>
+              </div>
+
+              {/* Optional Community Notification Bar (Never Blocks Downloads) */}
+              {unlockedForEmail ? (
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                  ✓ Personalized Sanctuary updates registered for {unlockedForEmail}.
                 </div>
-              </form>
-            )}
+              ) : (
+                <form
+                  onSubmit={handleRequestFreeGuide}
+                  noValidate
+                  className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2"
+                >
+                  <label
+                    htmlFor="free-guide-email"
+                    className="block text-[11px] font-medium text-slate-500 dark:text-slate-400"
+                  >
+                    Optional: Receive free open-source edition updates by email
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="free-guide-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com (optional)"
+                      className="flex-1 min-w-0 px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+                    <button
+                      type="submit"
+                      disabled={isSubmittingEmail}
+                      className="px-3 py-1.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      {isSubmittingEmail ? 'Saving...' : 'Notify Me'}
+                    </button>
+                  </div>
+                  {emailError && (
+                    <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                      {emailError}
+                    </p>
+                  )}
+                </form>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1711,7 +2024,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="font-semibold text-amber-700 dark:text-amber-400">
-                Featured Sanctuary Book · Free Gift
+                Featured Free Ebook · Full Edition
               </span>
               <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
                 PDF + EPUB
@@ -1750,9 +2063,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   )
                 }
                 disabled={downloadingDocKey === 'book_pdf'}
-                className="px-3 py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center"
+                className="px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
               >
-                {downloadingDocKey === 'book_pdf' ? 'Downloading...' : 'Download Book PDF'}
+                {downloadingDocKey === 'book_pdf' ? 'Downloading...' : 'Free Download PDF'}
               </button>
               <button
                 type="button"
@@ -1763,9 +2076,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   )
                 }
                 disabled={downloadingDocKey === 'book_epub'}
-                className="px-3 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center"
+                className="px-3 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 text-xs font-bold rounded-lg transition-colors cursor-pointer text-center whitespace-nowrap"
               >
-                {downloadingDocKey === 'book_epub' ? 'Downloading...' : 'Download EPUB'}
+                {downloadingDocKey === 'book_epub' ? 'Downloading...' : 'Free Download EPUB'}
               </button>
             </div>
             <div className="flex items-center justify-between text-xs pt-1">
@@ -1777,16 +2090,27 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 }}
                 className="font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
               >
-                Read Book Inline on Page →
+                Read Ebook Inline on Page →
               </button>
-              <a
-                href={BOOK_DRIVE_EPUB_VIEW_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-slate-500 hover:text-slate-900 dark:hover:text-white hover:underline"
-              >
-                EPUB in Drive ↗
-              </a>
+              <div className="flex items-center gap-2">
+                <a
+                  href={BOOK_DRIVE_PDF_VIEW_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-500 hover:text-slate-900 dark:hover:text-white hover:underline"
+                >
+                  PDF in Drive ↗
+                </a>
+                <span aria-hidden="true" className="text-slate-400">·</span>
+                <a
+                  href={BOOK_DRIVE_EPUB_VIEW_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-500 hover:text-slate-900 dark:hover:text-white hover:underline"
+                >
+                  EPUB in Drive ↗
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -1833,14 +2157,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 </div>
 
                 <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => {
                         setActiveDocKey(doc.key);
                         setShowPdfPreview(true);
                       }}
-                      className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                      className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
                         isSelectedForReader
                           ? 'bg-sky-600 text-white'
                           : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white'
@@ -1852,10 +2176,27 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                       type="button"
                       onClick={() => handleDownloadSanctuaryDoc(doc.key, doc.filename)}
                       disabled={downloadingDocKey === doc.key}
-                      className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                      className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
                     >
-                      {downloadingDocKey === doc.key ? 'Saving...' : 'Download PDF'}
+                      {downloadingDocKey === doc.key ? 'Saving...' : 'Free Download PDF'}
                     </button>
+                    {doc.key === 'book_pdf' && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDownloadSanctuaryDoc(
+                            'book_epub',
+                            'quantum-analemma-a-i-technology-cycle.epub'
+                          )
+                        }
+                        disabled={downloadingDocKey === 'book_epub'}
+                        className="w-full px-3 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                      >
+                        {downloadingDocKey === 'book_epub'
+                          ? 'Saving EPUB...'
+                          : 'Free Download EPUB'}
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">

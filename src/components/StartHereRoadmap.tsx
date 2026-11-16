@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { CheckCircle2, Eye, Lock, ShieldCheck } from 'lucide-react';
 import selfCustodyKeysImg from '../assets/images/infographic_self_custody_keys_1794621087516.jpg';
+import videoCoverWalletImg from '../assets/images/video_cover_wallet_1794561551281.jpg';
 import {
   AssetSymbol,
   Candle,
@@ -9,6 +10,7 @@ import {
   TradeSide,
 } from '../types/market';
 import { ScamScreenXRayInspector } from './ScamScreenXRayInspector';
+import { SectionPromoVideoBanner } from './SectionPromoVideoBanner';
 
 interface StartHereRoadmapProps {
   symbol: AssetSymbol;
@@ -251,14 +253,18 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
       {/* Top Banner: Start Here Orientation + $5 Mode Switch */}
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div className="max-w-2xl">
-          <div className="text-xs font-semibold text-sky-600 dark:text-sky-400">
-            Start Here · Guided Training Module
+          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-sky-600 dark:text-sky-400">
+            <span>Start Here · $5 Guided Training Sandbox</span>
+            <span aria-hidden="true">·</span>
+            <span className="text-emerald-700 dark:text-emerald-400">
+              100% Risk-Free Simulation Inside App (Zero Real Funds Deposited · Not Financial Advice)
+            </span>
           </div>
           <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">
             Learn Market Decisions Safely with a $5 Real-Wallet Roadmap
           </h1>
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Follow Steps 1 to 5 below to decode what every chart signal means in plain English, protect a real $5 wallet from hidden network fees, and use the AI Mentor to check your thinking before making a swap.
+            Every slider, AI check, and trade ticket inside Symphony Markets runs in a <strong>100% simulated learning sandbox</strong>. When you choose to test a real $5 Spot swap on public Stellar (XLM) or XRP Ledger rails, you do so strictly inside your own external self-custody wallet app.
           </p>
         </div>
 
@@ -314,6 +320,34 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
 
       {/* Collapsible Interactive Red-Flag Scam X-Ray */}
       {showScamXRay && <ScamScreenXRayInspector />}
+
+      {/* Dedicated $5 Blueprint Section Video ("Symphony markets five dollar") */}
+      <SectionPromoVideoBanner
+        sectionBadge="$5 Blueprint Section Video · Synced From Google Drive"
+        headline="Symphony Markets — Five Dollar ($5) Blueprint Promo"
+        description="See how the $5 Spot Roadmap, sub-penny XRPL/Stellar self-custody rails, and the 2.0% (10-Cent) risk cap protect beginners from wipeouts—plus switch to the full 4:40 $5 Blueprint walkthrough anytime."
+        accentTone="sky"
+        tracks={[
+          {
+            id: 'five_dollar_promo',
+            tabLabel: '01 · Five Dollar Promo',
+            title: 'Symphony Markets Five Dollar Promo',
+            duration: '0:10',
+            videoSrc: '/api/drive-video/1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
+            driveFileId: '1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
+            posterSrc: videoCoverWalletImg,
+          },
+          {
+            id: 'five_dollar_full',
+            tabLabel: '02 · Full $5 Blueprint',
+            title: 'Symphony Markets: The $5 Blueprint',
+            duration: '4:40',
+            videoSrc: '/assets/aistudio/Symphony_Markets__The__5_Blueprint_781e68ab.mp4',
+            driveFileId: '1RNomMOr0irdvq0nsbm8nQh2fhooCPoBp',
+            posterSrc: videoCoverWalletImg,
+          },
+        ]}
+      />
 
       {/* Collapsible Plain-English Jargon Decoder */}
       {showGlossary && (
@@ -477,8 +511,13 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
               </div>
             </div>
 
-            <div className="text-xs font-semibold text-slate-900 dark:text-white">
-              Quick $5 Coin Comparison (Live Data)
+            <div className="space-y-1">
+              <div className="text-xs font-semibold text-slate-900 dark:text-white">
+                Quick $5 Network Comparison (Simulation vs. Live Public Ledger)
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Clicking below loads live market prices into our <strong>Risk-Free Paper Sandbox</strong>. Real on-chain swaps happen only when you open your own external wallet (Lobstr, Xaman, or Trust Wallet):
+              </p>
             </div>
             <div className="space-y-2 text-xs">
               <button
@@ -494,11 +533,11 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
                 }`}
               >
                 <div className="flex justify-between font-semibold text-slate-900 dark:text-white">
-                  <span>Stellar (XLM) — Best for $5 Test</span>
-                  <span className="text-emerald-600 dark:text-emerald-400">~$0.41 Reserve</span>
+                  <span>Stellar (XLM) · Sandbox + Public Network</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">~$0.41 Base Reserve</span>
                 </div>
                 <div className="text-slate-500 dark:text-slate-400 mt-0.5">
-                  $5 buys ~12 XLM · Fee: $0.00005 · Leaves ~$4.35+ free to trade with USDC
+                  In-App: Simulated Paper Sizing · Live Ledger: $5 buys ~12 XLM ($0.00005 fee, ~$4.35+ unlocked)
                 </div>
               </button>
 
@@ -515,11 +554,11 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
                 }`}
               >
                 <div className="flex justify-between font-semibold text-slate-900 dark:text-white">
-                  <span>XRP Ledger (XRP) — High Liquidity</span>
-                  <span className="text-sky-600 dark:text-sky-400">1 XRP Reserve</span>
+                  <span>XRP Ledger (XRP) · Sandbox + Public Network</span>
+                  <span className="text-sky-600 dark:text-sky-400">1 XRP Base Reserve</span>
                 </div>
                 <div className="text-slate-500 dark:text-slate-400 mt-0.5">
-                  $5 buys ~2 XRP · Fee: $0.00003 · 1 XRP stays as wallet base reserve
+                  In-App: Simulated Paper Sizing · Live Ledger: $5 buys ~2 XRP ($0.00003 fee, 1 XRP base lock)
                 </div>
               </button>
             </div>

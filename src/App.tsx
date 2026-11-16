@@ -16,6 +16,7 @@ import { PortfolioAndToolsSection } from './components/PortfolioAndToolsSection'
 import { RiskSimulatorPanel } from './components/RiskSimulatorPanel';
 import { StartHereRoadmap } from './components/StartHereRoadmap';
 import { SymphonyCandlestickBackdrop, SymphonyHarpLogo } from './components/SymphonyHarpLogo';
+import { TenSetAutoTraderLab } from './components/TenSetAutoTraderLab';
 import {
   calculateFibonacciLevels,
   enrichCandlesWithIndicators,
@@ -451,8 +452,8 @@ export default function App() {
           <span className="relative z-10">Symphony Markets</span>
         </a>
 
-        {/* Zone 2: Standalone Page Menu Items (5 concise single-line links) */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
+        {/* Zone 2: Standalone Page Menu Items (6 concise single-line links) */}
+        <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-slate-600 dark:text-slate-400">
           <button
             type="button"
             onClick={() => navigatePublicPage('symphony')}
@@ -485,6 +486,17 @@ export default function App() {
             }`}
           >
             KSBC Gold
+          </button>
+          <button
+            type="button"
+            onClick={() => navigatePublicPage('guide')}
+            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              viewMode === 'landing' && publicPage === 'guide'
+                ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                : 'hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Free Ebook
           </button>
           <button
             type="button"
@@ -616,11 +628,11 @@ export default function App() {
           onClick={() => navigatePublicPage('guide')}
           className={`whitespace-nowrap shrink-0 cursor-pointer ${
             viewMode === 'landing' && publicPage === 'guide'
-              ? 'text-sky-600 dark:text-sky-400 font-semibold'
+              ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
               : ''
           }`}
         >
-          PDF Guide
+          Free Ebook
         </button>
         <button
           type="button"
@@ -673,6 +685,9 @@ export default function App() {
               <a href="#ai-buy-sell-helper" className="text-amber-700 dark:text-amber-400 font-bold hover:underline whitespace-nowrap">
                 ★ AI Buy & Sell Helper
               </a>
+              <a href="#ten-set-auto-trader" className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline whitespace-nowrap">
+                ⚡ 10-Set Auto-Trader (Trust Wallet)
+              </a>
               <a href="#risk-chart" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
                 2. Live Chart & 2% Risk Simulator
               </a>
@@ -699,13 +714,23 @@ export default function App() {
                 Wallet Watch & Ledger
               </a>
             </div>
-            <button
-              type="button"
-              onClick={() => navigatePublicPage('story')}
-              className="text-sky-600 dark:text-sky-400 hover:underline font-medium whitespace-nowrap cursor-pointer"
-            >
-              Watch 1-Min Video Library →
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigatePublicPage('guide')}
+                className="text-emerald-700 dark:text-emerald-400 hover:underline font-semibold whitespace-nowrap cursor-pointer"
+              >
+                Free Ebook (PDF & EPUB) →
+              </button>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                onClick={() => navigatePublicPage('story')}
+                className="text-sky-600 dark:text-sky-400 hover:underline font-medium whitespace-nowrap cursor-pointer"
+              >
+                Promo Video Library →
+              </button>
+            </div>
           </div>
 
           {/* Start Here: 5-Step $5 Real-Wallet Guided Training Module & AI Mentor */}
@@ -772,6 +797,22 @@ export default function App() {
               );
               document.getElementById('risk-chart')?.scrollIntoView({ behavior: 'smooth' });
             }}
+          />
+        </section>
+
+        {/* Advanced Student 10-Set Automated Buy & Sell Sequencer (Simulated or Active Trust Wallet) */}
+        <section id="ten-set-auto-trader">
+          <TenSetAutoTraderLab
+            symbol={symbol}
+            onSelectSymbol={handleSelectSymbol}
+            candles={activeCandles}
+            fibLevels={fibLevels}
+            livePrice={livePrice}
+            xrpLivePrice={xrpLive}
+            xlmLivePrice={xlmLive}
+            accountBalance={accountBalance}
+            riskPercent={riskPercent}
+            onLogSetPositionToPortfolio={handleOpenPaperPosition}
           />
         </section>
 
@@ -1049,20 +1090,36 @@ export default function App() {
       </main>
       )}
 
-      {/* Quiet Educational Disclaimer Footer */}
+      {/* Quiet Educational Disclaimer & Analemma Ventures Ecosystem Cross-Link Footer */}
       <footer
         className={`border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 ${
           isSingleStageWelcome ? '' : 'mt-8'
         }`}
       >
         <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <SymphonyHarpLogo variant="vector" className="w-5 h-5" />
             <span>
-              Symphony Markets — Free Open-Source No-Scam Zone Education & Simulator. Not financial advice.
+              Symphony Markets — Free Open-Source No-Scam Zone Sandbox (Hypothetical Simulation · Zero Custody · Not Financial Advice).
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigatePublicPage('guide')}
+              className="text-emerald-700 dark:text-emerald-400 hover:underline underline-offset-2 font-semibold cursor-pointer"
+            >
+              Free Ebook (PDF & EPUB)
+            </button>
+            <span>·</span>
+            <button
+              type="button"
+              onClick={() => navigatePublicPage('story')}
+              className="text-sky-600 dark:text-sky-400 hover:underline underline-offset-2 font-medium cursor-pointer"
+            >
+              Analemma Ventures · Digital Visual Resume Pro 1.0 Node
+            </button>
+            <span>·</span>
             <button
               type="button"
               onClick={() => setDarkMode((d) => !d)}
