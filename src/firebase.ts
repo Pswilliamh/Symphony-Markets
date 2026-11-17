@@ -107,8 +107,26 @@ export type SupportedWalletNetwork =
   | 'EVM_TrustExtension';
 
 export async function signInWithGoogleForWallet(): Promise<User> {
-  const credential = await signInWithPopup(auth, googleProvider);
-  return credential.user;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(
+        new Error(
+          'ANDROID_POPUP_BLOCKED: Google Sign-In popup did not open on this mobile browser. Use 1-Tap Classroom Sign-Off right beside it to unlock instantly.'
+        )
+      );
+    }, 9000);
+  });
+
+  try {
+    const credential = await Promise.race([
+      signInWithPopup(auth, googleProvider),
+      timeoutPromise,
+    ]);
+    return credential.user;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 export async function signOutGoogleWalletGate(uid?: string): Promise<void> {
@@ -286,6 +304,39 @@ export async function recordWalletSetApprovalInFirestore(
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, approvalPath);
     }
+  }
+}
+
+export interface BatchTenSetItemInput {
+  setNumber: number;
+  buyPrice: number;
+  sellPrice: number;
+  quantity: number;
+}
+
+export async function recordBatchTenSetApprovalsInFirestore(params: {
+  user: User;
+  walletNetwork: SupportedWalletNetwork;
+  coinTicker: 'BTC' | 'XRP' | 'XLM';
+  walletTarget: 'TrustWallet' | 'Xaman' | 'TrustExtension';
+  publicWalletAddress: string;
+  sets: BatchTenSetItemInput[];
+}): Promise<void> {
+  if (!params.user.emailVerified) return;
+  await unlockLiveWalletSessionInFirestore(params.user, params.walletNetwork);
+  for (const s of params.sets) {
+    await recordWalletSetApprovalInFirestore({
+      user: params.user,
+      walletNetwork: params.walletNetwork,
+      setNumber: s.setNumber,
+      coinTicker: params.coinTicker,
+      walletTarget: params.walletTarget,
+      publicWalletAddress: params.publicWalletAddress,
+      buyPrice: s.buyPrice,
+      sellPrice: s.sellPrice,
+      quantity: s.quantity,
+      markSigned: false,
+    });
   }
 }
 

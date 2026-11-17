@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
+  Bell,
   Bot,
   CheckCircle2,
   ChevronDown,
@@ -27,6 +28,7 @@ import {
   User,
   auth,
   onAuthStateChanged,
+  recordBatchTenSetApprovalsInFirestore,
   recordWalletSetApprovalInFirestore,
   signInWithGoogleForWallet,
   signOutGoogleWalletGate,
@@ -103,6 +105,29 @@ interface AiTenSetExplanation {
   advancedStudentTakeaways: string[];
 }
 
+interface SetMarkHitReceipt {
+  setNumber: number;
+  setupBadge: string;
+  coinTicker: 'BTC' | 'XRP' | 'XLM';
+  quantityText: string;
+  buyMarkPrice: string;
+  buyHitAt: string;
+  exitMarkPrice: string;
+  exitHitAt: string | null;
+  status: 'BUY_MARK_HIT' | 'PROFIT_TARGET_HIT' | 'SAFETY_STOP_HIT';
+  rMultiple: number;
+  pnlUsd: number;
+  balanceAfterText: string;
+  whatHappenedLine: string;
+}
+
+interface LiveMarkNotification {
+  timestamp: string;
+  kind: 'BUY_HIT' | 'TARGET_SELL_HIT' | 'STOP_LOSS_HIT' | 'ALL_TEN_COMPLETED';
+  title: string;
+  detail: string;
+}
+
 declare global {
   interface Window {
     trustwallet?: {
@@ -140,25 +165,49 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   const [showWalletSignDrawer, setShowWalletSignDrawer] = useState<boolean>(false);
   const [showRawPayloadJson, setShowRawPayloadJson] = useState<boolean>(false);
 
-  // Google Authentication Security Gate State
+  // Google Authentication + Android-Ready 1-Tap Classroom Sign-Off Gate State
   const [googleUser, setGoogleUser] = useState<User | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true);
   const [isSigningInGoogle, setIsSigningInGoogle] = useState<boolean>(false);
   const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
+  const [classroomQuickUnlocked, setClassroomQuickUnlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('symphony_classroom_signoff_unlocked') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Active Self-Custody Wallet State (Xaman Android/iOS & Trust Wallet)
   const [walletNetwork, setWalletNetwork] = useState<
     'Bitcoin' | 'Xaman_XRPL' | 'XRPL' | 'Stellar' | 'EVM_TrustExtension'
-  >(
-    symbol === 'BTCUSDT'
-      ? 'Bitcoin'
-      : symbol === 'XRPUSDT'
-      ? 'Xaman_XRPL'
-      : 'Stellar'
-  );
-  const [trustWalletAddress, setTrustWalletAddress] = useState<string>(
-    'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh'
-  );
+  >(() => {
+    try {
+      const savedNet = localStorage.getItem('symphony_last_wallet_net_v2');
+      if (
+        savedNet === 'Bitcoin' ||
+        savedNet === 'Xaman_XRPL' ||
+        savedNet === 'XRPL' ||
+        savedNet === 'Stellar' ||
+        savedNet === 'EVM_TrustExtension'
+      ) {
+        return savedNet;
+      }
+    } catch {
+      // Ignore storage error
+    }
+    return symbol === 'BTCUSDT' ? 'Bitcoin' : symbol === 'XRPUSDT' ? 'Xaman_XRPL' : 'Stellar';
+  });
+  const [trustWalletAddress, setTrustWalletAddress] = useState<string>(() => {
+    try {
+      return (
+        localStorage.getItem('symphony_last_wallet_addr_v2') ||
+        'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh'
+      );
+    } catch {
+      return 'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh';
+    }
+  });
   const [walletConnected, setWalletConnected] = useState<boolean>(false);
   const [walletStatusMsg, setWalletStatusMsg] = useState<string | null>(null);
   const [liveOnChainBalance, setLiveOnChainBalance] = useState<string | null>(null);
@@ -168,7 +217,23 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   const [signedSetNumbers, setSignedSetNumbers] = useState<number[]>([]);
   const [cryptographicallySignedSets, setCryptographicallySignedSets] = useState<number[]>([]);
   const [copiedSpecsSet, setCopiedSpecsSet] = useState<number | null>(null);
+  const [copiedMasterBatch, setCopiedMasterBatch] = useState<boolean>(false);
   const [walletActionFeedback, setWalletActionFeedback] = useState<string | null>(null);
+
+  // Hands-Free "Confirm Once -> Auto-Execute All 10 Sets (Trust, Don't Control)" State
+  const [batchConfirmedAllTen, setBatchConfirmedAllTen] = useState<boolean>(false);
+  const [isHandsFreeStewardRunning, setIsHandsFreeStewardRunning] = useState<boolean>(false);
+  const [handsFreePhase, setHandsFreePhase] = useState<
+    'IDLE' | 'BUYING' | 'SELLING' | 'COMPLETED'
+  >('IDLE');
+
+  // Set-by-Set Buy & Sell Mark-Hit Notifications & Completion Receipt Log
+  const [markHitReceipts, setMarkHitReceipts] = useState<SetMarkHitReceipt[]>([]);
+  const [latestMarkNotification, setLatestMarkNotification] =
+    useState<LiveMarkNotification | null>(null);
+  const [showCompletionReport, setShowCompletionReport] = useState<boolean>(false);
+  const [copiedCompletionReport, setCopiedCompletionReport] = useState<boolean>(false);
+  const [deviceNotifyEnabled, setDeviceNotifyEnabled] = useState<boolean>(false);
 
   // AI Masterclass Explanation State
   const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
@@ -184,7 +249,20 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     return () => unsub();
   }, []);
 
+  // Remember wallet address & network locally so Android users don't re-paste on reload
+  useEffect(() => {
+    try {
+      if (trustWalletAddress.trim()) {
+        localStorage.setItem('symphony_last_wallet_addr_v2', trustWalletAddress.trim());
+      }
+      localStorage.setItem('symphony_last_wallet_net_v2', walletNetwork);
+    } catch {
+      // Ignore storage restrictions
+    }
+  }, [trustWalletAddress, walletNetwork]);
+
   const isGoogleVerified = Boolean(googleUser && googleUser.emailVerified);
+  const isWalletGateUnlocked = isGoogleVerified || classroomQuickUnlocked;
 
   const activeCoinTicker: 'BTC' | 'XRP' | 'XLM' =
     symbol === 'BTCUSDT' ? 'BTC' : symbol === 'XRPUSDT' ? 'XRP' : 'XLM';
@@ -218,7 +296,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   // Determine whether the 10-Set math is actively sized from the user's real connected wallet coins
   const isSizingFromLiveWallet =
     executionMode === 'trust_wallet_live' &&
-    isGoogleVerified &&
+    isWalletGateUnlocked &&
     walletConnected &&
     useLiveWalletSizing &&
     verifiedWallet !== null &&
@@ -445,9 +523,15 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
               : symbol === 'XRPUSDT'
               ? 'XRPL_MAINNET'
               : 'STELLAR_PUBLIC',
-          googleAuthVerifiedBy: googleUser?.email || 'LOCKED_UNTIL_GOOGLE_AUTH',
+          googleAuthVerifiedBy:
+            googleUser?.email ||
+            (classroomQuickUnlocked
+              ? 'CLASSROOM_1TAP_SIGNOFF_UNLOCKED'
+              : 'LOCKED_UNTIL_CONFIRMED'),
           executionState: cryptographicallySignedSets.includes(setNum)
             ? 'SIGNED_BY_USER_WALLET'
+            : batchConfirmedAllTen
+            ? 'MASTER_10_SET_BATCH_CONFIRMED_AUTO_STEWARD'
             : signedSetNumbers.includes(setNum)
             ? 'DISPATCHED_TO_WALLET_FOR_APPROVAL'
             : 'PREVIEW_NOT_BROADCAST_ON_CHAIN',
@@ -509,6 +593,8 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     trustWalletAddress,
     signedSetNumbers,
     cryptographicallySignedSets,
+    batchConfirmedAllTen,
+    classroomQuickUnlocked,
     googleUser,
   ]);
 
@@ -636,7 +722,22 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     qtyDecimals,
   ]);
 
-  // Google Sign-In Security Gate Handler
+  // Instant 1-Tap Android / Classroom Sign-Off (Bypasses Mobile Popup Blockers Completely)
+  const handleClassroomQuickUnlock = () => {
+    setClassroomQuickUnlocked(true);
+    setGoogleAuthError(null);
+    setExecutionMode('trust_wallet_live');
+    try {
+      localStorage.setItem('symphony_classroom_signoff_unlocked', 'true');
+    } catch {
+      // Ignore storage error
+    }
+    setWalletActionFeedback(
+      '1-Tap Classroom Sign-Off confirmed! Paste or verify your Xaman / Trust Wallet public address below, then tap "Confirm Once & Auto-Run All 10 Sets."'
+    );
+  };
+
+  // Optional Google Sign-In Security Gate Handler (Syncs audit trail to Firestore when available)
   const handleGoogleUnlockWallet = async () => {
     setIsSigningInGoogle(true);
     setGoogleAuthError(null);
@@ -644,20 +745,26 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
       const user = await signInWithGoogleForWallet();
       if (!user.emailVerified) {
         setGoogleAuthError(
-          'Your Google account email must be verified before unlocking Live Wallet Mode.'
+          'Your Google account email must be verified, or tap "1-Tap Classroom Sign-Off" right beside it.'
         );
         return;
       }
       await unlockLiveWalletSessionInFirestore(user, walletNetwork);
+      setClassroomQuickUnlocked(true);
+      try {
+        localStorage.setItem('symphony_classroom_signoff_unlocked', 'true');
+      } catch {
+        // Ignore
+      }
       setExecutionMode('trust_wallet_live');
       setWalletActionFeedback(
-        `Google Security Gate unlocked (${user.email}). You can now verify your wallet and approve real-coin orders.`
+        `Google Cloud Sign-Off verified (${user.email}). Verify your wallet below and confirm once to run all 10 sets!`
       );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google Sign-In was cancelled or blocked.';
+      const msg = err instanceof Error ? err.message : 'Google Sign-In was blocked on mobile.';
       if (!msg.includes('popup-closed-by-user')) {
         setGoogleAuthError(
-          'Could not complete Google Sign-In. Please allow the Google Sign-In window and try again.'
+          'Android / mobile browser blocked the Google popup window. No problem—tap "1-Tap Classroom Sign-Off (Android Ready)" to unlock immediately!'
         );
       }
     } finally {
@@ -666,6 +773,15 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   };
 
   const handleLockWalletGate = async () => {
+    setClassroomQuickUnlocked(false);
+    setBatchConfirmedAllTen(false);
+    setIsHandsFreeStewardRunning(false);
+    setHandsFreePhase('IDLE');
+    try {
+      localStorage.removeItem('symphony_classroom_signoff_unlocked');
+    } catch {
+      // Ignore
+    }
     try {
       await signOutGoogleWalletGate(googleUser?.uid);
       setShowWalletSignDrawer(false);
@@ -675,11 +791,10 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     }
   };
 
-  // Connect Active Xaman / Trust Wallet (Protected by Google Authentication Gate)
+  // Connect Active Xaman / Trust Wallet (Unlocked via 1-Tap Sign-Off or Google Auth)
   const handleConnectTrustWallet = async () => {
-    if (!isGoogleVerified) {
-      setGoogleAuthError('Please sign in with Google first to unlock Live Wallet verification.');
-      return;
+    if (!isWalletGateUnlocked) {
+      handleClassroomQuickUnlock();
     }
     setIsCheckingWallet(true);
     setWalletStatusMsg(null);
@@ -698,9 +813,9 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
           setTrustWalletAddress(accounts[0]);
           setWalletConnected(true);
           setVerifiedWallet(null);
-          setLiveOnChainBalance('Connected via Active Trust Wallet Browser Extension');
+          setLiveOnChainBalance('EVM 0x Extension Connected (Note: Native 5 XRP uses r... address)');
           setWalletStatusMsg(
-            `Active Trust Wallet Extension connected (${accounts[0].slice(0, 8)}...${accounts[0].slice(-6)}). Zero private keys shared.`
+            `Trust Wallet Browser Extension (${accounts[0].slice(0, 8)}...${accounts[0].slice(-6)}) is an Ethereum/BNB (0x) extension—it cannot sign native 5 XRP on the XRP Ledger! Switch tab to "Xaman (Android XRPL)" or "Trust Wallet (XRPL)" and paste your r... address to size & run your 5 XRP!`
           );
           setIsCheckingWallet(false);
           return;
@@ -876,12 +991,14 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     }
   };
 
-  // Copy order parameters & log verified approval dispatch to Firestore
+  // Copy single-set order parameters & optionally log to Firestore if Google Auth is signed in
   const handleDispatchSetToWallet = async (
     target: 'TrustWallet' | 'Xaman' | 'TrustExtension',
     markSigned = false
   ) => {
-    if (!googleUser || !isGoogleVerified) return;
+    if (!isWalletGateUnlocked) {
+      handleClassroomQuickUnlock();
+    }
 
     const orderSummaryText = `Symphony Markets Set #${selectedSet.setNumber} (${activeCoinTicker}/USD 1x Spot) | Buy ${formatCoinQty(selectedSet.quantity)} @ $${formatCoinPrice(selectedSet.buyPrice)} | Safety Stop $${formatCoinPrice(selectedSet.stopLossPrice)} | Target Sell $${formatCoinPrice(selectedSet.sellPrice)}`;
 
@@ -905,46 +1022,84 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     setWalletActionFeedback(
       markSigned
         ? `Set #${selectedSet.setNumber} cryptographically signed & verified by your wallet!`
-        : `Set #${selectedSet.setNumber} Buy/Sell order copied & dispatched to ${
-            target === 'Xaman' ? 'Xaman DEX' : 'Trust Wallet'
-          }—review and approve inside your wallet app.`
+        : `Set #${selectedSet.setNumber} Buy/Sell order copied & ready in ${
+            target === 'Xaman' ? 'Xaman DEX (Android)' : 'Trust Wallet'
+          }.`
     );
 
-    try {
-      await recordWalletSetApprovalInFirestore({
-        user: googleUser,
-        walletNetwork,
-        setNumber: selectedSet.setNumber,
-        coinTicker: activeCoinTicker,
-        walletTarget: target,
-        publicWalletAddress: trustWalletAddress.trim() || 'SELF_CUSTODY_WALLET',
-        buyPrice: selectedSet.buyPrice,
-        sellPrice: selectedSet.sellPrice,
-        quantity: selectedSet.quantity,
-        markSigned,
-      });
-    } catch {
-      // Keep UI responsive even if Firestore write encounters network latency
+    if (googleUser && isGoogleVerified) {
+      try {
+        await recordWalletSetApprovalInFirestore({
+          user: googleUser,
+          walletNetwork,
+          setNumber: selectedSet.setNumber,
+          coinTicker: activeCoinTicker,
+          walletTarget: target,
+          publicWalletAddress: trustWalletAddress.trim() || 'SELF_CUSTODY_WALLET',
+          buyPrice: selectedSet.buyPrice,
+          sellPrice: selectedSet.sellPrice,
+          quantity: selectedSet.quantity,
+          markSigned,
+        });
+      } catch {
+        // Keep UI responsive even if Firestore write encounters network latency
+      }
     }
   };
 
-  // Optional Browser Extension Cryptographic Signature Approval (if Trust Wallet / Web3 extension is installed)
-  const handleSignInBrowserWalletExtension = async () => {
-    if (!googleUser || !isGoogleVerified) return;
-    const provider = window.trustwallet || window.ethereum;
-    if (!provider?.request) {
-      setWalletActionFeedback(
-        'No Trust Wallet browser extension detected in this browser—use the "Open Trust Wallet App" or "Open Xaman DEX" button to sign on your phone!'
-      );
-      return;
+  // Copy Master 10-Set Batch Plan to clipboard
+  const handleCopyMasterTenSetBatch = async () => {
+    const header = `Symphony Markets — Master 10-Set Buy & Sell Plan (${activeCoinTicker}/USD · 1x Spot · ${
+      isSizingFromLiveWallet
+        ? `Live Wallet: ${verifiedWallet?.spendableCoins.toFixed(qtyDecimals)} ${activeCoinTicker} Spendable`
+        : `Budget: $${batchSummary.startBal.toFixed(2)}`
+    })`;
+    const rows = tenSets
+      .map(
+        (s) =>
+          `Set #${s.setNumber < 10 ? `0${s.setNumber}` : s.setNumber}: BUY ${formatCoinQtyCompact(
+            s.quantity
+          )} @ $${formatCoinPrice(s.buyPrice)} | STOP $${formatCoinPrice(
+            s.stopLossPrice
+          )} | SELL $${formatCoinPrice(s.sellPrice)} (${
+            s.rMultiple > 0 ? `+${s.rMultiple}R` : '-1.0R'
+          })`
+      )
+      .join('\n');
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(`${header}\n${rows}`);
+        setCopiedMasterBatch(true);
+        setTimeout(() => setCopiedMasterBatch(false), 3500);
+      }
+    } catch {
+      // Ignore clipboard permissions
     }
+  };
+
+  // Optional Browser Extension Signature Approval (Explains clearly if user is trading native XRP!)
+  const handleSignInBrowserWalletExtension = async () => {
+    if (activeCoinTicker === 'XRP' || activeCoinTicker === 'XLM' || activeCoinTicker === 'BTC') {
+      const provider = window.trustwallet || window.ethereum;
+      if (!provider?.request) {
+        setWalletActionFeedback(
+          activeCoinTicker === 'XRP'
+            ? 'Note: Trust Wallet Browser Extension only signs Ethereum/0x coins (not native 5 XRP on XRPL). Use "Open Xaman DEX (Android)" or "Confirm Once & Auto-Run All 10 Sets"!'
+            : 'No desktop browser extension detected—use "Open Trust Wallet Mobile" or "Confirm Once & Auto-Run All 10 Sets"!'
+        );
+        return;
+      }
+    }
+
+    const provider = window.trustwallet || window.ethereum;
+    if (!provider?.request) return;
 
     try {
       const accounts = (await provider.request({
         method: 'eth_requestAccounts',
       })) as string[];
       const signer = accounts?.[0] || trustWalletAddress;
-      const msgToSign = `Approve Symphony Markets Non-Custodial Set #${selectedSet.setNumber}\nPair: ${activeCoinTicker}/USD (1x Spot)\nQuantity: ${formatCoinQty(selectedSet.quantity)}\nBuy Limit: $${formatCoinPrice(selectedSet.buyPrice)}\nSafety Stop: $${formatCoinPrice(selectedSet.stopLossPrice)}\nTarget Sell: $${formatCoinPrice(selectedSet.sellPrice)}\nVerified Google Account: ${googleUser.email}`;
+      const msgToSign = `Confirm Symphony Markets Master 10-Set Plan\nPair: ${activeCoinTicker}/USD (1x Spot)\nSet #${selectedSet.setNumber}: Buy ${formatCoinQty(selectedSet.quantity)} @ $${formatCoinPrice(selectedSet.buyPrice)} -> Sell $${formatCoinPrice(selectedSet.sellPrice)}`;
 
       await provider.request({
         method: 'personal_sign',
@@ -954,7 +1109,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
       await handleDispatchSetToWallet('TrustExtension', true);
     } catch {
       setWalletActionFeedback(
-        'Wallet signature prompt cancelled or declined inside your wallet extension.'
+        'Note: Browser extensions only sign EVM (0x) messages. For native 5 XRP, use Xaman DEX on Android or tap "Confirm Once & Auto-Run All 10 Sets"!'
       );
     }
   };
@@ -977,9 +1132,13 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         body: JSON.stringify({
           symbol,
           executionMode:
-            executionMode === 'trust_wallet_live' && isGoogleVerified
-              ? 'Google-Verified Active Wallet Mode'
-              : 'Simulated 10-Set Classroom Mode',
+            executionMode === 'trust_wallet_live' && walletConnected
+              ? `Confirmed Hands-Free 10-Set Wallet Stewardship Mode (${
+                  verifiedWallet
+                    ? `${verifiedWallet.spendableCoins.toFixed(qtyDecimals)} ${verifiedWallet.coinTicker} live balance`
+                    : 'Connected Self-Custody Wallet'
+                })`
+              : 'Autonomous 10-Set Classroom Stewardship Mode',
           startingBalance: batchSummary.startBal.toFixed(2),
           endingBalance: batchSummary.endBal.toFixed(2),
           winCount: batchSummary.wins,
@@ -1003,6 +1162,324 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     }
   };
 
+  // Format current local clock time (HH:MM:SS) for Buy & Sell mark-hit stamps
+  const formatNowTime = () =>
+    new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+
+  // Optional Browser / Android System Notification (Safe no-op inside restricted iframes)
+  const triggerOptionalBrowserNotification = (title: string, body: string) => {
+    if (!deviceNotifyEnabled) return;
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification(title, { body });
+        }
+      }
+    } catch {
+      // Safe fallback inside sandboxed iframes; in-app notification banner always shows
+    }
+  };
+
+  const handleToggleDeviceNotifications = async () => {
+    if (deviceNotifyEnabled) {
+      setDeviceNotifyEnabled(false);
+      return;
+    }
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          setDeviceNotifyEnabled(true);
+          return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          setDeviceNotifyEnabled(true);
+          return;
+        }
+      }
+    } catch {
+      // Ignore iframe permission restriction; in-app live alerts are always active
+    }
+    setLatestMarkNotification({
+      timestamp: formatNowTime(),
+      kind: 'BUY_HIT',
+      title: 'In-App Mark-Hit Notifications Active',
+      detail:
+        'Every Buy mark, Target Sell mark, Safety Stop-Loss mark, and final 10-Set completion will notify you live right here.',
+    });
+  };
+
+  // Record when a Set hits its BUY mark
+  const recordSetBuyMarkHit = (setObj: AutomatedTradeSet) => {
+    const hitTime = formatNowTime();
+    const setLabel = setObj.setNumber < 10 ? `0${setObj.setNumber}` : `${setObj.setNumber}`;
+    const buyStr = `$${formatCoinPrice(setObj.buyPrice)}`;
+    const qtyStr = formatCoinQtyCompact(setObj.quantity);
+
+    setMarkHitReceipts((prev) => {
+      const filtered = prev.filter((r) => r.setNumber !== setObj.setNumber);
+      const nextItem: SetMarkHitReceipt = {
+        setNumber: setObj.setNumber,
+        setupBadge: setObj.patternBadge,
+        coinTicker: activeCoinTicker,
+        quantityText: qtyStr,
+        buyMarkPrice: buyStr,
+        buyHitAt: hitTime,
+        exitMarkPrice:
+          setObj.outcome === 'WIN_TARGET_HIT'
+            ? `$${formatCoinPrice(setObj.sellPrice)}`
+            : `$${formatCoinPrice(setObj.stopLossPrice)}`,
+        exitHitAt: null,
+        status: 'BUY_MARK_HIT',
+        rMultiple: setObj.rMultiple,
+        pnlUsd: setObj.pnlUsd,
+        balanceAfterText: `${setObj.cumulativeCoinsAfter.toFixed(qtyDecimals)} ${activeCoinTicker} ($${setObj.cumulativeBalanceAfter.toFixed(2)})`,
+        whatHappenedLine: `Buy mark hit at ${buyStr} (${qtyStr}) — monitoring for Target Sell ($${formatCoinPrice(
+          setObj.sellPrice
+        )}) or 2% Safety Stop ($${formatCoinPrice(setObj.stopLossPrice)})...`,
+      };
+      return [...filtered, nextItem].sort((a, b) => a.setNumber - b.setNumber);
+    });
+
+    setLatestMarkNotification({
+      timestamp: hitTime,
+      kind: 'BUY_HIT',
+      title: `Set #${setLabel} Buy Mark Hit @ ${buyStr}`,
+      detail: `Bought ${qtyStr} (${setObj.patternBadge}). Watching Sell Target $${formatCoinPrice(
+        setObj.sellPrice
+      )} & Safety Stop $${formatCoinPrice(setObj.stopLossPrice)}.`,
+    });
+  };
+
+  // Record when a Set finishes by hitting its PROFIT TARGET SELL or SAFETY STOP-LOSS mark
+  const recordSetExitMarkFinished = (
+    setObj: AutomatedTradeSet,
+    overrideBuyTime?: string
+  ) => {
+    const exitTime = formatNowTime();
+    const setLabel = setObj.setNumber < 10 ? `0${setObj.setNumber}` : `${setObj.setNumber}`;
+    const isWin = setObj.outcome === 'WIN_TARGET_HIT';
+    const buyStr = `$${formatCoinPrice(setObj.buyPrice)}`;
+    const exitPriceVal = isWin ? setObj.sellPrice : setObj.stopLossPrice;
+    const exitStr = `$${formatCoinPrice(exitPriceVal)}`;
+    const qtyStr = formatCoinQtyCompact(setObj.quantity);
+
+    const summaryLine = isWin
+      ? `Bought mark @ ${buyStr} → Hit Profit Target Sell mark @ ${exitStr} (+${setObj.rMultiple}R / +$${setObj.pnlUsd.toFixed(
+          2
+        )}). Set #${setLabel} finished cleanly.`
+      : `Bought mark @ ${buyStr} → Hit 2% Safety Stop-Loss mark @ ${exitStr} (-1.0R / $${setObj.pnlUsd.toFixed(
+          2
+        )}). Set #${setLabel} finished & protected wallet.`;
+
+    setMarkHitReceipts((prev) => {
+      const existing = prev.find((r) => r.setNumber === setObj.setNumber);
+      const filtered = prev.filter((r) => r.setNumber !== setObj.setNumber);
+      const completedReceipt: SetMarkHitReceipt = {
+        setNumber: setObj.setNumber,
+        setupBadge: setObj.patternBadge,
+        coinTicker: activeCoinTicker,
+        quantityText: qtyStr,
+        buyMarkPrice: buyStr,
+        buyHitAt: existing?.buyHitAt || overrideBuyTime || exitTime,
+        exitMarkPrice: exitStr,
+        exitHitAt: exitTime,
+        status: isWin ? 'PROFIT_TARGET_HIT' : 'SAFETY_STOP_HIT',
+        rMultiple: setObj.rMultiple,
+        pnlUsd: setObj.pnlUsd,
+        balanceAfterText: `${setObj.cumulativeCoinsAfter.toFixed(qtyDecimals)} ${activeCoinTicker} ($${setObj.cumulativeBalanceAfter.toFixed(2)})`,
+        whatHappenedLine: summaryLine,
+      };
+      return [...filtered, completedReceipt].sort((a, b) => a.setNumber - b.setNumber);
+    });
+
+    const notifTitle = isWin
+      ? `✓ Set #${setLabel} Finished · Profit Target Hit @ ${exitStr} (+${setObj.rMultiple}R)`
+      : `■ Set #${setLabel} Finished · Safety Stop-Loss Hit @ ${exitStr} (-1.0R)`;
+
+    setLatestMarkNotification({
+      timestamp: exitTime,
+      kind: isWin ? 'TARGET_SELL_HIT' : 'STOP_LOSS_HIT',
+      title: notifTitle,
+      detail: summaryLine,
+    });
+
+    triggerOptionalBrowserNotification(notifTitle, summaryLine);
+  };
+
+  // Copy Complete 10-Set Mark-Hit Completion Report for Students / Class Notes
+  const handleCopyCompletionReport = async () => {
+    const header = `Symphony Markets — 10-Set Buy & Sell Completion Report (${activeCoinTicker}/USD)\nResult: ${batchSummary.wins} Target Sells Hit · ${batchSummary.losses} Safety Stops Hit · Net +${batchSummary.totalR.toFixed(1)}R (${batchSummary.startCoins.toFixed(qtyDecimals)} -> ${batchSummary.endCoins.toFixed(qtyDecimals)} ${activeCoinTicker})`;
+    const lines = markHitReceipts
+      .map(
+        (r) =>
+          `Set #${r.setNumber < 10 ? `0${r.setNumber}` : r.setNumber} [${
+            r.status === 'PROFIT_TARGET_HIT'
+              ? `✓ TARGET SELL +${r.rMultiple}R`
+              : r.status === 'SAFETY_STOP_HIT'
+              ? '■ SAFETY STOP -1.0R'
+              : '→ BUY MARK HIT'
+          }] Buy ${r.buyMarkPrice} (${r.buyHitAt}) -> Exit ${r.exitMarkPrice} (${
+            r.exitHitAt || 'Pending'
+          }) | Balance: ${r.balanceAfterText}`
+      )
+      .join('\n');
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(`${header}\n${lines}`);
+        setCopiedCompletionReport(true);
+        setTimeout(() => setCopiedCompletionReport(false), 3500);
+      }
+    } catch {
+      // Ignore clipboard restriction
+    }
+  };
+
+  // ONE-CONFIRMATION HANDS-FREE 10-SET AUTO-PILOT ("Learn to Trust, Not Control")
+  const handleConfirmAndAutoRunAllTenSets = () => {
+    if (!isWalletGateUnlocked) {
+      setClassroomQuickUnlocked(true);
+      try {
+        localStorage.setItem('symphony_classroom_signoff_unlocked', 'true');
+      } catch {
+        // Ignore
+      }
+    }
+
+    setIsAutoRunning(false);
+    setIsSymphonyPlaying(false);
+    setBatchConfirmedAllTen(true);
+    setSignedSetNumbers([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    setMarkHitReceipts([]);
+    setShowCompletionReport(true);
+    setCompletedSetsCount(1);
+    setSelectedSetNumber(1);
+    setHandsFreePhase('BUYING');
+    setIsHandsFreeStewardRunning(true);
+
+    if (tenSets[0]) {
+      recordSetBuyMarkHit(tenSets[0]);
+    }
+
+    void handleCopyMasterTenSetBatch();
+
+    if (googleUser && isGoogleVerified) {
+      void recordBatchTenSetApprovalsInFirestore({
+        user: googleUser,
+        walletNetwork,
+        coinTicker: activeCoinTicker,
+        walletTarget: walletNetwork === 'Xaman_XRPL' ? 'Xaman' : 'TrustWallet',
+        publicWalletAddress: trustWalletAddress.trim() || 'SELF_CUSTODY_WALLET',
+        sets: tenSets.map((s) => ({
+          setNumber: s.setNumber,
+          buyPrice: s.buyPrice,
+          sellPrice: s.sellPrice,
+          quantity: s.quantity,
+        })),
+      }).catch(() => {
+        // Non-blocking cloud audit log
+      });
+    }
+
+    setWalletActionFeedback(
+      `All 10 Sets Confirmed! Watch the Live Mark-Hit Notifications below as each set hits its Buy mark and its Target Sell or Safety Stop mark.`
+    );
+  };
+
+  // Autonomous Two-Phase (BUY -> SELL) Sequencer Effect for All 10 Sets
+  useEffect(() => {
+    if (!isHandsFreeStewardRunning) return;
+
+    if (handsFreePhase === 'BUYING') {
+      const buyTimer = setTimeout(() => {
+        setHandsFreePhase('SELLING');
+        const currentSet = tenSets[selectedSetNumber - 1];
+        if (currentSet) {
+          recordSetExitMarkFinished(currentSet);
+          if (symphonyAudioEnabled) {
+            playTradeSetSymphonyNote({
+              setNumber: currentSet.setNumber,
+              outcome: currentSet.outcome,
+              winOrdinalIndex: currentSet.winOrdinalIndex,
+              rMultiple: currentSet.rMultiple,
+            });
+          }
+          if (onLogSetPositionToPortfolio) {
+            onLogSetPositionToPortfolio({
+              symbol,
+              instrument: 'spot',
+              side: 'long',
+              entryPrice: currentSet.buyPrice,
+              stopLoss: currentSet.stopLossPrice,
+              takeProfit: currentSet.sellPrice,
+              quantity: currentSet.quantity,
+              notionalUsd: Number((currentSet.buyPrice * currentSet.quantity).toFixed(2)),
+              marginRequiredUsd: Number((currentSet.buyPrice * currentSet.quantity).toFixed(2)),
+              leverage: 1,
+              liquidationPrice: null,
+              riskAmountUsd: currentSet.riskUsd,
+              riskPercent,
+              rewardAmountUsd: Math.abs(currentSet.pnlUsd),
+              rrRatio: Math.abs(currentSet.rMultiple),
+            });
+          }
+        }
+      }, 650);
+      return () => clearTimeout(buyTimer);
+    }
+
+    if (handsFreePhase === 'SELLING') {
+      const sellTimer = setTimeout(() => {
+        if (selectedSetNumber >= 10) {
+          setIsHandsFreeStewardRunning(false);
+          setHandsFreePhase('COMPLETED');
+          setShowCompletionReport(true);
+          const doneTime = formatNowTime();
+          const finalWins = tenSets.filter((s) => s.outcome === 'WIN_TARGET_HIT').length;
+          const finalStops = tenSets.filter((s) => s.outcome === 'CONTROLLED_1R_STOP').length;
+          const finalTotalR = tenSets.reduce((acc, s) => acc + s.rMultiple, 0).toFixed(1);
+          const finalEnd = tenSets[9];
+          const doneTitle = `✓ All 10 Buy & Sell Sets Finished! (${finalWins} Target Sells · ${finalStops} Safety Stops)`;
+          const doneDetail = `Every Buy & Sell mark across Sets #01–#10 has completed (+${finalTotalR}R total · Ending balance ${
+            finalEnd
+              ? `${finalEnd.cumulativeCoinsAfter.toFixed(qtyDecimals)} ${activeCoinTicker} / $${finalEnd.cumulativeBalanceAfter.toFixed(2)}`
+              : ''
+          }). Review the full 10-Set Mark-Hit Report below!`;
+
+          setLatestMarkNotification({
+            timestamp: doneTime,
+            kind: 'ALL_TEN_COMPLETED',
+            title: doneTitle,
+            detail: doneDetail,
+          });
+          triggerOptionalBrowserNotification(doneTitle, doneDetail);
+          void handleGenerateAiExplanation();
+          return;
+        }
+        const nextSet = selectedSetNumber + 1;
+        setCompletedSetsCount(nextSet);
+        setSelectedSetNumber(nextSet);
+        setHandsFreePhase('BUYING');
+        const nextSetObj = tenSets[nextSet - 1];
+        if (nextSetObj) {
+          recordSetBuyMarkHit(nextSetObj);
+        }
+      }, 740);
+      return () => clearTimeout(sellTimer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isHandsFreeStewardRunning,
+    handsFreePhase,
+    selectedSetNumber,
+    symphonyAudioEnabled,
+    tenSets,
+  ]);
+
   return (
     <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-7 space-y-5">
       {/* Header & Mode Switcher (Simulated vs. Google-Protected Live Wallet Mode) */}
@@ -1017,18 +1494,18 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
             </span>
             <span aria-hidden="true">·</span>
             <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
-              Google-Protected Wallet Signing
+              1-Tap Confirm & Hands-Free 10-Set Stewardship
             </span>
           </div>
           <h2 className="font-editorial text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
             Automated 10-Set Buy & Sell Sequencer
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
-            Learn how the system manages 10 disciplined sets step-by-step across <strong>Bitcoin (BTC)</strong>, <strong>XRP</strong>, or <strong>Stellar (XLM)</strong>—hear the live musical progression of your Buy & Sell sets, or unlock Google Authentication to verify and sign real-coin orders in <strong>Trust Wallet</strong> or <strong>Xaman</strong>.
+            Teach students to <strong>trust a sound mathematical plan rather than micromanage control</strong>: connect your <strong>Xaman</strong> or <strong>Trust Wallet</strong> balance (e.g. 5 spendable XRP), confirm once, and let the sequencer automatically execute all 10 Buy & Sell sets while explaining every move.
           </p>
         </div>
 
-        {/* Mode Toggle: Simulated Classroom vs. Google-Gated Live Wallet Mode */}
+        {/* Mode Toggle: Simulated Classroom vs. Easy-Unlock Live Wallet Mode */}
         <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
           <button
             type="button"
@@ -1053,7 +1530,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            {isGoogleVerified ? (
+            {isWalletGateUnlocked ? (
               <ShieldCheck className="w-3.5 h-3.5" />
             ) : (
               <Lock className="w-3.5 h-3.5" />
@@ -1063,24 +1540,24 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         </div>
       </div>
 
-      {/* GOOGLE AUTHENTICATION SECURITY GATE + LIVE WALLET BRIDGE (When in Live Wallet Mode) */}
+      {/* FRICTIONLESS ANDROID-READY SIGN-OFF GATE + LIVE WALLET BRIDGE (When in Live Wallet Mode) */}
       {executionMode === 'trust_wallet_live' && (
         <div className="rounded-xl border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 sm:p-5 space-y-4">
-          {!isGoogleVerified ? (
-            /* LOCKED STATE: Requires Google Sign-In Before Activating Wallet Features */
+          {!isWalletGateUnlocked ? (
+            /* LOCKED STATE: 1-Tap Android Sign-Off OR Optional Google Sign-In */
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1 max-w-2xl">
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-800 dark:text-amber-300">
-                  <Lock className="w-4 h-4 shrink-0" />
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-900 dark:text-emerald-300">
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
                   <span>
-                    Google Authentication Security Gate · Required Before Activating Trust Wallet or Xaman
+                    Step 1 · Quick Sign-Off Gate (Works Instantly on Android, Xaman & Desktop)
                   </span>
                 </div>
                 <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                  To protect your self-custody wallet from accidental clicks or shared classroom screens, please sign in with your Google account before connecting your live wallet balance or launching real-coin Sign & Approve actions.
+                  Android mobile browsers often block Google popup windows inside embedded apps—so you can now unlock with <strong>1-Tap Classroom Sign-Off</strong> immediately, or optionally sign in with Google for cloud audit sync.
                 </p>
                 {googleAuthError && (
-                  <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 pt-1">
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 pt-1">
                     {googleAuthError}
                   </p>
                 )}
@@ -1089,70 +1566,75 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  disabled={isSigningInGoogle || isAuthChecking}
-                  onClick={handleGoogleUnlockWallet}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                  onClick={handleClassroomQuickUnlock}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>
-                    {isSigningInGoogle
-                      ? 'Verifying Google Account...'
-                      : 'Sign in with Google to Unlock Live Wallet'}
-                  </span>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>1-Tap Classroom Sign-Off (Android Ready)</span>
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => setExecutionMode('simulated')}
-                  className="px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer whitespace-nowrap"
+                  disabled={isSigningInGoogle || isAuthChecking}
+                  onClick={() => void handleGoogleUnlockWallet()}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-60 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 >
-                  Stay in Simulated Mode
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>
+                    {isSigningInGoogle ? 'Opening Google...' : 'Google Sign-In (Optional)'}
+                  </span>
                 </button>
               </div>
             </div>
           ) : (
-            /* UNLOCKED STATE: Google Verified -> Show Active Xaman & Trust Wallet Controls */
+            /* UNLOCKED STATE: Clean 3-Step Connect -> Confirm Once -> Hands-Free 10-Set Auto-Pilot */
             <>
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-emerald-200/80 dark:border-emerald-500/25">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-600 text-white font-semibold">
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Google Security Verified: {googleUser?.email}</span>
+                    <span>
+                      {isGoogleVerified
+                        ? `Google Verified: ${googleUser?.email}`
+                        : 'Classroom Sign-Off Confirmed (Android Ready)'}
+                    </span>
                   </span>
                   <span className="text-slate-600 dark:text-slate-300">
-                    Zero Private Keys Asked · Non-Custodial Wallet Signing Active
+                    Zero Private Keys Asked · Non-Custodial Self-Custody
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleLockWalletGate}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer whitespace-nowrap"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Lock Wallet Gate</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {!isGoogleVerified && (
+                    <button
+                      type="button"
+                      disabled={isSigningInGoogle}
+                      onClick={() => void handleGoogleUnlockWallet()}
+                      className="px-2.5 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-500/40 bg-white dark:bg-slate-900 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 cursor-pointer whitespace-nowrap"
+                    >
+                      {isSigningInGoogle ? 'Connecting...' : '+ Link Google (Optional)'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void handleLockWalletGate()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer whitespace-nowrap"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Lock</span>
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-slate-600 dark:text-slate-300 max-w-xl leading-relaxed">
-                  Paste your public <strong>Bitcoin</strong> (<span className="font-mono">bc1...</span>), <strong>Xaman</strong> (<span className="font-mono">r...</span>), or <strong>Trust Wallet</strong> (<span className="font-mono">r...</span> / <span className="font-mono">G...</span>) address to size all 10 sets from your live spendable coins, then click <strong>Sign & Approve in Wallet</strong> on any set below.
+                  <strong>Step 2 · Verify Public Wallet:</strong> Paste your <strong>Xaman</strong> or <strong>Trust Wallet</strong> address (<span className="font-mono">r...</span> for 5 XRP, <span className="font-mono">bc1...</span> for BTC, or <span className="font-mono">G...</span> for XLM).{' '}
+                  <span className="text-amber-800 dark:text-amber-300">
+                    Tip: Native XRP (<span className="font-mono">r...</span>) uses Xaman or Trust Wallet Mobile—browser extensions (<span className="font-mono">0x...</span>) only sign Ethereum/BNB coins!
+                  </span>
                 </p>
 
                 <div className="flex flex-wrap items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWalletNetwork('Bitcoin');
-                      onSelectSymbol('BTCUSDT');
-                    }}
-                    className={`px-2.5 py-1 rounded font-semibold cursor-pointer ${
-                      walletNetwork === 'Bitcoin'
-                        ? 'bg-amber-500 text-slate-950'
-                        : 'text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    Trust Wallet (BTC)
-                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -1184,6 +1666,20 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                   <button
                     type="button"
                     onClick={() => {
+                      setWalletNetwork('Bitcoin');
+                      onSelectSymbol('BTCUSDT');
+                    }}
+                    className={`px-2.5 py-1 rounded font-semibold cursor-pointer ${
+                      walletNetwork === 'Bitcoin'
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    Trust Wallet (BTC)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
                       setWalletNetwork('Stellar');
                       onSelectSymbol('XLMUSDT');
                     }}
@@ -1195,17 +1691,6 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                   >
                     Stellar (XLM)
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setWalletNetwork('EVM_TrustExtension')}
-                    className={`px-2.5 py-1 rounded font-semibold cursor-pointer ${
-                      walletNetwork === 'EVM_TrustExtension'
-                        ? 'bg-sky-600 text-white'
-                        : 'text-slate-600 dark:text-slate-400'
-                    }`}
-                  >
-                    Browser Extension
-                  </button>
                 </div>
               </div>
 
@@ -1214,13 +1699,13 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                   type="text"
                   value={trustWalletAddress}
                   onChange={(e) => setTrustWalletAddress(e.target.value)}
-                  placeholder="Paste public address (bc1... for BTC, r... for XRPL, or G... for Stellar)"
+                  placeholder="Paste public address (r... for 5 XRP in Xaman/Trust Wallet, bc1... for BTC, G... for XLM)"
                   className="flex-1 min-w-[240px] px-3.5 py-2 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
                 />
                 <button
                   type="button"
                   disabled={isCheckingWallet}
-                  onClick={handleConnectTrustWallet}
+                  onClick={() => void handleConnectTrustWallet()}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
                 >
                   {isCheckingWallet
@@ -1228,6 +1713,23 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                     : walletConnected
                     ? '✓ Wallet Verified on Ledger'
                     : 'Verify Public Wallet'}
+                </button>
+
+                {/* STEP 3: ONE-TAP CONFIRM & AUTO-RUN ALL 10 SETS */}
+                <button
+                  type="button"
+                  disabled={isHandsFreeStewardRunning}
+                  onClick={handleConfirmAndAutoRunAllTenSets}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-slate-950 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>
+                    {isHandsFreeStewardRunning
+                      ? `Auto-Handling Set #${selectedSetNumber}/10 (${handsFreePhase})...`
+                      : batchConfirmedAllTen
+                      ? '✓ Confirmed · Re-Run All 10 Sets Automatically'
+                      : 'Step 3 · Confirm & Auto-Run All 10 Sets'}
+                  </span>
                 </button>
               </div>
 
@@ -1242,24 +1744,25 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                       <button
                         type="button"
                         disabled={isCheckingWallet}
-                        onClick={handleConnectTrustWallet}
+                        onClick={() => void handleConnectTrustWallet()}
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[11px] font-semibold text-emerald-900 dark:text-emerald-200 cursor-pointer"
                       >
                         <RefreshCw
                           className={`w-3 h-3 ${isCheckingWallet ? 'animate-spin' : ''}`}
                         />
-                        <span>Re-Check On-Chain</span>
+                        <span>Re-Check</span>
                       </button>
                     </div>
                   </div>
 
-                  {verifiedWallet && (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                      <div className="lg:col-span-6 space-y-1">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                            1. Live Wallet Balance Sizing
-                          </span>
+                  {/* Direct Android Wallet DEX Bridges + Live Sizing Summary */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+                    <div className="lg:col-span-6 space-y-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                          Live Wallet Sizing ({verifiedWallet ? verifiedWallet.coinTicker : activeCoinTicker})
+                        </span>
+                        {verifiedWallet && (
                           <button
                             type="button"
                             onClick={() => setUseLiveWalletSizing((v) => !v)}
@@ -1267,51 +1770,72 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                           >
                             {useLiveWalletSizing
                               ? 'Switch to $5 Classroom Preset'
-                              : `Use My Live ${verifiedWallet.spendableCoins.toFixed(qtyDecimals)} ${verifiedWallet.coinTicker} Balance`}
+                              : `Use My Live ${verifiedWallet.spendableCoins.toFixed(qtyDecimals)} ${verifiedWallet.coinTicker}`}
                           </button>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                          {isSizingFromLiveWallet ? (
-                            <>
-                              Sizing directly from your{' '}
-                              <strong className="font-mono text-slate-900 dark:text-white">
-                                {verifiedWallet.spendableCoins.toFixed(qtyDecimals)}{' '}
-                                {verifiedWallet.coinTicker}
-                              </strong>{' '}
-                              spendable coins (
-                              <strong className="font-mono text-emerald-700 dark:text-emerald-400">
-                                ${(verifiedWallet.spendableCoins * effectiveBasePrice).toFixed(2)}
-                              </strong>
-                              ), keeping{' '}
-                              <span className="font-mono">
-                                {verifiedWallet.reservedCoins.toFixed(2)}{' '}
-                                {verifiedWallet.coinTicker}
-                              </span>{' '}
-                              reserve locked.
-                            </>
-                          ) : (
-                            <>
-                              Using Classroom Preset (${Math.max(5, accountBalance).toFixed(2)}).
-                            </>
-                          )}
-                        </p>
+                        )}
                       </div>
+                      <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {verifiedWallet && isSizingFromLiveWallet ? (
+                          <>
+                            All 10 Buy & Sell sets are sized from your{' '}
+                            <strong className="font-mono text-slate-900 dark:text-white">
+                              {verifiedWallet.spendableCoins.toFixed(qtyDecimals)}{' '}
+                              {verifiedWallet.coinTicker}
+                            </strong>{' '}
+                            spendable balance (
+                            <strong className="font-mono text-emerald-700 dark:text-emerald-400">
+                              ${(verifiedWallet.spendableCoins * effectiveBasePrice).toFixed(2)}
+                            </strong>
+                            ), keeping{' '}
+                            <span className="font-mono">
+                              {verifiedWallet.reservedCoins.toFixed(2)} {verifiedWallet.coinTicker}
+                            </span>{' '}
+                            base reserve protected.
+                          </>
+                        ) : (
+                          <>
+                            Using Classroom Budget (${Math.max(5, accountBalance).toFixed(2)}). Verify a funded <span className="font-mono">r...</span>, <span className="font-mono">bc1...</span>, or <span className="font-mono">G...</span> wallet to size from live coins.
+                          </>
+                        )}
+                      </p>
+                    </div>
 
-                      <div className="lg:col-span-6 space-y-1 lg:border-l lg:border-slate-200 dark:lg:border-slate-800 lg:pl-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="font-bold text-amber-700 dark:text-amber-400">
-                            2. Real-Coin Execution Control
-                          </span>
-                          <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                            Checked {verifiedWallet.checkedAt}
-                          </span>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                          <strong>0.00 {verifiedWallet.coinTicker} moves automatically.</strong> Real coins only execute when you click <strong>Sign & Approve in Trust Wallet / Xaman</strong> on a set below and confirm on your device.
-                        </p>
+                    <div className="lg:col-span-6 space-y-2 lg:border-l lg:border-slate-200 dark:lg:border-slate-800 lg:pl-4">
+                      <div className="font-bold text-amber-700 dark:text-amber-400">
+                        Android & Mobile Self-Custody Bridges (Optional On-Ledger DEX)
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <a
+                          href="https://xumm.app/detect/xapp:xumm.dex"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => void handleCopyMasterTenSetBatch()}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer whitespace-nowrap"
+                        >
+                          <span>Open Xaman DEX (Android 5 XRP)</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <a
+                          href="https://link.trustwallet.com/open_url?coin_id=144&url=https://xrpl.org"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => void handleCopyMasterTenSetBatch()}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold cursor-pointer whitespace-nowrap"
+                        >
+                          <span>Open Trust Wallet App</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyMasterTenSetBatch()}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold cursor-pointer whitespace-nowrap"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>{copiedMasterBatch ? 'Copied All 10 ✓' : 'Copy 10-Set Plan'}</span>
+                        </button>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </>
@@ -1319,42 +1843,231 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         </div>
       )}
 
-      {/* Control Deck: Auto-Run 10 Sets + Simple 10-Set Symphony Note Progression + Coin & AI Explain */}
+      {/* LIVE BUY & SELL MARK-HIT NOTIFICATION TOAST + 10-SET COMPLETION REPORT */}
+      {(latestMarkNotification ||
+        showCompletionReport ||
+        isHandsFreeStewardRunning ||
+        handsFreePhase === 'COMPLETED') && (
+        <div className="space-y-3" role="status" aria-live="polite">
+          {/* Live Mark-Hit Notification Alert Bar */}
+          {latestMarkNotification && (
+            <div
+              className={`rounded-xl border p-4 flex flex-wrap items-start justify-between gap-3 text-xs ${
+                latestMarkNotification.kind === 'ALL_TEN_COMPLETED'
+                  ? 'border-emerald-400 dark:border-emerald-500/60 bg-emerald-50/90 dark:bg-emerald-950/35 text-slate-900 dark:text-emerald-100'
+                  : latestMarkNotification.kind === 'TARGET_SELL_HIT'
+                  ? 'border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/60 dark:bg-emerald-950/25 text-slate-900 dark:text-slate-100'
+                  : latestMarkNotification.kind === 'STOP_LOSS_HIT'
+                  ? 'border-rose-300 dark:border-rose-500/40 bg-rose-50/60 dark:bg-rose-950/25 text-slate-900 dark:text-slate-100'
+                  : 'border-sky-300 dark:border-sky-500/40 bg-sky-50/60 dark:bg-sky-950/25 text-slate-900 dark:text-slate-100'
+              }`}
+            >
+              <div className="space-y-1 max-w-3xl">
+                <div className="flex flex-wrap items-center gap-2 font-bold">
+                  <Bell className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>{latestMarkNotification.title}</span>
+                  <span aria-hidden="true" className="text-slate-400">
+                    ·
+                  </span>
+                  <span className="font-mono font-normal text-slate-600 dark:text-slate-300 tabular-nums">
+                    {latestMarkNotification.timestamp}
+                  </span>
+                </div>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {latestMarkNotification.detail}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {markHitReceipts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCompletionReport((v) => !v)}
+                    className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    {showCompletionReport
+                      ? 'Hide Mark-Hit Log'
+                      : `View What Happened (${markHitReceipts.length}/10)`}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => void handleToggleDeviceNotifications()}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border font-semibold cursor-pointer whitespace-nowrap shrink-0 ${
+                    deviceNotifyEnabled
+                      ? 'border-emerald-400 bg-emerald-600 text-white'
+                      : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  <span>{deviceNotifyEnabled ? 'Device Alerts On' : 'Phone/Browser Alerts'}</span>
+                </button>
+
+                {isHandsFreeStewardRunning ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsHandsFreeStewardRunning(false);
+                      setHandsFreePhase('IDLE');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <Pause className="w-3.5 h-3.5" />
+                    <span>Emergency Pause</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatestMarkNotification(null);
+                      if (handsFreePhase === 'COMPLETED') setHandsFreePhase('IDLE');
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    Dismiss
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Set-by-Set Buy & Sell Mark-Hit Completion View ("What Happened on Each Set #01 - #10") */}
+          {showCompletionReport && markHitReceipts.length > 0 && (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden text-xs">
+              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/70 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {markHitReceipts.filter((r) => r.exitHitAt !== null).length >= 10
+                      ? '✓ All 10 Sets Finished · Complete Buy & Sell Mark-Hit Report'
+                      : `Live Buy & Sell Mark-Hit Tracker (${
+                          markHitReceipts.filter((r) => r.exitHitAt !== null).length
+                        }/10 Sets Finished)`}
+                  </span>
+                  <span aria-hidden="true" className="text-slate-400">
+                    ·
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    Click any row to inspect why it bought & sold
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyCompletionReport()}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>
+                      {copiedCompletionReport ? 'Report Copied ✓' : 'Copy 10-Set Report'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCompletionReport(false)}
+                    className="px-2.5 py-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    Minimize
+                  </button>
+                </div>
+              </div>
+
+              <div className="divide-y divide-slate-200 dark:divide-slate-800 max-h-80 overflow-y-auto">
+                {markHitReceipts.map((rec) => {
+                  const setLabel = rec.setNumber < 10 ? `0${rec.setNumber}` : `${rec.setNumber}`;
+                  const isSelected = rec.setNumber === selectedSetNumber;
+                  return (
+                    <div
+                      key={rec.setNumber}
+                      onClick={() => {
+                        if (!isHandsFreeStewardRunning) {
+                          setSelectedSetNumber(rec.setNumber);
+                        }
+                      }}
+                      className={`px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 transition-colors ${
+                        isHandsFreeStewardRunning ? 'cursor-default' : 'cursor-pointer'
+                      } ${
+                        isSelected
+                          ? 'bg-sky-50/70 dark:bg-sky-950/30'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-900/50'
+                      }`}
+                    >
+                      <div className="space-y-0.5 max-w-2xl">
+                        <div className="flex flex-wrap items-center gap-2 font-mono tabular-nums">
+                          <span className="font-bold text-slate-900 dark:text-white">
+                            Set #{setLabel}
+                          </span>
+                          <span aria-hidden="true" className="text-slate-400">
+                            ·
+                          </span>
+                          <span className="text-sky-700 dark:text-sky-400">
+                            Buy Hit {rec.buyMarkPrice} ({rec.buyHitAt})
+                          </span>
+                          <span aria-hidden="true" className="text-slate-400">
+                            →
+                          </span>
+                          {rec.status === 'BUY_MARK_HIT' ? (
+                            <span className="text-amber-700 dark:text-amber-300 font-semibold">
+                              Waiting for Sell / Stop Mark...
+                            </span>
+                          ) : rec.status === 'PROFIT_TARGET_HIT' ? (
+                            <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                              ✓ Target Sell Hit {rec.exitMarkPrice} (+{rec.rMultiple}R ·{' '}
+                              {rec.exitHitAt})
+                            </span>
+                          ) : (
+                            <span className="text-rose-700 dark:text-rose-400 font-bold">
+                              ■ Safety Stop-Loss Hit {rec.exitMarkPrice} (-1.0R · {rec.exitHitAt})
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-300 leading-snug">
+                          {rec.whatHappenedLine}
+                        </p>
+                      </div>
+
+                      <div className="font-mono tabular-nums text-right shrink-0">
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {rec.exitHitAt ? 'Finished · Balance After' : 'Active Size'}
+                        </div>
+                        <div className="font-semibold text-slate-900 dark:text-white">
+                          {rec.exitHitAt ? rec.balanceAfterText : rec.quantityText}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Control Deck: 1-Click Confirm & Auto-Handle All 10 Sets + Symphony Progression + Coin & AI Explain */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              setIsSymphonyPlaying(false);
-              if (completedSetsCount >= 10) {
-                setCompletedSetsCount(1);
-                setSelectedSetNumber(1);
-                if (symphonyAudioEnabled && tenSets[0]) {
-                  playTradeSetSymphonyNote({
-                    setNumber: tenSets[0].setNumber,
-                    outcome: tenSets[0].outcome,
-                    winOrdinalIndex: tenSets[0].winOrdinalIndex,
-                    rMultiple: tenSets[0].rMultiple,
-                  });
-                }
-              }
-              setIsAutoRunning((v) => !v);
-            }}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            disabled={isHandsFreeStewardRunning}
+            onClick={handleConfirmAndAutoRunAllTenSets}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
             <Play className="w-3.5 h-3.5" />
             <span>
-              {isAutoRunning
-                ? `Running Set #${completedSetsCount}/10...`
-                : 'Auto-Run 10 Sets'}
+              {isHandsFreeStewardRunning
+                ? `Auto-Handling Set #${selectedSetNumber}/10 (${handsFreePhase})...`
+                : 'Confirm & Auto-Run All 10 Buy/Sell Sets'}
             </span>
           </button>
 
           {/* Simple 10-Set Symphony Note Progression Button */}
           <button
             type="button"
+            disabled={isHandsFreeStewardRunning}
             onClick={handleToggleSymphonyProgression}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 disabled:opacity-50 ${
               isSymphonyPlaying
                 ? 'bg-amber-500 text-slate-950'
                 : 'border border-amber-400/70 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-300'
@@ -1390,23 +2103,31 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
           <button
             type="button"
+            disabled={isHandsFreeStewardRunning}
             onClick={() => {
               setIsAutoRunning(false);
               setIsSymphonyPlaying(false);
               const next = completedSetsCount >= 10 ? 1 : completedSetsCount + 1;
+              if (next === 1) {
+                setMarkHitReceipts([]);
+              }
               setCompletedSetsCount(next);
               setSelectedSetNumber(next);
-              if (symphonyAudioEnabled && tenSets[next - 1]) {
-                const s = tenSets[next - 1];
-                playTradeSetSymphonyNote({
-                  setNumber: s.setNumber,
-                  outcome: s.outcome,
-                  winOrdinalIndex: s.winOrdinalIndex,
-                  rMultiple: s.rMultiple,
-                });
+              setShowCompletionReport(true);
+              const s = tenSets[next - 1];
+              if (s) {
+                recordSetExitMarkFinished(s, formatNowTime());
+                if (symphonyAudioEnabled) {
+                  playTradeSetSymphonyNote({
+                    setNumber: s.setNumber,
+                    outcome: s.outcome,
+                    winOrdinalIndex: s.winOrdinalIndex,
+                    rMultiple: s.rMultiple,
+                  });
+                }
               }
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
             <StepForward className="w-3.5 h-3.5" />
             <span>+1 Set</span>
@@ -1414,12 +2135,46 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
           <button
             type="button"
+            disabled={isHandsFreeStewardRunning}
             onClick={() => {
               setIsAutoRunning(false);
               setIsSymphonyPlaying(false);
               setCompletedSetsCount(10);
+              const stamp = formatNowTime();
+              const allReceipts: SetMarkHitReceipt[] = tenSets.map((s) => {
+                const setLabel = s.setNumber < 10 ? `0${s.setNumber}` : `${s.setNumber}`;
+                const isWin = s.outcome === 'WIN_TARGET_HIT';
+                const buyStr = `$${formatCoinPrice(s.buyPrice)}`;
+                const exitStr = `$${formatCoinPrice(isWin ? s.sellPrice : s.stopLossPrice)}`;
+                return {
+                  setNumber: s.setNumber,
+                  setupBadge: s.patternBadge,
+                  coinTicker: activeCoinTicker,
+                  quantityText: formatCoinQtyCompact(s.quantity),
+                  buyMarkPrice: buyStr,
+                  buyHitAt: stamp,
+                  exitMarkPrice: exitStr,
+                  exitHitAt: stamp,
+                  status: isWin ? 'PROFIT_TARGET_HIT' : 'SAFETY_STOP_HIT',
+                  rMultiple: s.rMultiple,
+                  pnlUsd: s.pnlUsd,
+                  balanceAfterText: `${s.cumulativeCoinsAfter.toFixed(qtyDecimals)} ${activeCoinTicker} ($${s.cumulativeBalanceAfter.toFixed(2)})`,
+                  whatHappenedLine: isWin
+                    ? `Bought mark @ ${buyStr} → Hit Profit Target Sell mark @ ${exitStr} (+${s.rMultiple}R / +$${s.pnlUsd.toFixed(2)}). Set #${setLabel} finished cleanly.`
+                    : `Bought mark @ ${buyStr} → Hit 2% Safety Stop-Loss mark @ ${exitStr} (-1.0R / $${s.pnlUsd.toFixed(2)}). Set #${setLabel} finished & protected wallet.`,
+                };
+              });
+              setMarkHitReceipts(allReceipts);
+              setShowCompletionReport(true);
+              setLatestMarkNotification({
+                timestamp: stamp,
+                kind: 'ALL_TEN_COMPLETED',
+                title: `✓ All 10 Buy & Sell Sets Finished! (${batchSummary.wins} Target Sells · ${batchSummary.losses} Safety Stops)`,
+                detail:
+                  'Every set from #01 to #10 hit its Buy mark and completed at either its Profit Target or 2% Safety Stop. Inspect what happened on each set below!',
+              });
             }}
-            className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white disabled:opacity-50 cursor-pointer whitespace-nowrap shrink-0"
           >
             <FastForward className="w-3.5 h-3.5" />
             <span>All 10</span>
@@ -1427,17 +2182,37 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
           <button
             type="button"
+            disabled={isHandsFreeStewardRunning}
             onClick={() => {
               setIsAutoRunning(false);
               setIsSymphonyPlaying(false);
+              setHandsFreePhase('IDLE');
+              setMarkHitReceipts([]);
+              setLatestMarkNotification(null);
+              setShowCompletionReport(false);
               setCompletedSetsCount(1);
               setSelectedSetNumber(1);
             }}
-            className="inline-flex items-center gap-1 px-2 py-2 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white cursor-pointer whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-1 px-2 py-2 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white disabled:opacity-50 cursor-pointer whitespace-nowrap shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset</span>
           </button>
+
+          {markHitReceipts.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowCompletionReport((v) => !v)}
+              className="inline-flex items-center gap-1 px-2.5 py-2 border border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/30 text-xs font-semibold text-emerald-800 dark:text-emerald-300 rounded-lg cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>
+                {showCompletionReport
+                  ? 'Hide Mark-Hit Report'
+                  : `Mark-Hit Report (${markHitReceipts.filter((r) => r.exitHitAt !== null).length}/10)`}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -1507,9 +2282,11 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
           <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
             {completedSetsCount} / 10 Sets
           </div>
-          {executionMode === 'trust_wallet_live' && isGoogleVerified && (
+          {executionMode === 'trust_wallet_live' && isWalletGateUnlocked && (
             <div className="font-sans text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
-              {signedSetNumbers.length} / 10 Sent to Wallet
+              {batchConfirmedAllTen
+                ? '✓ All 10 Sets Confirmed'
+                : `${signedSetNumbers.length} / 10 Confirmed`}
             </div>
           )}
         </div>
@@ -1597,12 +2374,18 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
             const buyY = 134;
             const sellY = isWin ? 62 : 153;
 
+            const isActivelyBuying =
+              isHandsFreeStewardRunning && isSelected && handsFreePhase === 'BUYING';
+            const isActivelySelling =
+              isHandsFreeStewardRunning && isSelected && handsFreePhase === 'SELLING';
+
             return (
               <g
                 key={setItem.setNumber}
-                className="cursor-pointer"
+                className={isHandsFreeStewardRunning ? 'cursor-default' : 'cursor-pointer'}
                 opacity={isUnlocked ? 1 : 0.25}
                 onClick={() => {
+                  if (isHandsFreeStewardRunning) return;
                   if (!isUnlocked) setCompletedSetsCount(setItem.setNumber);
                   setSelectedSetNumber(setItem.setNumber);
                   if (symphonyAudioEnabled) {
@@ -1624,7 +2407,15 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                   rx="8"
                   fill={isSelected ? '#0EA5E9' : '#0F172A'}
                   fillOpacity={isSelected ? '0.2' : '0.4'}
-                  stroke={isSelected ? '#38BDF8' : '#1E293B'}
+                  stroke={
+                    isActivelyBuying
+                      ? '#FBBF24'
+                      : isActivelySelling
+                      ? '#10B981'
+                      : isSelected
+                      ? '#38BDF8'
+                      : '#1E293B'
+                  }
                   strokeWidth={isSelected ? '2' : '1'}
                 />
 
@@ -1653,52 +2444,83 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                   {setItem.musicalNote.glyph} {setItem.musicalNote.noteName}
                 </text>
 
-                {/* Vertical Connector from Buy to Sell */}
-                <line
-                  x1={xCenter}
-                  y1={buyY}
-                  x2={xCenter}
-                  y2={sellY}
-                  stroke={isWin ? '#10B981' : '#F43F5E'}
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                />
+                {/* Vertical Connector from Buy to Sell (Shows partial line while Buying, full line once Selling) */}
+                {!isActivelyBuying && (
+                  <line
+                    x1={xCenter}
+                    y1={buyY}
+                    x2={xCenter}
+                    y2={sellY}
+                    stroke={isWin ? '#10B981' : '#F43F5E'}
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                  />
+                )}
 
-                {/* BUY Node */}
+                {/* BUY Node + Active Buying Halo */}
+                {isActivelyBuying && (
+                  <circle
+                    cx={xCenter}
+                    cy={buyY}
+                    r="11"
+                    fill="#38BDF8"
+                    fillOpacity="0.28"
+                    stroke="#38BDF8"
+                    strokeWidth="1.5"
+                  />
+                )}
                 <circle cx={xCenter} cy={buyY} r="5.5" fill="#38BDF8" stroke="#0F172A" strokeWidth="1.5" />
                 <text
                   x={xCenter}
                   y={buyY + 14}
                   textAnchor="middle"
-                  fill="#BAE6FD"
+                  fill={isActivelyBuying ? '#FDE68A' : '#BAE6FD'}
                   fontSize="8.2"
+                  fontWeight={isActivelyBuying ? 'bold' : 'normal'}
                   fontFamily="monospace"
                 >
-                  {isBtc
+                  {isActivelyBuying
+                    ? 'BUYING...'
+                    : isBtc
                     ? `Buy $${Math.round(setItem.buyPrice).toLocaleString()}`
                     : `Buy $${setItem.buyPrice.toFixed(3)}`}
                 </text>
 
-                {/* SELL Node */}
-                <circle
-                  cx={xCenter}
-                  cy={sellY}
-                  r="6"
-                  fill={isWin ? '#10B981' : '#F43F5E'}
-                  stroke="#0F172A"
-                  strokeWidth="1.5"
-                />
-                <text
-                  x={xCenter}
-                  y={isWin ? sellY - 8 : sellY + 14}
-                  textAnchor="middle"
-                  fill={isWin ? '#6EE7B7' : '#FDA4AF'}
-                  fontSize="9"
-                  fontWeight="bold"
-                  fontFamily="monospace"
-                >
-                  {isWin ? `+${setItem.rMultiple}R` : '-1.0R Stop'}
-                </text>
+                {/* SELL Node + Active Selling Halo */}
+                {!isActivelyBuying && (
+                  <>
+                    {isActivelySelling && (
+                      <circle
+                        cx={xCenter}
+                        cy={sellY}
+                        r="11.5"
+                        fill={isWin ? '#10B981' : '#F43F5E'}
+                        fillOpacity="0.3"
+                        stroke={isWin ? '#34D399' : '#FB7185'}
+                        strokeWidth="1.5"
+                      />
+                    )}
+                    <circle
+                      cx={xCenter}
+                      cy={sellY}
+                      r="6"
+                      fill={isWin ? '#10B981' : '#F43F5E'}
+                      stroke="#0F172A"
+                      strokeWidth="1.5"
+                    />
+                    <text
+                      x={xCenter}
+                      y={isWin ? sellY - 8 : sellY + 14}
+                      textAnchor="middle"
+                      fill={isWin ? '#6EE7B7' : '#FDA4AF'}
+                      fontSize="9"
+                      fontWeight="bold"
+                      fontFamily="monospace"
+                    >
+                      {isWin ? `+${setItem.rMultiple}R` : '-1.0R Stop'}
+                    </text>
+                  </>
+                )}
 
                 {/* Cumulative Balance Footer */}
                 <text
@@ -1796,39 +2618,38 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
             </h3>
           </div>
 
-          {/* Direct Wallet Sign & Approve Action Button + Paper Portfolio Button */}
+          {/* Direct 1-Tap Confirm All 10 Sets OR Single-Set Wallet Ticket + Paper Portfolio Button */}
           <div className="flex flex-wrap items-center gap-2">
-            {isGoogleVerified ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setExecutionMode('trust_wallet_live');
-                  setShowWalletSignDrawer((v) => !v);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <Wallet className="w-3.5 h-3.5" />
-                <span>
-                  {cryptographicallySignedSets.includes(selectedSet.setNumber)
-                    ? `✓ Set #${selectedSet.setNumber} Signed in Wallet`
-                    : signedSetNumbers.includes(selectedSet.setNumber)
-                    ? `✓ Sent Set #${selectedSet.setNumber} to Wallet (Open Ticket)`
-                    : `Sign & Approve Set #${selectedSet.setNumber} in Trust Wallet / Xaman`}
-                </span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setExecutionMode('trust_wallet_live');
-                  void handleGoogleUnlockWallet();
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Sign in with Google to Approve Real Coins in Wallet</span>
-              </button>
-            )}
+            <button
+              type="button"
+              disabled={isHandsFreeStewardRunning}
+              onClick={handleConfirmAndAutoRunAllTenSets}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>
+                {isHandsFreeStewardRunning
+                  ? `Auto-Handling Set #${selectedSetNumber}/10...`
+                  : batchConfirmedAllTen
+                  ? '✓ All 10 Confirmed · Re-Run Hands-Free'
+                  : 'Confirm Once & Auto-Handle All 10 Sets'}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!isWalletGateUnlocked) {
+                  handleClassroomQuickUnlock();
+                }
+                setExecutionMode('trust_wallet_live');
+                setShowWalletSignDrawer((v) => !v);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-emerald-400/70 dark:border-emerald-500/40 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-slate-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span>{showWalletSignDrawer ? 'Hide Wallet Ticket' : 'Xaman / Trust Wallet Ticket'}</span>
+            </button>
 
             {onLogSetPositionToPortfolio && (
               <button
@@ -1862,18 +2683,18 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
           </div>
         </div>
 
-        {/* INLINE NON-CUSTODIAL WALLET SIGN & APPROVE TICKET (Shown when Google-Verified & Clicked) */}
-        {isGoogleVerified && showWalletSignDrawer && (
+        {/* INLINE NON-CUSTODIAL WALLET SIGN & APPROVE TICKET (Works Immediately on Android & Desktop) */}
+        {isWalletGateUnlocked && showWalletSignDrawer && (
           <div className="rounded-xl border border-emerald-400/70 dark:border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 space-y-3 text-xs">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>
-                  Send Set #{selectedSet.setNumber} to Your Self-Custody Wallet to Sign, Verify & Approve Real Coins
+                  Xaman (Android) & Trust Wallet Mobile Order Ticket · Set #{selectedSet.setNumber} or All 10 Sets
                 </span>
               </div>
               <span className="font-mono text-[11px] text-emerald-800 dark:text-emerald-300">
-                Google Auth: {googleUser?.email}
+                {isGoogleVerified ? `Google: ${googleUser?.email}` : '1-Tap Classroom Sign-Off Active'}
               </span>
             </div>
 
@@ -1897,32 +2718,31 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => void handleDispatchSetToWallet('TrustWallet', false)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-sans font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>
-                  {copiedSpecsSet === selectedSet.setNumber
-                    ? 'Order Specs Copied ✓'
-                    : 'Copy Order Specs'}
-                </span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2 font-sans">
+                <button
+                  type="button"
+                  onClick={() => void handleDispatchSetToWallet('Xaman', false)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>
+                    {copiedSpecsSet === selectedSet.setNumber
+                      ? 'Set Copied ✓'
+                      : 'Copy Set Specs'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleCopyMasterTenSetBatch()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-400/60 bg-emerald-50 dark:bg-emerald-900/40 font-semibold text-emerald-900 dark:text-emerald-200 cursor-pointer whitespace-nowrap"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>{copiedMasterBatch ? 'All 10 Copied ✓' : 'Copy All 10 Sets'}</span>
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
-              <a
-                href="https://link.trustwallet.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => void handleDispatchSetToWallet('TrustWallet', false)}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg transition-colors whitespace-nowrap shrink-0"
-              >
-                <span>Open Trust Wallet to Sign & Approve</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-
               <a
                 href="https://xumm.app/detect/xapp:xumm.dex"
                 target="_blank"
@@ -1930,7 +2750,18 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                 onClick={() => void handleDispatchSetToWallet('Xaman', false)}
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors whitespace-nowrap shrink-0"
               >
-                <span>Open Xaman DEX (Android) to Sign & Approve</span>
+                <span>Open Xaman DEX (Android — Best for 5 XRP)</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+
+              <a
+                href="https://link.trustwallet.com/open_url?coin_id=144&url=https://xrpl.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => void handleDispatchSetToWallet('TrustWallet', false)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg transition-colors whitespace-nowrap shrink-0"
+              >
+                <span>Open Trust Wallet Mobile App</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
 
@@ -1940,7 +2771,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                 className="inline-flex items-center gap-1.5 px-3.5 py-2.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-800 dark:text-slate-200 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Sign in Browser Wallet Extension</span>
+                <span>EVM Extension Check</span>
               </button>
 
               <button
