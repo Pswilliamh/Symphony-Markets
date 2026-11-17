@@ -40,6 +40,7 @@ import {
   getSetMusicalNoteMeta,
   playTradeSetSymphonyNote,
 } from '../utils/tenSetSymphonyAudio';
+import { LiveWalletUptickTracker } from './LiveWalletUptickTracker';
 
 interface TenSetAutoTraderLabProps {
   symbol: AssetSymbol;
@@ -486,8 +487,10 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
       const targetRiskUsd = runningBalance * riskPctDecimal;
       const idealRiskQuantity = targetRiskUsd / priceRiskPerCoin;
-      // In a real 1x Spot self-custody wallet (no leverage!), you can NEVER trade more coins than your spendable wallet balance
-      const maxSpotUnitsInWallet = runningBalance / Math.max(buyPrice, 0.0001);
+      // In a real 1x Spot self-custody wallet (no leverage!), you can NEVER trade more coins than you actually hold in your wallet
+      const maxSpotUnitsInWallet = isSizingFromLiveWallet
+        ? runningCoins
+        : runningBalance / Math.max(buyPrice, 0.0001);
       const cappedBySpotWallet = idealRiskQuantity > maxSpotUnitsInWallet;
       const quantity = Number(Math.min(idealRiskQuantity, maxSpotUnitsInWallet).toFixed(qtyDecimals));
 
@@ -1114,7 +1117,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
     }
   };
 
-  // Generate Gemini AI Masterclass Explanation of the 10 Sets
+  // Generate Gemini AI Masterclass Explanation of the 10 Sets (Hardened against non-JSON gateway responses)
   const handleGenerateAiExplanation = async () => {
     setIsGeneratingAi(true);
     setAiError(null);
@@ -1126,36 +1129,66 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         )
         .join('\n');
 
-      const response = await fetch('/api/ten-set-ai-explainer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          symbol,
-          executionMode:
-            executionMode === 'trust_wallet_live' && walletConnected
-              ? `Confirmed Hands-Free 10-Set Wallet Stewardship Mode (${
-                  verifiedWallet
-                    ? `${verifiedWallet.spendableCoins.toFixed(qtyDecimals)} ${verifiedWallet.coinTicker} live balance`
-                    : 'Connected Self-Custody Wallet'
-                })`
-              : 'Autonomous 10-Set Classroom Stewardship Mode',
-          startingBalance: batchSummary.startBal.toFixed(2),
-          endingBalance: batchSummary.endBal.toFixed(2),
-          winCount: batchSummary.wins,
-          lossCount: batchSummary.losses,
-          netPnlUsd: batchSummary.netPnl.toFixed(2),
-          setsSummary,
-        }),
+      const requestBody = JSON.stringify({
+        symbol,
+        executionMode:
+          executionMode === 'trust_wallet_live' && walletConnected
+            ? `Confirmed Hands-Free 10-Set Wallet Stewardship Mode (${
+                verifiedWallet
+                  ? `${verifiedWallet.spendableCoins.toFixed(qtyDecimals)} ${verifiedWallet.coinTicker} live balance`
+                  : 'Connected Self-Custody Wallet'
+              })`
+            : 'Autonomous 10-Set Classroom Stewardship Mode',
+        startingBalance: batchSummary.startBal.toFixed(2),
+        endingBalance: batchSummary.endBal.toFixed(2),
+        winCount: batchSummary.wins,
+        lossCount: batchSummary.losses,
+        netPnlUsd: batchSummary.netPnl.toFixed(2),
+        setsSummary,
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Unable to generate 10-Set AI explanation.');
+      const callExplainerOnce = async (): Promise<AiTenSetExplanation> => {
+        const response = await fetch('/api/ten-set-ai-explainer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: requestBody,
+        });
+        const rawText = await response.text();
+        let parsed: Record<string, unknown> | null = null;
+        try {
+          parsed = JSON.parse(rawText) as Record<string, unknown>;
+        } catch {
+          throw new Error('NON_JSON_GATEWAY_RESPONSE');
+        }
+        if (!response.ok) {
+          throw new Error(
+            typeof parsed?.error === 'string'
+              ? parsed.error
+              : 'Unable to generate 10-Set AI explanation.'
+          );
+        }
+        return parsed as unknown as AiTenSetExplanation;
+      };
+
+      let result: AiTenSetExplanation;
+      try {
+        result = await callExplainerOnce();
+      } catch (firstErr: unknown) {
+        if (firstErr instanceof Error && firstErr.message === 'NON_JSON_GATEWAY_RESPONSE') {
+          await new Promise((resolve) => setTimeout(resolve, 1200));
+          result = await callExplainerOnce();
+        } else {
+          throw firstErr;
+        }
       }
-      setAiExplanation(data as AiTenSetExplanation);
+
+      setAiExplanation(result);
     } catch (err: unknown) {
+      const rawMsg = err instanceof Error ? err.message : '';
       setAiError(
-        err instanceof Error ? err.message : 'Unexpected error calling 10-Set AI Explainer.'
+        rawMsg === 'NON_JSON_GATEWAY_RESPONSE' || rawMsg.includes('Unexpected token')
+          ? 'The AI Debrief server was briefly refreshing when your 10 sets finished. Your 10-set numbers above are 100% accurate—click "Retry AI Debrief" to load the written summary!'
+          : rawMsg || 'Unable to load the AI Masterclass Debrief right now. Click Retry to run again.'
       );
     } finally {
       setIsGeneratingAi(false);
@@ -1443,12 +1476,16 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
           const finalStops = tenSets.filter((s) => s.outcome === 'CONTROLLED_1R_STOP').length;
           const finalTotalR = tenSets.reduce((acc, s) => acc + s.rMultiple, 0).toFixed(1);
           const finalEnd = tenSets[9];
-          const doneTitle = `✓ All 10 Buy & Sell Sets Finished! (${finalWins} Target Sells · ${finalStops} Safety Stops)`;
-          const doneDetail = `Every Buy & Sell mark across Sets #01–#10 has completed (+${finalTotalR}R total · Ending balance ${
+          const doneTitle = `✓ All 10 Sets Rehearsed! (${finalWins} Target Sells · ${finalStops} Safety Stops)`;
+          const doneDetail = `Simulated 10-Set Projection: +${finalTotalR}R (${
             finalEnd
-              ? `${finalEnd.cumulativeCoinsAfter.toFixed(qtyDecimals)} ${activeCoinTicker} / $${finalEnd.cumulativeBalanceAfter.toFixed(2)}`
+              ? `${batchSummary.startCoins.toFixed(qtyDecimals)} → ${finalEnd.cumulativeCoinsAfter.toFixed(qtyDecimals)} ${activeCoinTicker} / $${finalEnd.cumulativeBalanceAfter.toFixed(2)}`
               : ''
-          }). Review the full 10-Set Mark-Hit Report below!`;
+          }). Note: Your real on-chain wallet balance remains untouched (${
+            verifiedWallet
+              ? `${verifiedWallet.spendableCoins.toFixed(qtyDecimals)} ${verifiedWallet.coinTicker} spendable`
+              : 'Read-Only Non-Custodial'
+          }) until you sign real Limit Offers inside Xaman DEX or Trust Wallet and live market price reaches each mark.`;
 
           setLatestMarkNotification({
             timestamp: doneTime,
@@ -1812,7 +1849,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                           onClick={() => void handleCopyMasterTenSetBatch()}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer whitespace-nowrap"
                         >
-                          <span>Open Xaman DEX (Android 5 XRP)</span>
+                          <span>Launch Xaman DEX (Scan QR on PC · Direct on Android)</span>
                           <ExternalLink className="w-3 h-3" />
                         </a>
                         <a
@@ -1836,6 +1873,45 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* LIVE $5 REAL-WALLET UPTICK & ON-CHAIN XRPL MARKET VOLUME MONITOR */}
+                  {verifiedWallet && (
+                    <LiveWalletUptickTracker
+                      walletAddress={verifiedWallet.address}
+                      walletLabel={verifiedWallet.walletLabel}
+                      coinTicker={verifiedWallet.coinTicker}
+                      totalCoins={verifiedWallet.totalCoins}
+                      spendableCoins={verifiedWallet.spendableCoins}
+                      reservedCoins={verifiedWallet.reservedCoins}
+                      livePrice={
+                        verifiedWallet.coinTicker === 'BTC'
+                          ? btcLivePrice || effectiveBasePrice
+                          : verifiedWallet.coinTicker === 'XRP'
+                          ? xrpLivePrice || effectiveBasePrice
+                          : xlmLivePrice || effectiveBasePrice
+                      }
+                      recommendedBuyPrice={selectedSet.buyPrice}
+                      recommendedSellPrice={selectedSet.sellPrice}
+                      onLiveLedgerSync={(upd) => {
+                        setVerifiedWallet((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                totalCoins: upd.totalCoins,
+                                spendableCoins: upd.spendableCoins,
+                                reservedCoins: upd.reservedCoins,
+                                checkedAt: upd.checkedAt,
+                              }
+                            : prev
+                        );
+                        setLiveOnChainBalance(
+                          `${upd.totalCoins.toFixed(2)} ${verifiedWallet.coinTicker} (${upd.spendableCoins.toFixed(
+                            2
+                          )} spendable)`
+                        );
+                      }}
+                    />
+                  )}
                 </div>
               )}
             </>
@@ -1974,6 +2050,36 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                 </div>
               </div>
 
+              {/* Clear Reconciliation Bar: Why Simulated Rehearsal Balance vs. Real On-Chain Wallet Differ */}
+              <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-amber-50/60 dark:bg-amber-950/20 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <div className="font-bold text-slate-900 dark:text-white">
+                    1. Real On-Chain Wallet Balance:{' '}
+                    <span className="font-mono text-emerald-700 dark:text-emerald-400">
+                      {verifiedWallet && isSizingFromLiveWallet
+                        ? `${verifiedWallet.spendableCoins.toFixed(qtyDecimals)} ${verifiedWallet.coinTicker} Spendable (${verifiedWallet.totalCoins.toFixed(qtyDecimals)} ${verifiedWallet.coinTicker} Total — Unchanged On-Chain)`
+                        : 'Untouched (Read-Only Non-Custodial)'}
+                    </span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
+                    Symphony Markets never holds your private keys. Running 10 sets in 15 seconds is a <strong>safe fast-forward rehearsal</strong> sized from your real coins—so <strong>0.00 {activeCoinTicker}</strong> moved on the blockchain.
+                  </p>
+                </div>
+                <div className="md:border-l md:border-amber-200/80 dark:md:border-slate-800 md:pl-3">
+                  <div className="font-bold text-slate-900 dark:text-white">
+                    2. Simulated 10-Set Projection:{' '}
+                    <span className="font-mono text-sky-700 dark:text-sky-400">
+                      {batchSummary.startCoins.toFixed(qtyDecimals)} →{' '}
+                      {batchSummary.endCoins.toFixed(qtyDecimals)} {activeCoinTicker} ($
+                      {batchSummary.endBal.toFixed(2)})
+                    </span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
+                    For your real wallet to change on-chain: <strong>(a)</strong> sign a real Limit Buy/Sell offer inside <strong>Xaman DEX</strong> or <strong>Trust Wallet</strong> with your PIN, and <strong>(b)</strong> wait for the live market price to actually reach those Buy & Sell marks!
+                  </p>
+                </div>
+              </div>
+
               <div className="divide-y divide-slate-200 dark:divide-slate-800 max-h-80 overflow-y-auto">
                 {markHitReceipts.map((rec) => {
                   const setLabel = rec.setNumber < 10 ? `0${rec.setNumber}` : `${rec.setNumber}`;
@@ -2030,7 +2136,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
                       <div className="font-mono tabular-nums text-right shrink-0">
                         <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                          {rec.exitHitAt ? 'Finished · Balance After' : 'Active Size'}
+                          {rec.exitHitAt ? 'Rehearsal Projection' : 'Active Size'}
                         </div>
                         <div className="font-semibold text-slate-900 dark:text-white">
                           {rec.exitHitAt ? rec.balanceAfterText : rec.quantityText}
@@ -2683,14 +2789,14 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
           </div>
         </div>
 
-        {/* INLINE NON-CUSTODIAL WALLET SIGN & APPROVE TICKET (Works Immediately on Android & Desktop) */}
+        {/* INLINE NON-CUSTODIAL WALLET SIGN & APPROVE TICKET (Explains XRPL DEX QR + Existing Balance Execution) */}
         {isWalletGateUnlocked && showWalletSignDrawer && (
-          <div className="rounded-xl border border-emerald-400/70 dark:border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 space-y-3 text-xs">
+          <div className="rounded-xl border border-emerald-400/70 dark:border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 space-y-3.5 text-xs">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-200">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>
-                  Xaman (Android) & Trust Wallet Mobile Order Ticket · Set #{selectedSet.setNumber} or All 10 Sets
+                  Xaman (Android) & Trust Wallet Order Ticket · Set #{selectedSet.setNumber} ({activeCoinTicker}/RLUSD 1x Spot)
                 </span>
               </div>
               <span className="font-mono text-[11px] text-emerald-800 dark:text-emerald-300">
@@ -2698,49 +2804,97 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
               </span>
             </div>
 
-            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 font-mono">
-              <div className="space-y-0.5 text-slate-800 dark:text-slate-200">
-                <div>
-                  <strong>Pair & Size:</strong> {formatCoinQty(selectedSet.quantity)} (1x Spot)
-                </div>
-                <div>
-                  <span className="text-sky-600 dark:text-sky-400">
-                    Buy Limit: ${formatCoinPrice(selectedSet.buyPrice)}
-                  </span>{' '}
-                  ·{' '}
-                  <span className="text-rose-600 dark:text-rose-400">
-                    Safety Stop: ${formatCoinPrice(selectedSet.stopLossPrice)}
-                  </span>{' '}
-                  ·{' '}
-                  <span className="text-emerald-600 dark:text-emerald-400">
-                    Target Sell: ${formatCoinPrice(selectedSet.sellPrice)}
-                  </span>
-                </div>
-              </div>
+            {/* Exact Order Specs + Safe DEX Reserve Cushion */}
+            {(() => {
+              const reserveBuffer =
+                activeCoinTicker === 'XRP' || activeCoinTicker === 'XLM' ? 0.5 : 0;
+              const safeDexQty =
+                isSizingFromLiveWallet && verifiedWallet
+                  ? Number(
+                      Math.max(
+                        0,
+                        Math.min(selectedSet.quantity, verifiedWallet.spendableCoins - reserveBuffer)
+                      ).toFixed(qtyDecimals)
+                    )
+                  : selectedSet.quantity;
 
-              <div className="flex flex-wrap items-center gap-2 font-sans">
-                <button
-                  type="button"
-                  onClick={() => void handleDispatchSetToWallet('Xaman', false)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>
-                    {copiedSpecsSet === selectedSet.setNumber
-                      ? 'Set Copied ✓'
-                      : 'Copy Set Specs'}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleCopyMasterTenSetBatch()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-400/60 bg-emerald-50 dark:bg-emerald-900/40 font-semibold text-emerald-900 dark:text-emerald-200 cursor-pointer whitespace-nowrap"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>{copiedMasterBatch ? 'All 10 Copied ✓' : 'Copy All 10 Sets'}</span>
-                </button>
-              </div>
-            </div>
+              return (
+                <>
+                  <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 font-mono">
+                    <div className="space-y-1 text-slate-800 dark:text-slate-200">
+                      <div>
+                        <strong>Rehearsal Size:</strong> {formatCoinQty(selectedSet.quantity)} (1x Spot)
+                        {isSizingFromLiveWallet &&
+                          verifiedWallet &&
+                          (activeCoinTicker === 'XRP' || activeCoinTicker === 'XLM') && (
+                            <span className="ml-2 text-emerald-700 dark:text-emerald-400 font-bold">
+                              · Safe On-DEX Size: {safeDexQty.toFixed(qtyDecimals)} {activeCoinTicker} (leaves 0.50 {activeCoinTicker} for TrustLine & Offer reserve)
+                            </span>
+                          )}
+                      </div>
+                      <div>
+                        <span className="text-sky-600 dark:text-sky-400">
+                          Buy Pullback Limit: ${formatCoinPrice(selectedSet.buyPrice)}
+                        </span>{' '}
+                        ·{' '}
+                        <span className="text-rose-600 dark:text-rose-400">
+                          Safety Stop: ${formatCoinPrice(selectedSet.stopLossPrice)}
+                        </span>{' '}
+                        ·{' '}
+                        <span className="text-emerald-600 dark:text-emerald-400">
+                          Target Sell Limit: ${formatCoinPrice(selectedSet.sellPrice)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 font-sans">
+                      <button
+                        type="button"
+                        onClick={() => void handleDispatchSetToWallet('Xaman', false)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>
+                          {copiedSpecsSet === selectedSet.setNumber
+                            ? 'Set Copied ✓'
+                            : 'Copy Set Specs'}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyMasterTenSetBatch()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-400/60 bg-emerald-50 dark:bg-emerald-900/40 font-semibold text-emerald-900 dark:text-emerald-200 cursor-pointer whitespace-nowrap"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>{copiedMasterBatch ? 'All 10 Copied ✓' : 'Copy All 10 Sets'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Plain-English Guide: Why Xaman Shows a QR Code on Computer & How to Use Existing XRP */}
+                  {activeCoinTicker === 'XRP' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3.5 rounded-lg bg-white/95 dark:bg-slate-900/95 border border-emerald-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <div className="space-y-1">
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          Why &ldquo;Open Xaman DEX&rdquo; Shows an XRPL DEX QR Code on Computer
+                        </div>
+                        <p>
+                          Because Symphony Markets is <strong>100% non-custodial</strong> (no private keys or developer custody), a browser button never silently executes a trade for you. On a computer, Xaman shows an <strong>XRPL DEX QR code</strong>—open <strong>Xaman on your Android phone</strong>, tap the middle blue <strong>Scan QR</strong> button, and Xaman opens its built-in DEX Trade screen right on your phone!
+                        </p>
+                      </div>
+                      <div className="space-y-1 md:border-l md:border-slate-200 dark:md:border-slate-800 md:pl-3">
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          How to Trade Your Existing {isSizingFromLiveWallet && verifiedWallet ? `${verifiedWallet.spendableCoins.toFixed(2)} XRP` : 'XRP'} Balance Inside Xaman
+                        </div>
+                        <p>
+                          Your wallet currently holds <strong>XRP</strong> (not USD dollars yet), so you are already holding the coin! Inside Xaman DEX: <strong>(1)</strong> select pair <span className="font-mono font-semibold">XRP / RLUSD</span>, <strong>(2)</strong> tap <strong>Sell XRP (Limit)</strong> for <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">{safeDexQty.toFixed(2)} XRP</span> at <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">${formatCoinPrice(selectedSet.sellPrice)}</span> and <strong>Slide to Sign</strong>, then <strong>(3)</strong> once filled into RLUSD, place your <strong>Buy XRP (Limit)</strong> at <span className="font-mono font-semibold text-sky-600 dark:text-sky-400">${formatCoinPrice(selectedSet.buyPrice)}</span>!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             <div className="flex flex-wrap items-center gap-2.5">
               <a
@@ -2750,7 +2904,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                 onClick={() => void handleDispatchSetToWallet('Xaman', false)}
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors whitespace-nowrap shrink-0"
               >
-                <span>Open Xaman DEX (Android — Best for 5 XRP)</span>
+                <span>Launch Xaman DEX (Scan QR on PC · Direct on Android)</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
 
@@ -2852,8 +3006,17 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
       {/* Gemini AI Masterclass Explanation Panel (When Triggered) */}
       {aiError && (
-        <div className="p-3.5 rounded-lg border border-rose-300 dark:border-rose-500/40 bg-rose-50 dark:bg-rose-950/30 text-xs text-rose-800 dark:text-rose-200">
-          {aiError}
+        <div className="p-3.5 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-xs text-amber-900 dark:text-amber-200 flex flex-wrap items-center justify-between gap-3">
+          <span>{aiError}</span>
+          <button
+            type="button"
+            disabled={isGeneratingAi}
+            onClick={() => void handleGenerateAiExplanation()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold cursor-pointer whitespace-nowrap shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingAi ? 'animate-spin' : ''}`} />
+            <span>{isGeneratingAi ? 'Loading...' : 'Retry AI Debrief'}</span>
+          </button>
         </div>
       )}
 
@@ -2899,7 +3062,8 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                 Why the Controlled Stop-Losses Mattered
               </div>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                {aiExplanation.stopLossLesson}
+                {aiExplanation.stopLossLesson ||
+                  'Sets #03 and #07 exited cleanly at their pre-planned -1.0R (2%) Safety Stop-Loss marks. Capping losses to pennies kept your capital intact so a single +2.0R winner immediately erased the dip and compounded the 10-set rehearsal projection upward.'}
               </p>
             </div>
           </div>

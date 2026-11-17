@@ -483,9 +483,15 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: trimmed }),
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: Record<string, unknown> = {};
+      try {
+        data = JSON.parse(rawText) as Record<string, unknown>;
+      } catch {
+        throw new Error('Server was briefly refreshing. Please click Unlock again.');
+      }
       if (!res.ok) {
-        throw new Error(data.error || 'Could not validate email');
+        throw new Error(typeof data.error === 'string' ? data.error : 'Could not validate email');
       }
       setUnlockedForEmail(trimmed);
     } catch (err: unknown) {

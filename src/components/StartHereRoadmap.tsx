@@ -241,11 +241,19 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
           leverage,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Could not reach AI Learning Coach');
+      const rawText = await res.text();
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(rawText) as Record<string, unknown>;
+      } catch {
+        throw new Error('AI Learning Coach was briefly refreshing. Please tap Ask again.');
       }
-      setCoachReply(data as CoachResponse);
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === 'string' ? data.error : 'Could not reach AI Learning Coach'
+        );
+      }
+      setCoachReply(data as unknown as CoachResponse);
     } catch (err: unknown) {
       setCoachError(err instanceof Error ? err.message : 'Error contacting AI Learning Coach');
     } finally {

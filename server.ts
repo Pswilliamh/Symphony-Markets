@@ -4,16 +4,30 @@ import path from 'path';
 import { Readable } from 'stream';
 import { ReadableStream as WebReadableStream } from 'stream/web';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function parseGeminiJson(text: string | undefined): unknown {
+  const cleaned = (text ?? '{}')
+    .trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+  return JSON.parse(cleaned || '{}');
+}
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json({ limit: '1mb' }));
+
+  app.get('/api/health', (_req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
 
   app.post('/api/dex-ai-audit', async (req, res) => {
     try {
@@ -71,6 +85,7 @@ Evaluate whether 24/7 autonomous DEX execution faces excessive slippage/fee drag
         config: {
           systemInstruction:
             'You are a quantitative DeFi and DEX risk educator applying the 11-module day-trader-skill workflow (scanner, news, analyst, pelosi, entry, exit, risk, budget, timemachine, alerts, broker). Keep responses concise, realistic, and strictly educational (paper simulation only, never financial advice). Highlight how AMM slippage, LP fees, and on-chain spread affect a 2% risk / 1:2 R:R setup.',
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -106,9 +121,7 @@ Evaluate whether 24/7 autonomous DEX execution faces excessive slippage/fee drag
         },
       });
 
-      const rawText = (response.text ?? '{}').trim();
-      const parsed = JSON.parse(rawText);
-      res.json(parsed);
+      res.json(parseGeminiJson(response.text));
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Unexpected error calling Gemini DEX audit.';
@@ -169,6 +182,7 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
         config: {
           systemInstruction:
             'You are a patient, plain-English crypto market teacher helping a beginner learn market mechanics safely with a $5 real-wallet budget. Translate technical chart data into simple everyday analogies. Never promise profits or give financial advice; teach process, fee protection, and patience.',
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -200,8 +214,7 @@ Answer the learner's question in warm, crystal-clear everyday English with zero 
         },
       });
 
-      const rawText = (response.text ?? '{}').trim();
-      res.json(JSON.parse(rawText));
+      res.json(parseGeminiJson(response.text));
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Unexpected error calling AI Learning Coach.';
@@ -270,6 +283,7 @@ Provide specific numerical Recommended Buy Zone 1 (Primary Pullback/Support Buy)
         config: {
           systemInstruction:
             'You are an algorithmic technical analysis helper examining live market structure (EMA 20/50, RSI 14, Fibonacci 38.2/50/61.8 levels, and candlestick patterns) to output concrete, disciplined Recommended Buy Points, Safety Stop-Loss Points, and Recommended Sell (Take-Profit) Points. Always include a clear reminder that all signals are probabilistic technical levels provided strictly on a "Use at Your Own Risk" basis with a strict 2% risk cap ($0.10 on a $5 wallet) and 1x Spot self-custody discipline.',
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
@@ -339,8 +353,7 @@ Provide specific numerical Recommended Buy Zone 1 (Primary Pullback/Support Buy)
         },
       });
 
-      const rawText = (response.text ?? '{}').trim();
-      res.json(JSON.parse(rawText));
+      res.json(parseGeminiJson(response.text));
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Unexpected error running AI Buy & Sell Helper.';
@@ -379,61 +392,73 @@ Provide specific numerical Recommended Buy Zone 1 (Primary Pullback/Support Buy)
         setsSummary,
       } = req.body ?? {};
 
-      const prompt = `An advanced student just ran the 10-Set Automated Buy & Sell Sequencer on ${symbol} (Mode: ${executionMode}).
-Starting Wallet Balance: $${startingBalance} -> Ending Balance after 10 Sets: $${endingBalance} (Net PnL: $${netPnlUsd}, Wins: ${winCount}, Controlled 1R Stops: ${lossCount}).
+      const prompt = `An advanced student just ran a fast-forward 10-Set Automated Buy & Sell Rehearsal on ${symbol} (Mode: ${executionMode}).
+Starting Rehearsal Balance (sized from their wallet): $${startingBalance} -> Projected Ending Rehearsal Balance after 10 Sets: $${endingBalance} (Projected Net PnL: $${netPnlUsd}, Wins: ${winCount}, Controlled 1R Stops: ${lossCount}).
 
-Here are the 10 Buy & Sell Sets executed:
+IMPORTANT NON-CUSTODIAL TRUTH TO CLARIFY FOR THE STUDENT:
+Because Symphony Markets is 100% non-custodial (read-only public address, zero private keys held), this fast-forward 10-set run is a SIMULATED MATHEMATICAL REHEARSAL sized from their real wallet—it did NOT move coins on the blockchain or change their actual on-chain Trust Wallet / Xaman balance yet. Explain clearly that to grow their actual on-chain wallet balance, they place & sign real Limit Buy / Sell offers inside Xaman DEX or Trust Wallet and wait for live market prices to reach those marks over real time.
+
+Here are the 10 Buy & Sell Sets rehearsed:
 ${setsSummary}
 
-Write a crystal-clear, encouraging Masterclass Explanation teaching the student:
-1. Overall 10-Set Executive Summary: What the automated engine did across all 10 sets and why thinking in "10-Set Batches" (Law of Large Numbers with 1:2 Risk-to-Reward) beats emotional single-trade gambling.
-2. Why the Winning Buy & Sell Points Worked: How Fibonacci pullbacks, EMA support, and RSI confluence selected the entries and exits.
-3. Why the Controlled Stop-Losses Were Essential: How the small 1R stops protected the wallet so the 2R/3R winners could compound.
-4. Three Advanced Takeaways for Live Trust Wallet Self-Custody Execution.`;
+Write a crystal-clear, encouraging Masterclass Explanation with concise, well-balanced paragraphs (3-5 sentences per field) teaching the student:
+1. headline: 1-sentence headline summarizing the 10-Set rehearsal result and reminding them this is a read-only projection sized from their wallet.
+2. whatTheEngineDid: How the automation selected the 10 buy and sell marks (Fibonacci pullbacks, EMA staircase, RSI springs) and why fast-forwarding 10 sets rehearses real execution before risking coins on-chain.
+3. whyTenSetsMatter: Why executing in 10-trade batches (Law of Large Numbers with 1:2+ Risk-to-Reward) removes micromanagement emotion—and why real on-chain DEX orders only change their wallet balance after they sign inside Xaman/Trust Wallet and live market price touches each mark.
+4. stopLossLesson: Why Sets #3 and #7 hitting their controlled -1R (2%) Safety Stop-Loss marks were actually a huge victory for capital protection so the 8 winning sets could compound.
+5. advancedStudentTakeaways: Exactly 3 concise, practical takeaways for moving from this 10-set rehearsal to real self-custody DEX orders.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-4-hydrogen',
         contents: prompt,
         config: {
           systemInstruction:
-            'You are a quantitative trading mentor for advanced students at Symphony Markets. Explain clearly what the 10-Set Automated Buy & Sell engine did and why each mathematical decision (Fibonacci entries, 1:2 R:R profit targets, and 2% stop-loss protection) teaches market mastery. Always remind students that automated tools are used at their own risk and that self-custody in Trust Wallet keeps them in full control of their keys.',
+            'You are a transparent, plain-English trading mentor at Symphony Markets. Always populate EVERY JSON field (headline, whatTheEngineDid, whyTenSetsMatter, stopLossLesson, advancedStudentTakeaways) with concise 3-5 sentence paragraphs. Never claim a simulated rehearsal already changed the user’s real on-chain wallet balance; clearly distinguish read-only wallet sizing (rehearsal projection) from real signed on-chain DEX trades in Xaman or Trust Wallet.',
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           responseMimeType: 'application/json',
           responseSchema: {
             type: Type.OBJECT,
+            required: [
+              'headline',
+              'whatTheEngineDid',
+              'whyTenSetsMatter',
+              'stopLossLesson',
+              'advancedStudentTakeaways',
+            ],
             properties: {
               headline: {
                 type: Type.STRING,
-                description: '1-sentence headline summarizing the 10-Set run and its core lesson.',
+                description:
+                  '1-sentence headline summarizing the 10-Set rehearsal projection and core lesson.',
               },
               whatTheEngineDid: {
                 type: Type.STRING,
                 description:
-                  'Clear explanation of how the automation selected the 10 buy and sell points.',
+                  'Concise 3-5 sentence explanation of how the automation selected the 10 buy and sell marks.',
               },
               whyTenSetsMatter: {
                 type: Type.STRING,
                 description:
-                  'Why executing in 10-trade sets with 1:2 R:R removes emotion and builds consistency.',
+                  'Concise 3-5 sentence explanation of 10-set batch math AND why real wallet balances only change when signed on-chain in Xaman/Trust Wallet DEX.',
               },
               stopLossLesson: {
                 type: Type.STRING,
                 description:
-                  'Why the 1-2 controlled stop-loss sets in the batch were actually a victory for risk management.',
+                  'Concise 3-5 sentence explanation of why the 2 controlled -1R stop-loss sets were a victory for protecting the wallet.',
               },
               advancedStudentTakeaways: {
                 type: Type.ARRAY,
                 items: {
                   type: Type.STRING,
                 },
-                description: '3 actionable lessons for the student from this 10-set run.',
+                description: '3 concise actionable lessons for the student from this 10-set run.',
               },
             },
           },
         },
       });
 
-      const rawText = (response.text ?? '{}').trim();
-      res.json(JSON.parse(rawText));
+      res.json(parseGeminiJson(response.text));
     } catch (err: unknown) {
       const message =
         err instanceof Error

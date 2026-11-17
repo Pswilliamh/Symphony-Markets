@@ -289,11 +289,21 @@ export const LiveAiSignalHelper: React.FC<LiveAiSignalHelperProps> = ({
         }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Unable to complete AI Buy & Sell scan.');
+      const rawText = await response.text();
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(rawText) as Record<string, unknown>;
+      } catch {
+        throw new Error(
+          'The AI scan server was briefly refreshing. Please click Scan again in a moment.'
+        );
       }
-      setAiScanResult(data as AiScanResponse);
+      if (!response.ok) {
+        throw new Error(
+          typeof data.error === 'string' ? data.error : 'Unable to complete AI Buy & Sell scan.'
+        );
+      }
+      setAiScanResult(data as unknown as AiScanResponse);
       setLastScannedSymbol(symbol);
     } catch (err: unknown) {
       setAiError(

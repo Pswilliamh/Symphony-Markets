@@ -377,11 +377,19 @@ export const DecentralizedAiDexDesk: React.FC<DecentralizedAiDexDeskProps> = ({
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to run Gemini DEX audit');
+      const rawText = await res.text();
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(rawText) as Record<string, unknown>;
+      } catch {
+        throw new Error('DEX AI audit server was briefly refreshing. Please try again.');
       }
-      setAiAudit(data as AiDexAuditResponse);
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === 'string' ? data.error : 'Failed to run Gemini DEX audit'
+        );
+      }
+      setAiAudit(data as unknown as AiDexAuditResponse);
     } catch (e: unknown) {
       setAuditError(e instanceof Error ? e.message : 'Unable to reach AI DEX audit endpoint');
     } finally {
