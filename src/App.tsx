@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, ArrowRight, Layers } from 'lucide-react';
 import { CandleEducationDeck } from './components/CandleEducationDeck';
 import { CandlestickChart } from './components/CandlestickChart';
 import { CandlestickSymphonyComposer } from './components/CandlestickSymphonyComposer';
@@ -12,7 +13,10 @@ import { DayTraderSkillSuite } from './components/DayTraderSkillSuite';
 import { DecentralizedAiDexDesk } from './components/DecentralizedAiDexDesk';
 import { LandingPageView, PublicPageTab } from './components/LandingPageView';
 import { LiveAiSignalHelper } from './components/LiveAiSignalHelper';
-import { MarketCyclesEducationModule } from './components/MarketCyclesEducationModule';
+import {
+  MarketCyclePartId,
+  MarketCyclesEducationModule,
+} from './components/MarketCyclesEducationModule';
 import { PortfolioAndToolsSection } from './components/PortfolioAndToolsSection';
 import { RiskSimulatorPanel } from './components/RiskSimulatorPanel';
 import { StartHereRoadmap } from './components/StartHereRoadmap';
@@ -36,12 +40,187 @@ import {
   WatchedWallet,
 } from './types/market';
 
+type CurriculumGroupId = 'foundations' | 'live_desk' | 'pro_suites' | 'market_cycles';
+
+type WorkshopChapterId =
+  | 'start-here'
+  | 'ai-buy-sell-helper'
+  | 'ten-set-auto-trader'
+  | 'coin-history'
+  | 'risk-chart'
+  | 'market-symphony'
+  | 'portfolio-ledger'
+  | 'skill-desk'
+  | 'ai-dex-lab'
+  | 'candlestick-guide'
+  | 'cycle-bull-vs-bear'
+  | 'cycle-four-seasons'
+  | 'cycle-monthly-rhythms'
+  | 'cycle-four-year-clock';
+
+interface CurriculumGroupMeta {
+  id: CurriculumGroupId;
+  roman: string;
+  label: string;
+  rangeBadge: string;
+}
+
+interface WorkshopChapterMeta {
+  id: WorkshopChapterId;
+  number: string;
+  groupId: CurriculumGroupId;
+  shortTitle: string;
+  fullTitle: string;
+  cyclePart?: MarketCyclePartId;
+}
+
+const CURRICULUM_GROUPS: CurriculumGroupMeta[] = [
+  {
+    id: 'foundations',
+    roman: 'I',
+    label: '$5 Start, AI Signals & 10-Set',
+    rangeBadge: '01–04',
+  },
+  {
+    id: 'live_desk',
+    roman: 'II',
+    label: 'Live Chart, Symphony & Wallet Ledger',
+    rangeBadge: '05–07',
+  },
+  {
+    id: 'pro_suites',
+    roman: 'III',
+    label: '11-Skill Desk, AI DEX & Candlesticks',
+    rangeBadge: '08–10',
+  },
+  {
+    id: 'market_cycles',
+    roman: 'IV',
+    label: 'Bull vs. Bear & 4-Year Market Cycles',
+    rangeBadge: '11–14',
+  },
+];
+
+const WORKSHOP_CHAPTERS: WorkshopChapterMeta[] = [
+  {
+    id: 'start-here',
+    number: '01',
+    groupId: 'foundations',
+    shortTitle: '01. $5 Start Here & Safety',
+    fullTitle: '$5 Start Here & Real-Wallet Safety Roadmap',
+  },
+  {
+    id: 'ai-buy-sell-helper',
+    number: '02',
+    groupId: 'foundations',
+    shortTitle: '02. ★ AI Buy & Sell Helper',
+    fullTitle: 'Live AI Market Examiner: Recommended Buy, Stop-Loss & Sell Points',
+  },
+  {
+    id: 'ten-set-auto-trader',
+    number: '03',
+    groupId: 'foundations',
+    shortTitle: '03. ⚡ 10-Set Sequencer & Wallet',
+    fullTitle: 'Automated 10-Set Buy & Sell Sequencer (& Live Wallet Uptick)',
+  },
+  {
+    id: 'coin-history',
+    number: '04',
+    groupId: 'foundations',
+    shortTitle: '04. 🏛 Coin History & Founders',
+    fullTitle: 'History of Our Coins: What They Represent & Their Founders',
+  },
+  {
+    id: 'risk-chart',
+    number: '05',
+    groupId: 'live_desk',
+    shortTitle: '05. Live Chart & 2% Risk',
+    fullTitle: 'Live Candlestick Chart & 2% Risk Simulator',
+  },
+  {
+    id: 'market-symphony',
+    number: '06',
+    groupId: 'live_desk',
+    shortTitle: '06. ♪ 8-Hour Symphony Graph',
+    fullTitle: '♪ 8-Hour Market Symphony Music Graph',
+  },
+  {
+    id: 'portfolio-ledger',
+    number: '07',
+    groupId: 'live_desk',
+    shortTitle: '07. Wallet Watch & Ledger',
+    fullTitle: 'Wallet Watch, Paper Portfolio & Alerts Ledger',
+  },
+  {
+    id: 'skill-desk',
+    number: '08',
+    groupId: 'pro_suites',
+    shortTitle: '08. Day-Trader-Skill Desk (11-Module)',
+    fullTitle: 'Day-Trader-Skill Desk — 11-Module Interactive Suite',
+  },
+  {
+    id: 'ai-dex-lab',
+    number: '09',
+    groupId: 'pro_suites',
+    shortTitle: '09. 24/7 AI Decentralized DEX Lab',
+    fullTitle: '24/7 AI Decentralized DEX Lab — 11-Skill On-Chain Architecture',
+  },
+  {
+    id: 'candlestick-guide',
+    number: '10',
+    groupId: 'pro_suites',
+    shortTitle: '10. Candlestick & Fibonacci Guide',
+    fullTitle: 'Candlestick Anatomy & Fibonacci Retracement Guide',
+  },
+  {
+    id: 'cycle-bull-vs-bear',
+    number: '11',
+    groupId: 'market_cycles',
+    shortTitle: '11. Bull Market vs. Bear Market',
+    fullTitle: 'What Is a Bull Market vs. a Bear Market? (And Why Do They Have Those Names?)',
+    cyclePart: 'bull_vs_bear',
+  },
+  {
+    id: 'cycle-four-seasons',
+    number: '12',
+    groupId: 'market_cycles',
+    shortTitle: '12. How a Cycle Flows Through 4 Seasons',
+    fullTitle: 'How a Complete Market Cycle Flows Through 4 Seasons',
+    cyclePart: 'four_seasons',
+  },
+  {
+    id: 'cycle-monthly-rhythms',
+    number: '13',
+    groupId: 'market_cycles',
+    shortTitle: '13. Monthly & Time-of-Year Rhythms',
+    fullTitle: 'How the Market Moves by Time of the Year & Time of the Month',
+    cyclePart: 'monthly_rhythms',
+  },
+  {
+    id: 'cycle-four-year-clock',
+    number: '14',
+    groupId: 'market_cycles',
+    shortTitle: '14. Past Four 4-Year Cycles (Late 2026)',
+    fullTitle: 'The Past Four 4-Year Cycles & Where the Market Is Right Now (Late 2026)',
+    cyclePart: 'four_year_cycles',
+  },
+];
+
+function resolveChapterId(targetSectionId?: string): WorkshopChapterId {
+  if (!targetSectionId) return 'start-here';
+  if (targetSectionId === 'market-cycles') return 'cycle-bull-vs-bear';
+  const match = WORKSHOP_CHAPTERS.find((ch) => ch.id === targetSectionId);
+  return match ? match.id : 'start-here';
+}
+
 export default function App() {
   const [viewMode, setViewMode] = useState<'landing' | 'app'>('landing');
   const [publicPage, setPublicPage] = useState<PublicPageTab>('welcome');
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [symbol, setSymbol] = useState<AssetSymbol>('XRPUSDT');
   const [timeframe, setTimeframe] = useState<Timeframe>('1h');
+  const [activeChapterId, setActiveChapterId] = useState<WorkshopChapterId>('start-here');
+  const [paginatedMode, setPaginatedMode] = useState<boolean>(true);
 
   // Market State for BTC, XRP, and XLM
   const [candlesBySymbol, setCandlesBySymbol] = useState<Record<AssetSymbol, Candle[]>>({
@@ -466,24 +645,49 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleEnterApp = (targetSectionId?: string) => {
+  const navigateToChapter = (targetSectionId?: string) => {
+    const resolvedId = resolveChapterId(targetSectionId);
+    setActiveChapterId(resolvedId);
     if (
-      targetSectionId === 'skill-desk' ||
-      targetSectionId === 'ai-dex-lab' ||
-      targetSectionId === 'candlestick-guide' ||
-      targetSectionId === 'market-cycles'
+      resolvedId === 'skill-desk' ||
+      resolvedId === 'ai-dex-lab' ||
+      resolvedId === 'candlestick-guide' ||
+      resolvedId.startsWith('cycle-')
     ) {
       setBeginnerFocusMode(false);
     }
     setViewMode('app');
     setTimeout(() => {
-      if (targetSectionId) {
-        document.getElementById(targetSectionId)?.scrollIntoView({ behavior: 'smooth' });
+      if (paginatedMode) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (targetSectionId) {
+        document.getElementById(resolvedId)?.scrollIntoView({ behavior: 'smooth' });
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    }, 60);
+    }, 40);
   };
+
+  const handleEnterApp = (targetSectionId?: string) => {
+    navigateToChapter(targetSectionId);
+  };
+
+  const activeChapterIdx = useMemo(() => {
+    const idx = WORKSHOP_CHAPTERS.findIndex((ch) => ch.id === activeChapterId);
+    return idx >= 0 ? idx : 0;
+  }, [activeChapterId]);
+
+  const activeChapter = WORKSHOP_CHAPTERS[activeChapterIdx];
+  const prevChapter = activeChapterIdx > 0 ? WORKSHOP_CHAPTERS[activeChapterIdx - 1] : null;
+  const nextChapter =
+    activeChapterIdx < WORKSHOP_CHAPTERS.length - 1
+      ? WORKSHOP_CHAPTERS[activeChapterIdx + 1]
+      : null;
+  const activeGroup =
+    CURRICULUM_GROUPS.find((g) => g.id === activeChapter.groupId) ?? CURRICULUM_GROUPS[0];
+  const chaptersInActiveGroup = WORKSHOP_CHAPTERS.filter(
+    (ch) => ch.groupId === activeGroup.id
+  );
 
   const isSingleStageWelcome = viewMode === 'landing' && publicPage === 'welcome';
 
@@ -728,8 +932,8 @@ export default function App() {
         </main>
       ) : (
         /* Main Training Workspace Container (1440px max-w) */
-        <main id="workspace" className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 space-y-8">
-          {/* Calm Step-by-Step Focus Switcher & Guiding Epigraph Bar */}
+        <main id="workspace" className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+          {/* Guiding Epigraph & Page-by-Page vs Full Scroll Mode Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
             <div className="flex flex-wrap items-center gap-3">
               <span className="italic text-slate-700 dark:text-slate-300">
@@ -742,77 +946,9 @@ export default function App() {
               >
                 Free Ebook (PDF & EPUB) →
               </button>
-            </div>
-
-            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setBeginnerFocusMode(true)}
-                className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                  beginnerFocusMode
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Calm Step-by-Step View
-              </button>
-              <button
-                type="button"
-                onClick={() => setBeginnerFocusMode(false)}
-                className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                  !beginnerFocusMode
-                    ? 'bg-sky-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Show All Labs
-              </button>
-            </div>
-          </div>
-
-          {/* Quick In-App Jump Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="font-semibold text-slate-900 dark:text-white">Step-by-Step Jump:</span>
-              <a href="#start-here" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                1. $5 Start Here
-              </a>
-              <a href="#ai-buy-sell-helper" className="text-amber-700 dark:text-amber-400 font-bold hover:underline whitespace-nowrap">
-                2. ★ AI Buy & Sell Helper
-              </a>
-              <a href="#ten-set-auto-trader" className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline whitespace-nowrap">
-                3. ⚡ 10-Set Auto-Trader & Wallet Sign
-              </a>
-              <a href="#coin-history" className="text-amber-700 dark:text-amber-400 font-semibold hover:underline whitespace-nowrap">
-                4. 🏛 Coin History & Founders
-              </a>
-              <a href="#risk-chart" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                5. Live Chart & 2% Risk
-              </a>
-              <a href="#market-symphony" className="text-amber-700 dark:text-amber-400 font-semibold hover:underline whitespace-nowrap">
-                6. ♪ 8-Hour Music Graph
-              </a>
-              <a href="#portfolio-ledger" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                7. Wallet Watch & Ledger
-              </a>
-              {!beginnerFocusMode && (
-                <>
-                  <a href="#skill-desk" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                    11-Module Skill Desk
-                  </a>
-                  <a href="#ai-dex-lab" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                    24/7 AI DEX Lab
-                  </a>
-                  <a href="#candlestick-guide" className="hover:text-sky-600 dark:hover:text-sky-400 whitespace-nowrap">
-                    Candlestick Guide
-                  </a>
-                  <a href="#market-cycles" className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline whitespace-nowrap">
-                    4-Year Cycles
-                  </a>
-                </>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
+              <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
+                ·
+              </span>
               <button
                 type="button"
                 onClick={() => navigatePublicPage('story')}
@@ -821,357 +957,569 @@ export default function App() {
                 Promo Video Library →
               </button>
             </div>
-          </div>
 
-          {/* Start Here: 5-Step $5 Real-Wallet Guided Training Module & AI Mentor */}
-          <section id="start-here">
-          <StartHereRoadmap
-            symbol={symbol}
-            onSelectSymbol={handleSelectSymbol}
-            candles={activeCandles}
-            fibLevels={fibLevels}
-            livePrice={livePrice}
-            accountBalance={accountBalance}
-            entryPrice={entryPrice}
-            stopLoss={currentStopLoss}
-            takeProfit={currentTakeProfit}
-            riskPercent={riskPercent}
-            rrRatio={rrRatio}
-            instrument={instrument}
-            leverage={leverage}
-            tradeSide={tradeSide}
-            onActivateFiveDollarPreset={() => {
-              setAccountBalance(5);
-              setInstrument('spot');
-              setLeverage(1);
-              setRiskPercent(2.0);
-              setStopDistancePct(2.0);
-              setRrRatio(2);
-              setTradeSide('long');
-              setEntryPrice(Number(livePrice.toFixed(symbol === 'BTCUSDT' ? 2 : 4)));
-              setAlertBanner(
-                'Activated $5 Real-Wallet Learning Preset: $5.00 Budget · 1x Spot (Zero Leverage) · 10-Cent Safety Exit'
-              );
-            }}
-            onJumpToWalletWatch={() => {
-              setActiveBottomTab('wallets');
-              document.getElementById('portfolio-ledger')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            beginnerFocusMode={beginnerFocusMode}
-            onToggleBeginnerFocusMode={() => setBeginnerFocusMode((v) => !v)}
-          />
-        </section>
-
-        {/* Live AI Market Examiner: Recommended Buy, Stop-Loss & Sell Points (Use at Your Own Risk) */}
-        <section id="ai-buy-sell-helper">
-          <LiveAiSignalHelper
-            symbol={symbol}
-            onSelectSymbol={handleSelectSymbol}
-            timeframe={timeframe}
-            candles={activeCandles}
-            stats={activeStats}
-            fibLevels={fibLevels}
-            livePrice={livePrice}
-            btcLivePrice={btcLive}
-            xrpLivePrice={xrpLive}
-            xlmLivePrice={xlmLive}
-            accountBalance={accountBalance}
-            riskPercent={riskPercent}
-            onApplyRecommendationToChart={({ entryPrice: recEntry, stopDistancePct: recStopPct, rrRatio: recRr }) => {
-              setEntryPrice(recEntry);
-              setStopDistancePct(recStopPct);
-              setRrRatio(recRr);
-              setTradeSide('long');
-              setShowRiskOverlay(true);
-              const dec = symbol === 'BTCUSDT' ? 2 : 4;
-              setAlertBanner(
-                `Loaded AI Buy & Sell Points onto Live ${symbol} Chart: Buy $${recEntry.toFixed(dec)} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
-              );
-              document.getElementById('risk-chart')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          />
-        </section>
-
-        {/* Advanced Student 10-Set Automated Buy & Sell Sequencer (Simulated or Active Trust Wallet) */}
-        <section id="ten-set-auto-trader">
-          <TenSetAutoTraderLab
-            symbol={symbol}
-            onSelectSymbol={handleSelectSymbol}
-            candles={activeCandles}
-            fibLevels={fibLevels}
-            livePrice={livePrice}
-            btcLivePrice={btcLive}
-            xrpLivePrice={xrpLive}
-            xlmLivePrice={xlmLive}
-            accountBalance={accountBalance}
-            riskPercent={riskPercent}
-            onLogSetPositionToPortfolio={handleOpenPaperPosition}
-          />
-        </section>
-
-        {/* Coin History, Purpose & Founders Classroom Module (BTC, XRP, XLM & KSBC Gold RWA) */}
-        <section id="coin-history">
-          <CoinHistoryAndFoundersModule
-            btcLivePrice={btcLive}
-            xrpLivePrice={xrpLive}
-            xlmLivePrice={xlmLive}
-            onSelectSymbolAndTrain={(sym, targetId) => {
-              handleSelectSymbol(sym);
-              if (targetId) {
-                document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
-              }
-            }}
-            onOpenKsbcGoldLedger={() => navigatePublicPage('ksbc')}
-          />
-        </section>
-
-        {/* Asset Selector & Live Telemetry Strip */}
-        <section id="risk-chart" className="flex flex-wrap items-center justify-between gap-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* BTC vs XRP vs XLM Segmented Switcher */}
-            <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
-                onClick={() => handleSelectSymbol('BTCUSDT')}
-                className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  symbol === 'BTCUSDT'
-                    ? 'bg-amber-600 text-white'
+                onClick={() => setPaginatedMode(true)}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                  paginatedMode
+                    ? 'bg-emerald-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                BTC / USDT ($
-                {btcLive.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
+                Page-by-Page Menu (14 Sections)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPaginatedMode(false);
+                  setBeginnerFocusMode(false);
+                }}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                  !paginatedMode
+                    ? 'bg-sky-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Full Scroll View
+              </button>
+            </div>
+          </div>
+
+          {/* Grouped Curriculum Menu Bar (4 Logical Menu Groups + Section Selector + Top Prev/Next) */}
+          <nav
+            aria-label="Training Curriculum Menu"
+            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3.5"
+          >
+            {/* Row 1: 4 Grouped Menu Tabs */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 w-full xl:w-auto flex-1">
+                {CURRICULUM_GROUPS.map((grp) => {
+                  const isGroupActive = paginatedMode && activeGroup.id === grp.id;
+                  const firstInGroup = WORKSHOP_CHAPTERS.find((c) => c.groupId === grp.id);
+                  return (
+                    <button
+                      key={grp.id}
+                      type="button"
+                      onClick={() => {
+                        setPaginatedMode(true);
+                        if (activeGroup.id !== grp.id && firstInGroup) {
+                          navigateToChapter(firstInGroup.id);
+                        }
+                      }}
+                      className={`px-3.5 py-2.5 rounded-lg border text-left transition-colors cursor-pointer flex items-center justify-between gap-2 ${
+                        isGroupActive
+                          ? 'bg-slate-900 dark:bg-sky-600 text-white border-slate-900 dark:border-sky-500'
+                          : 'bg-slate-50 dark:bg-slate-950/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="text-xs font-semibold truncate">
+                        <span className="font-mono mr-1.5 opacity-80">{grp.roman}.</span>
+                        {grp.label}
+                      </span>
+                      <span
+                        className={`text-[11px] font-mono tabular-nums px-1.5 py-0.5 rounded shrink-0 ${
+                          isGroupActive
+                            ? 'bg-white/15 text-white'
+                            : 'bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {grp.rangeBadge}
+                      </span>
+                    </button>
+                  );
                 })}
-                )
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectSymbol('XRPUSDT')}
-                className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  symbol === 'XRPUSDT'
-                    ? 'bg-sky-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                XRP / USDT (${xrpLive.toFixed(4)})
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectSymbol('XLMUSDT')}
-                className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  symbol === 'XLMUSDT'
-                    ? 'bg-sky-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                XLM / USDT (${xlmLive.toFixed(4)})
-              </button>
+              </div>
             </div>
 
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              <span>{activeStats?.name || 'Spot & Perpetual Paper Feed'}</span>
-              <span aria-hidden="true" className="mx-2">
-                ·
-              </span>
-              <span>
-                {activeStats?.isLiveStream
-                  ? '● Live Exchange Feed Connected'
-                  : '● Simulated Live Market Feed'}
-              </span>
-            </div>
-          </div>
+            {/* Row 2: Active Group's Individual Section Buttons + Quick Jump Dropdown + Top Prev/Next */}
+            {paginatedMode ? (
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {chaptersInActiveGroup.map((ch) => {
+                    const isCurrent = ch.id === activeChapter.id;
+                    return (
+                      <button
+                        key={ch.id}
+                        type="button"
+                        onClick={() => navigateToChapter(ch.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                          isCurrent
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {ch.shortTitle}
+                      </button>
+                    );
+                  })}
+                </div>
 
-          {/* Key Market & DEX Volatility Telemetry */}
-          <div className="flex flex-wrap items-center gap-5 text-xs font-mono tabular-nums">
-            <div>
-              <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                Live Mark Price
-              </span>
-              <span className="text-base font-bold text-slate-900 dark:text-white">
-                $
-                {symbol === 'BTCUSDT'
-                  ? livePrice.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })
-                  : livePrice.toFixed(4)}
-              </span>
-            </div>
-            <div>
-              <span className="font-sans text-slate-500 dark:text-slate-400 block">24h Change</span>
-              <span
-                className={`font-semibold ${
-                  (activeStats?.priceChangePercent24h ?? 0) >= 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-rose-600 dark:text-rose-400'
-                }`}
-              >
-                {(activeStats?.priceChangePercent24h ?? 0) >= 0 ? '+' : ''}
-                {(activeStats?.priceChangePercent24h ?? 1.84).toFixed(2)}%
-              </span>
-            </div>
-            <div>
-              <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                24h Range (Low – High)
-              </span>
-              <span className="text-slate-800 dark:text-slate-200">
-                ${(activeStats?.low24h ?? livePrice * 0.96).toFixed(symbol === 'BTCUSDT' ? 2 : 4)} – $
-                {(activeStats?.high24h ?? livePrice * 1.04).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
-              </span>
-            </div>
-            <div>
-              <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                Hist. Volatility / ATR(14)
-              </span>
-              <span className="text-slate-800 dark:text-slate-200">
-                {(activeStats?.annualizedVolatilityPct ?? 54.2).toFixed(1)}% · $
-                {(activeStats?.atr14 ?? livePrice * 0.015).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
-              </span>
-            </div>
-            <div>
-              <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                DEX Pool Depth / Spread
-              </span>
-              <span className="text-slate-800 dark:text-slate-200">
-                ${((activeStats?.dexLiquidityUsd ?? 45_000_000) / 1_000_000).toFixed(1)}M ·{' '}
-                {(activeStats?.dexSpreadBps ?? 4.5).toFixed(1)} bps
-              </span>
-            </div>
-          </div>
-        </section>
+                <div className="flex flex-wrap items-center gap-2 text-xs shrink-0">
+                  <select
+                    aria-label="Jump directly to any of the 14 training sections"
+                    value={activeChapter.id}
+                    onChange={(e) => navigateToChapter(e.target.value)}
+                    className="max-w-[260px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs font-medium cursor-pointer"
+                  >
+                    {CURRICULUM_GROUPS.map((grp) => (
+                      <optgroup
+                        key={grp.id}
+                        label={`Group ${grp.roman}: ${grp.label} (${grp.rangeBadge})`}
+                      >
+                        {WORKSHOP_CHAPTERS.filter((ch) => ch.groupId === grp.id).map((ch) => (
+                          <option key={ch.id} value={ch.id}>
+                            {ch.number}. {ch.fullTitle}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
 
-        {/* Primary Two-Zone Sandbox Layout: Interactive Chart (Left 7 cols) + 2% Risk Simulator (Right 5 cols) */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <div className="lg:col-span-7 xl:col-span-8">
-            {isLoading && activeCandles.length === 0 ? (
-              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-8 h-[480px] flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
-                Loading {symbol} candlestick history and technical indicators...
+                  <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
+                    {activeChapterIdx + 1} / {WORKSHOP_CHAPTERS.length}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={!prevChapter}
+                    onClick={() => prevChapter && navigateToChapter(prevChapter.id)}
+                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateToChapter(nextChapter ? nextChapter.id : WORKSHOP_CHAPTERS[0].id)
+                    }
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    {nextChapter ? 'Next →' : 'Restart ↺'}
+                  </button>
+                </div>
               </div>
             ) : (
-              <CandlestickChart
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
+                <span>
+                  <strong>Full Scroll View Active:</strong> Showing all 14 educational sections stacked on one page. Switch back to <strong>Page-by-Page Menu</strong> anytime for clean single-section focus.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPaginatedMode(true)}
+                  className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline whitespace-nowrap cursor-pointer"
+                >
+                  Return to Page-by-Page Chapters →
+                </button>
+              </div>
+            )}
+          </nav>
+
+          {/* SECTION 01: Start Here — 5-Step $5 Real-Wallet Guided Training Module & AI Mentor */}
+          {(!paginatedMode || activeChapter.id === 'start-here') && (
+            <section id="start-here">
+              <StartHereRoadmap
                 symbol={symbol}
-                timeframe={timeframe}
-                onTimeframeChange={setTimeframe}
+                onSelectSymbol={handleSelectSymbol}
                 candles={activeCandles}
                 fibLevels={fibLevels}
-                selectedCandleIndex={selectedCandleIndex}
-                onSelectCandle={setSelectedCandleIndex}
+                livePrice={livePrice}
+                accountBalance={accountBalance}
                 entryPrice={entryPrice}
                 stopLoss={currentStopLoss}
                 takeProfit={currentTakeProfit}
+                riskPercent={riskPercent}
+                rrRatio={rrRatio}
+                instrument={instrument}
+                leverage={leverage}
                 tradeSide={tradeSide}
-                showFibOverlay={showFibOverlay}
-                onToggleFibOverlay={() => setShowFibOverlay((v) => !v)}
-                showTrendBands={showTrendBands}
-                onToggleTrendBands={() => setShowTrendBands((v) => !v)}
-                showRiskOverlay={showRiskOverlay}
-                onToggleRiskOverlay={() => setShowRiskOverlay((v) => !v)}
+                onActivateFiveDollarPreset={() => {
+                  setAccountBalance(5);
+                  setInstrument('spot');
+                  setLeverage(1);
+                  setRiskPercent(2.0);
+                  setStopDistancePct(2.0);
+                  setRrRatio(2);
+                  setTradeSide('long');
+                  setEntryPrice(Number(livePrice.toFixed(symbol === 'BTCUSDT' ? 2 : 4)));
+                  setAlertBanner(
+                    'Activated $5 Real-Wallet Learning Preset: $5.00 Budget · 1x Spot (Zero Leverage) · 10-Cent Safety Exit'
+                  );
+                }}
+                onJumpToWalletWatch={() => {
+                  setActiveBottomTab('wallets');
+                  navigateToChapter('portfolio-ledger');
+                }}
+                beginnerFocusMode={beginnerFocusMode}
+                onToggleBeginnerFocusMode={() => {
+                  if (paginatedMode) {
+                    navigateToChapter('skill-desk');
+                  } else {
+                    setBeginnerFocusMode((v) => !v);
+                  }
+                }}
               />
-            )}
-          </div>
+            </section>
+          )}
 
-          <div className="lg:col-span-5 xl:col-span-4">
-            <RiskSimulatorPanel
-              symbol={symbol}
-              livePrice={livePrice}
-              atr14={activeStats?.atr14 ?? livePrice * 0.015}
-              accountBalance={accountBalance}
-              onAccountBalanceChange={setAccountBalance}
-              entryPrice={entryPrice}
-              onEntryPriceChange={setEntryPrice}
-              stopDistancePct={stopDistancePct}
-              onStopDistancePctChange={setStopDistancePct}
-              riskPercent={riskPercent}
-              onRiskPercentChange={setRiskPercent}
-              rrRatio={rrRatio}
-              onRrRatioChange={setRrRatio}
-              tradeSide={tradeSide}
-              onTradeSideChange={setTradeSide}
-              instrument={instrument}
-              onInstrumentChange={setInstrument}
-              leverage={leverage}
-              onLeverageChange={setLeverage}
-              onOpenPaperPosition={handleOpenPaperPosition}
-            />
-          </div>
-        </section>
+          {/* SECTION 02: Live AI Market Examiner — Recommended Buy, Stop-Loss & Sell Points */}
+          {(!paginatedMode || activeChapter.id === 'ai-buy-sell-helper') && (
+            <section id="ai-buy-sell-helper">
+              <LiveAiSignalHelper
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                timeframe={timeframe}
+                candles={activeCandles}
+                stats={activeStats}
+                fibLevels={fibLevels}
+                livePrice={livePrice}
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+                accountBalance={accountBalance}
+                riskPercent={riskPercent}
+                onApplyRecommendationToChart={({
+                  entryPrice: recEntry,
+                  stopDistancePct: recStopPct,
+                  rrRatio: recRr,
+                }) => {
+                  setEntryPrice(recEntry);
+                  setStopDistancePct(recStopPct);
+                  setRrRatio(recRr);
+                  setTradeSide('long');
+                  setShowRiskOverlay(true);
+                  const dec = symbol === 'BTCUSDT' ? 2 : 4;
+                  setAlertBanner(
+                    `Loaded AI Buy & Sell Points onto Live ${symbol} Chart: Buy $${recEntry.toFixed(dec)} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
+                  );
+                  navigateToChapter('risk-chart');
+                }}
+              />
+            </section>
+          )}
 
-        {/* Dedicated 8-Hour Candlestick Symphony Music Graph Module */}
-        <section id="market-symphony">
-          <CandlestickSymphonyComposer
-            symbol={symbol}
-            onSelectSymbol={handleSelectSymbol}
-            candles={activeCandles}
-            livePrice={livePrice}
-            btcLivePrice={btcLive}
-            xrpLivePrice={xrpLive}
-            xlmLivePrice={xlmLive}
-          />
-        </section>
+          {/* SECTION 03: Automated 10-Set Buy & Sell Sequencer (& Live $5 Wallet Uptick) */}
+          {(!paginatedMode || activeChapter.id === 'ten-set-auto-trader') && (
+            <section id="ten-set-auto-trader">
+              <TenSetAutoTraderLab
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                candles={activeCandles}
+                fibLevels={fibLevels}
+                livePrice={livePrice}
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+                accountBalance={accountBalance}
+                riskPercent={riskPercent}
+                onLogSetPositionToPortfolio={handleOpenPaperPosition}
+              />
+            </section>
+          )}
 
-        {/* Day-Trader-Skill 11-Module Interactive Suite (Hidden when Simplify Screen is active) */}
-        {!beginnerFocusMode && (
-          <section id="skill-desk">
-            <DayTraderSkillSuite
-              symbol={symbol}
-              onSelectSymbol={handleSelectSymbol}
-              candles={activeCandles}
-              stats={activeStats}
-              fibLevels={fibLevels}
-              livePrice={livePrice}
-              accountBalance={accountBalance}
-              entryPrice={entryPrice}
-              onEntryPriceChange={setEntryPrice}
-              stopLoss={currentStopLoss}
-              takeProfit={currentTakeProfit}
-              stopDistancePct={stopDistancePct}
-              riskPercent={riskPercent}
-              rrRatio={rrRatio}
-              tradeSide={tradeSide}
-              instrument={instrument}
-              leverage={leverage}
-              positions={positions}
-              onOpenPaperPosition={handleOpenPaperPosition}
-              onAddAlert={(newAl) => {
-                setAlerts((prev) => [
-                  { ...newAl, id: `al_${Date.now()}`, triggered: false },
-                  ...prev,
-                ]);
-                setAlertBanner(
-                  `Armed Alert: ${newAl.symbol} ${newAl.condition} $${newAl.targetPrice.toFixed(
-                    newAl.symbol === 'BTCUSDT' ? 2 : 4
-                  )}`
-                );
-              }}
-            />
-          </section>
-        )}
+          {/* SECTION 04: Coin History, Purpose & Founders Classroom Module */}
+          {(!paginatedMode || activeChapter.id === 'coin-history') && (
+            <section id="coin-history">
+              <CoinHistoryAndFoundersModule
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+                onSelectSymbolAndTrain={(sym, targetId) => {
+                  handleSelectSymbol(sym);
+                  navigateToChapter(targetId || 'ten-set-auto-trader');
+                }}
+                onOpenKsbcGoldLedger={() => navigatePublicPage('ksbc')}
+              />
+            </section>
+          )}
 
-        {/* 24/7 AI Decentralized DEX Lab (Hidden when Simplify Screen is active) */}
-        {!beginnerFocusMode && (
-          <section id="ai-dex-lab">
-            <DecentralizedAiDexDesk
-              symbol={symbol}
-              candles={activeCandles}
-              stats={activeStats}
-              livePrice={livePrice}
-              accountBalance={accountBalance}
-              entryPrice={entryPrice}
-              stopLoss={currentStopLoss}
-              takeProfit={currentTakeProfit}
-              riskPercent={riskPercent}
-              rrRatio={rrRatio}
-              tradeSide={tradeSide}
-              onOpenPaperPosition={handleOpenPaperPosition}
-            />
-          </section>
-        )}
+          {/* SECTION 05: Live Candlestick Chart & 2% Risk Simulator */}
+          {(!paginatedMode || activeChapter.id === 'risk-chart') && (
+            <div id="risk-chart" className="space-y-6">
+              {/* Asset Selector & Live Telemetry Strip */}
+              <section className="flex flex-wrap items-center justify-between gap-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSymbol('BTCUSDT')}
+                      className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        symbol === 'BTCUSDT'
+                          ? 'bg-amber-600 text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      BTC / USDT ($
+                      {btcLive.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                      )
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSymbol('XRPUSDT')}
+                      className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        symbol === 'XRPUSDT'
+                          ? 'bg-sky-600 text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      XRP / USDT (${xrpLive.toFixed(4)})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSymbol('XLMUSDT')}
+                      className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        symbol === 'XLMUSDT'
+                          ? 'bg-sky-600 text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      XLM / USDT (${xlmLive.toFixed(4)})
+                    </button>
+                  </div>
 
-        {/* Candlestick Pattern Learning Guide & 4-Year Cycles (Shown when Show All Labs is active) */}
-        {!beginnerFocusMode ? (
-          <>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    <span>{activeStats?.name || 'Spot & Perpetual Paper Feed'}</span>
+                    <span aria-hidden="true" className="mx-2">
+                      ·
+                    </span>
+                    <span>
+                      {activeStats?.isLiveStream
+                        ? '● Live Exchange Feed Connected'
+                        : '● Simulated Live Market Feed'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Key Market & DEX Volatility Telemetry */}
+                <div className="flex flex-wrap items-center gap-5 text-xs font-mono tabular-nums">
+                  <div>
+                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                      Live Mark Price
+                    </span>
+                    <span className="text-base font-bold text-slate-900 dark:text-white">
+                      $
+                      {symbol === 'BTCUSDT'
+                        ? livePrice.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : livePrice.toFixed(4)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                      24h Change
+                    </span>
+                    <span
+                      className={`font-semibold ${
+                        (activeStats?.priceChangePercent24h ?? 0) >= 0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-rose-600 dark:text-rose-400'
+                      }`}
+                    >
+                      {(activeStats?.priceChangePercent24h ?? 0) >= 0 ? '+' : ''}
+                      {(activeStats?.priceChangePercent24h ?? 1.84).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                      24h Range (Low – High)
+                    </span>
+                    <span className="text-slate-800 dark:text-slate-200">
+                      ${(activeStats?.low24h ?? livePrice * 0.96).toFixed(symbol === 'BTCUSDT' ? 2 : 4)} – $
+                      {(activeStats?.high24h ?? livePrice * 1.04).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                      Hist. Volatility / ATR(14)
+                    </span>
+                    <span className="text-slate-800 dark:text-slate-200">
+                      {(activeStats?.annualizedVolatilityPct ?? 54.2).toFixed(1)}% · $
+                      {(activeStats?.atr14 ?? livePrice * 0.015).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                      DEX Pool Depth / Spread
+                    </span>
+                    <span className="text-slate-800 dark:text-slate-200">
+                      ${((activeStats?.dexLiquidityUsd ?? 45_000_000) / 1_000_000).toFixed(1)}M ·{' '}
+                      {(activeStats?.dexSpreadBps ?? 4.5).toFixed(1)} bps
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              {/* Primary Two-Zone Sandbox Layout: Interactive Chart + 2% Risk Simulator */}
+              <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="lg:col-span-7 xl:col-span-8">
+                  {isLoading && activeCandles.length === 0 ? (
+                    <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-8 h-[480px] flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+                      Loading {symbol} candlestick history and technical indicators...
+                    </div>
+                  ) : (
+                    <CandlestickChart
+                      symbol={symbol}
+                      timeframe={timeframe}
+                      onTimeframeChange={setTimeframe}
+                      candles={activeCandles}
+                      fibLevels={fibLevels}
+                      selectedCandleIndex={selectedCandleIndex}
+                      onSelectCandle={setSelectedCandleIndex}
+                      entryPrice={entryPrice}
+                      stopLoss={currentStopLoss}
+                      takeProfit={currentTakeProfit}
+                      tradeSide={tradeSide}
+                      showFibOverlay={showFibOverlay}
+                      onToggleFibOverlay={() => setShowFibOverlay((v) => !v)}
+                      showTrendBands={showTrendBands}
+                      onToggleTrendBands={() => setShowTrendBands((v) => !v)}
+                      showRiskOverlay={showRiskOverlay}
+                      onToggleRiskOverlay={() => setShowRiskOverlay((v) => !v)}
+                    />
+                  )}
+                </div>
+
+                <div className="lg:col-span-5 xl:col-span-4">
+                  <RiskSimulatorPanel
+                    symbol={symbol}
+                    livePrice={livePrice}
+                    atr14={activeStats?.atr14 ?? livePrice * 0.015}
+                    accountBalance={accountBalance}
+                    onAccountBalanceChange={setAccountBalance}
+                    entryPrice={entryPrice}
+                    onEntryPriceChange={setEntryPrice}
+                    stopDistancePct={stopDistancePct}
+                    onStopDistancePctChange={setStopDistancePct}
+                    riskPercent={riskPercent}
+                    onRiskPercentChange={setRiskPercent}
+                    rrRatio={rrRatio}
+                    onRrRatioChange={setRrRatio}
+                    tradeSide={tradeSide}
+                    onTradeSideChange={setTradeSide}
+                    instrument={instrument}
+                    onInstrumentChange={setInstrument}
+                    leverage={leverage}
+                    onLeverageChange={setLeverage}
+                    onOpenPaperPosition={handleOpenPaperPosition}
+                  />
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* SECTION 06: Dedicated 8-Hour Candlestick Symphony Music Graph Module */}
+          {(!paginatedMode || activeChapter.id === 'market-symphony') && (
+            <section id="market-symphony">
+              <CandlestickSymphonyComposer
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                candles={activeCandles}
+                livePrice={livePrice}
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+              />
+            </section>
+          )}
+
+          {/* SECTION 07: Paper Portfolio, Read-Only Wallet Watch, Bot Sandbox & Alerts */}
+          {(!paginatedMode || activeChapter.id === 'portfolio-ledger') && (
+            <section id="portfolio-ledger">
+              <PortfolioAndToolsSection
+                activeSectionTab={activeBottomTab}
+                onSectionTabChange={setActiveBottomTab}
+                positions={positions}
+                onClosePosition={handleClosePosition}
+                btcPrice={btcLive}
+                xrpPrice={xrpLive}
+                xlmPrice={xlmLive}
+                candles={activeCandles}
+                watchedWallets={watchedWallets}
+                onAddWallet={(w) => setWatchedWallets((prev) => [w, ...prev])}
+                onRemoveWallet={(id) =>
+                  setWatchedWallets((prev) => prev.filter((item) => item.id !== id))
+                }
+                botStrategies={botStrategies}
+                onToggleBot={handleToggleBot}
+                onRunBotBacktest={handleRunBotBacktest}
+                alerts={alerts}
+                onAddAlert={(newAl) =>
+                  setAlerts((prev) => [
+                    { ...newAl, id: `al_${Date.now()}`, triggered: false },
+                    ...prev,
+                  ])
+                }
+                onDeleteAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
+              />
+            </section>
+          )}
+
+          {/* SECTION 08: Day-Trader-Skill Desk — 11-Module Interactive Suite */}
+          {(!paginatedMode || activeChapter.id === 'skill-desk') && (
+            <section id="skill-desk">
+              <DayTraderSkillSuite
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                candles={activeCandles}
+                stats={activeStats}
+                fibLevels={fibLevels}
+                livePrice={livePrice}
+                accountBalance={accountBalance}
+                entryPrice={entryPrice}
+                onEntryPriceChange={setEntryPrice}
+                stopLoss={currentStopLoss}
+                takeProfit={currentTakeProfit}
+                stopDistancePct={stopDistancePct}
+                riskPercent={riskPercent}
+                rrRatio={rrRatio}
+                tradeSide={tradeSide}
+                instrument={instrument}
+                leverage={leverage}
+                positions={positions}
+                onOpenPaperPosition={handleOpenPaperPosition}
+                onAddAlert={(newAl) => {
+                  setAlerts((prev) => [
+                    { ...newAl, id: `al_${Date.now()}`, triggered: false },
+                    ...prev,
+                  ]);
+                  setAlertBanner(
+                    `Armed Alert: ${newAl.symbol} ${newAl.condition} $${newAl.targetPrice.toFixed(
+                      newAl.symbol === 'BTCUSDT' ? 2 : 4
+                    )}`
+                  );
+                }}
+              />
+            </section>
+          )}
+
+          {/* SECTION 09: 24/7 AI Decentralized DEX Lab — 11-Skill On-Chain Architecture */}
+          {(!paginatedMode || activeChapter.id === 'ai-dex-lab') && (
+            <section id="ai-dex-lab">
+              <DecentralizedAiDexDesk
+                symbol={symbol}
+                candles={activeCandles}
+                stats={activeStats}
+                livePrice={livePrice}
+                accountBalance={accountBalance}
+                entryPrice={entryPrice}
+                stopLoss={currentStopLoss}
+                takeProfit={currentTakeProfit}
+                riskPercent={riskPercent}
+                rrRatio={rrRatio}
+                tradeSide={tradeSide}
+                onOpenPaperPosition={handleOpenPaperPosition}
+              />
+            </section>
+          )}
+
+          {/* SECTION 10: Candlestick Anatomy & Fibonacci Retracement Guide */}
+          {(!paginatedMode || activeChapter.id === 'candlestick-guide') && (
             <section id="candlestick-guide">
               <CandleEducationDeck
                 symbol={symbol}
@@ -1180,11 +1528,20 @@ export default function App() {
                 onSelectCandle={setSelectedCandleIndex}
                 fibLevels={fibLevels}
                 livePrice={livePrice}
-                onUsePriceAsEntry={(price) => setEntryPrice(price)}
+                onUsePriceAsEntry={(price) => {
+                  setEntryPrice(price);
+                  const dec = symbol === 'BTCUSDT' ? 2 : 4;
+                  setAlertBanner(
+                    `Set Entry Price to $${price.toFixed(dec)} from Candlestick & Fibonacci Guide`
+                  );
+                }}
               />
             </section>
+          )}
 
-            <section id="market-cycles">
+          {/* SECTIONS 11–14: Bull vs. Bear, 4 Seasons, Monthly Rhythms & Past Four 4-Year Cycles */}
+          {(!paginatedMode || activeChapter.cyclePart) && (
+            <section id={activeChapter.cyclePart ? activeChapter.id : 'market-cycles'}>
               <MarketCyclesEducationModule
                 symbol={symbol}
                 onSelectSymbol={handleSelectSymbol}
@@ -1192,54 +1549,112 @@ export default function App() {
                 btcLivePrice={btcLive}
                 xrpLivePrice={xrpLive}
                 xlmLivePrice={xlmLive}
+                onEnterApp={handleEnterApp}
+                onlyPart={paginatedMode ? activeChapter.cyclePart ?? 'bull_vs_bear' : 'all'}
               />
             </section>
-          </>
-        ) : (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <span className="text-slate-600 dark:text-slate-300">
-              <strong>Calm Step-by-Step View Active:</strong> 4 deep-reference modules (11-Module Skill Desk, 24/7 AI DEX Lab, Candlestick Pattern Reference, and 4-Year Cycles) are tucked away to keep your screen clean and uncluttered.
-            </span>
-            <button
-              type="button"
-              onClick={() => setBeginnerFocusMode(false)}
-              className="px-3.5 py-2 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
-            >
-              + Expand All 4 Reference & Advanced Labs
-            </button>
-          </div>
-        )}
+          )}
 
-        {/* Paper Portfolio, Read-Only Wallet Watch, Bot Sandbox & Alerts */}
-        <section id="portfolio-ledger">
-          <PortfolioAndToolsSection
-            activeSectionTab={activeBottomTab}
-            onSectionTabChange={setActiveBottomTab}
-            positions={positions}
-            onClosePosition={handleClosePosition}
-            btcPrice={btcLive}
-            xrpPrice={xrpLive}
-            xlmPrice={xlmLive}
-            candles={activeCandles}
-            watchedWallets={watchedWallets}
-            onAddWallet={(w) => setWatchedWallets((prev) => [w, ...prev])}
-            onRemoveWallet={(id) =>
-              setWatchedWallets((prev) => prev.filter((item) => item.id !== id))
-            }
-            botStrategies={botStrategies}
-            onToggleBot={handleToggleBot}
-            onRunBotBacktest={handleRunBotBacktest}
-            alerts={alerts}
-            onAddAlert={(newAl) =>
-              setAlerts((prev) => [
-                { ...newAl, id: `al_${Date.now()}`, triggered: false },
-                ...prev,
-              ])
-            }
-            onDeleteAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
-          />
-        </section>
-      </main>
+          {/* Clean End-of-Section Footer Bar (Every Section Ends Peacefully With Previous & Next Buttons) */}
+          {paginatedMode && (
+            <section
+              aria-label="End of Section Navigation"
+              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 text-xs">
+                <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                    ✓ End of Section {activeChapter.number} of {WORKSHOP_CHAPTERS.length}
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {activeChapter.fullTitle}
+                  </span>
+                </div>
+                <span className="font-mono text-slate-500 dark:text-slate-400">
+                  Group {activeGroup.roman}: {activeGroup.label}
+                </span>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                <div className="flex items-center">
+                  {prevChapter ? (
+                    <button
+                      type="button"
+                      onClick={() => navigateToChapter(prevChapter.id)}
+                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4 shrink-0" />
+                      <span>Previous: {prevChapter.shortTitle}</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigatePublicPage('welcome')}
+                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <ArrowLeft className="w-4 h-4 shrink-0" />
+                      <span>Return to Welcome Stage</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-center gap-2 text-xs">
+                  <label
+                    htmlFor="bottom-chapter-jump"
+                    className="text-slate-500 dark:text-slate-400 whitespace-nowrap"
+                  >
+                    Jump to Section:
+                  </label>
+                  <select
+                    id="bottom-chapter-jump"
+                    value={activeChapter.id}
+                    onChange={(e) => navigateToChapter(e.target.value)}
+                    className="max-w-[270px] sm:max-w-[340px] px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs font-medium cursor-pointer"
+                  >
+                    {CURRICULUM_GROUPS.map((grp) => (
+                      <optgroup
+                        key={grp.id}
+                        label={`Group ${grp.roman}: ${grp.label} (${grp.rangeBadge})`}
+                      >
+                        {WORKSHOP_CHAPTERS.filter((ch) => ch.groupId === grp.id).map((ch) => (
+                          <option key={ch.id} value={ch.id}>
+                            {ch.number}. {ch.fullTitle}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-end">
+                  {nextChapter ? (
+                    <button
+                      type="button"
+                      onClick={() => navigateToChapter(nextChapter.id)}
+                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                    >
+                      <span>
+                        Next ({nextChapter.number}/{WORKSHOP_CHAPTERS.length}): {nextChapter.fullTitle}
+                      </span>
+                      <ArrowRight className="w-4 h-4 shrink-0" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigateToChapter(WORKSHOP_CHAPTERS[0].id)}
+                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                    >
+                      <span>Restart at 01: {WORKSHOP_CHAPTERS[0].fullTitle}</span>
+                      <ArrowRight className="w-4 h-4 shrink-0" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
       )}
 
       {/* Quiet Educational Disclaimer & Analemma Ventures Ecosystem Cross-Link Footer */}

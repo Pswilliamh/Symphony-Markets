@@ -424,6 +424,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const [activeDocKey, setActiveDocKey] = useState<SanctuaryDocKey>('manifesto');
   const [downloadingDocKey, setDownloadingDocKey] = useState<string | null>(null);
 
+  // Paginated Chapter State for Market Cycles Page (Page 2E)
+  const [cyclesChapterIdx, setCyclesChapterIdx] = useState<number>(0);
+  const [cyclesPaginatedMode, setCyclesPaginatedMode] = useState<boolean>(true);
+
   useEffect(() => {
     if (!isPlaying || customVideoUrl || activePage !== 'welcome') return;
     const timer = setInterval(() => {
@@ -932,8 +936,78 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
    * PAGE 2E: STANDALONE BULL VS. BEAR & 4-YEAR MARKET CYCLES COMPASS PAGE
    * ============================================================================ */
   if (activePage === 'cycles') {
+    const cyclesChapters = [
+      {
+        id: 'bull_vs_bear',
+        number: '01',
+        group: 'cycles' as const,
+        shortLabel: '01. Bull vs. Bear Markets',
+        fullTitle: 'What Is a Bull Market vs. a Bear Market? (And Why Do They Have Those Names?)',
+      },
+      {
+        id: 'four_seasons',
+        number: '02',
+        group: 'cycles' as const,
+        shortLabel: '02. 4 Market Seasons',
+        fullTitle: 'How a Complete Market Cycle Flows Through 4 Seasons',
+      },
+      {
+        id: 'monthly_rhythms',
+        number: '03',
+        group: 'cycles' as const,
+        shortLabel: '03. Monthly & Yearly Rhythms',
+        fullTitle: 'How the Market Moves by Time of the Year & Time of the Month',
+      },
+      {
+        id: 'four_year_cycles',
+        number: '04',
+        group: 'cycles' as const,
+        shortLabel: '04. Past Four 4-Year Cycles (Late 2026)',
+        fullTitle: 'The Past Four 4-Year Cycles & Where the Market Is Right Now (Late 2026)',
+      },
+      {
+        id: 'ai_helper',
+        number: '05',
+        group: 'tools' as const,
+        shortLabel: '05. ★ Live AI Buy & Sell Helper',
+        fullTitle: 'Live AI Market Examiner: Recommended Buy, Stop-Loss & Sell Points',
+      },
+      {
+        id: 'ten_set',
+        number: '06',
+        group: 'tools' as const,
+        shortLabel: '06. ⚡ 10-Set Sequencer & Wallet',
+        fullTitle: 'Automated 10-Set Buy & Sell Sequencer (& Live Wallet Uptick)',
+      },
+      {
+        id: 'coin_history',
+        number: '07',
+        group: 'tools' as const,
+        shortLabel: '07. 🏛 Coin History & Founders',
+        fullTitle: 'History of Our Coins: What They Represent & Their Founders',
+      },
+    ];
+
+    const safeIdx = Math.min(Math.max(0, cyclesChapterIdx), cyclesChapters.length - 1);
+    const currentCyclesChapter = cyclesChapters[safeIdx];
+    const prevCyclesChapter = safeIdx > 0 ? cyclesChapters[safeIdx - 1] : null;
+    const nextCyclesChapter =
+      safeIdx < cyclesChapters.length - 1 ? cyclesChapters[safeIdx + 1] : null;
+
+    const goToCyclesChapter = (idx: number) => {
+      setCyclesChapterIdx(idx);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const activeLivePrice =
+      symbol === 'BTCUSDT'
+        ? btcLivePrice
+        : symbol === 'XLMUSDT'
+        ? xlmLivePrice
+        : xrpLivePrice;
+
     return (
-      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -947,87 +1021,273 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <span aria-hidden="true">·</span>
               <span>Visual Market Compass</span>
               <span aria-hidden="true">·</span>
-              <span className="font-mono">2012–2028 Cycles & Live AI Buy/Sell Helper</span>
+              <span className="font-mono">7 Paginated Chapters · Zero Endless Scrolling</span>
             </div>
             <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-              Bull vs. Bear Markets, 4-Year Cycles & Live AI Buy/Sell Helper
+              Bull vs. Bear Markets, 4-Year Cycles & Live AI Classroom
             </h1>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onEnterApp('ai-buy-sell-helper')}
-            className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
-          >
-            Open With Live Interactive Chart →
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
+              <button
+                type="button"
+                onClick={() => setCyclesPaginatedMode(true)}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  cyclesPaginatedMode
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Page-by-Page
+              </button>
+              <button
+                type="button"
+                onClick={() => setCyclesPaginatedMode(false)}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  !cyclesPaginatedMode
+                    ? 'bg-sky-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Full Scroll
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onEnterApp('cycle-bull-vs-bear')}
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Open Full 14-Section App →
+            </button>
+          </div>
         </div>
 
-        {/* Live AI Buy & Sell Zone Examiner (Use at Your Own Risk) */}
-        <LiveAiSignalHelper
-          symbol={symbol || 'XRPUSDT'}
-          onSelectSymbol={(sym) => onSelectSymbol && onSelectSymbol(sym)}
-          timeframe="1h"
-          candles={candles || []}
-          stats={null}
-          fibLevels={[]}
-          livePrice={
-            symbol === 'BTCUSDT'
-              ? btcLivePrice
-              : symbol === 'XLMUSDT'
-              ? xlmLivePrice
-              : xrpLivePrice
-          }
-          btcLivePrice={btcLivePrice}
-          xrpLivePrice={xrpLivePrice}
-          xlmLivePrice={xlmLivePrice}
-          accountBalance={5}
-          riskPercent={2.0}
-          onApplyRecommendationToChart={() => onEnterApp('risk-chart')}
-        />
+        {/* Grouped Chapter Menu Bar */}
+        {cyclesPaginatedMode && (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold text-slate-500 dark:text-slate-400">
+                  Menu Groups:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentCyclesChapter.group !== 'cycles') goToCyclesChapter(0);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg font-semibold border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    currentCyclesChapter.group === 'cycles'
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  I. 4-Year Market Cycle Guides (01–04)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentCyclesChapter.group !== 'tools') goToCyclesChapter(4);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg font-semibold border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    currentCyclesChapter.group === 'tools'
+                      ? 'bg-sky-600 text-white border-sky-600'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  II. Live AI, 10-Set Sequencer & Coin History (05–07)
+                </button>
+              </div>
 
-        {/* Advanced Student 10-Set Automated Buy & Sell Sequencer (Simulated or Active Trust Wallet) */}
-        <TenSetAutoTraderLab
-          symbol={symbol || 'XRPUSDT'}
-          onSelectSymbol={(sym) => onSelectSymbol && onSelectSymbol(sym)}
-          candles={candles || []}
-          fibLevels={[]}
-          livePrice={
-            symbol === 'BTCUSDT'
-              ? btcLivePrice
-              : symbol === 'XLMUSDT'
-              ? xlmLivePrice
-              : xrpLivePrice
-          }
-          btcLivePrice={btcLivePrice}
-          xrpLivePrice={xrpLivePrice}
-          xlmLivePrice={xlmLivePrice}
-          accountBalance={5}
-          riskPercent={2.0}
-          onLogSetPositionToPortfolio={() => onEnterApp('portfolio-ledger')}
-        />
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
+                  Page {safeIdx + 1} of {cyclesChapters.length}
+                </span>
+                <button
+                  type="button"
+                  disabled={!prevCyclesChapter}
+                  onClick={() => prevCyclesChapter && goToCyclesChapter(safeIdx - 1)}
+                  className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800 whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  ← Prev
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    goToCyclesChapter(nextCyclesChapter ? safeIdx + 1 : 0)
+                  }
+                  className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  {nextCyclesChapter ? 'Next →' : 'Start Over ↺'}
+                </button>
+              </div>
+            </div>
 
-        <MarketCyclesEducationModule
-          symbol={symbol}
-          onSelectSymbol={onSelectSymbol}
-          candles={candles}
-          btcLivePrice={btcLivePrice}
-          xrpLivePrice={xrpLivePrice}
-          xlmLivePrice={xlmLivePrice}
-          onEnterApp={onEnterApp}
-        />
+            {/* Individual Chapter Buttons in Active Group */}
+            <div className="flex flex-wrap items-center gap-2">
+              {cyclesChapters
+                .map((ch, idx) => ({ ch, idx }))
+                .filter(({ ch }) => ch.group === currentCyclesChapter.group)
+                .map(({ ch, idx }) => {
+                  const isCurrent = idx === safeIdx;
+                  return (
+                    <button
+                      key={ch.id}
+                      type="button"
+                      onClick={() => goToCyclesChapter(idx)}
+                      className={`px-3.5 py-2 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        isCurrent
+                          ? 'bg-slate-900 dark:bg-amber-500 text-white dark:text-slate-950 border-slate-900 dark:border-amber-400'
+                          : 'bg-slate-50 dark:bg-slate-950/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {ch.shortLabel}
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        )}
 
-        {/* Coin History, Purpose & Founders Classroom Section (BTC, XRP, XLM & KSBC Gold RWA) */}
-        <CoinHistoryAndFoundersModule
-          btcLivePrice={btcLivePrice}
-          xrpLivePrice={xrpLivePrice}
-          xlmLivePrice={xlmLivePrice}
-          onSelectSymbolAndTrain={(sym, targetId) => {
-            onSelectSymbol?.(sym);
-            onEnterApp(targetId || 'ten-set-auto-trader');
-          }}
-          onOpenKsbcGoldLedger={() => onNavigatePage('ksbc')}
-        />
+        {/* Active Section Body (Single-Chapter Mode or Full-Scroll Mode) */}
+        {(!cyclesPaginatedMode ||
+          currentCyclesChapter.id === 'bull_vs_bear' ||
+          currentCyclesChapter.id === 'four_seasons' ||
+          currentCyclesChapter.id === 'monthly_rhythms' ||
+          currentCyclesChapter.id === 'four_year_cycles') && (
+          <MarketCyclesEducationModule
+            symbol={symbol}
+            onSelectSymbol={onSelectSymbol}
+            candles={candles}
+            btcLivePrice={btcLivePrice}
+            xrpLivePrice={xrpLivePrice}
+            xlmLivePrice={xlmLivePrice}
+            onEnterApp={onEnterApp}
+            onlyPart={
+              cyclesPaginatedMode
+                ? (currentCyclesChapter.id as
+                    | 'bull_vs_bear'
+                    | 'four_seasons'
+                    | 'monthly_rhythms'
+                    | 'four_year_cycles')
+                : 'all'
+            }
+          />
+        )}
+
+        {(!cyclesPaginatedMode || currentCyclesChapter.id === 'ai_helper') && (
+          <LiveAiSignalHelper
+            symbol={symbol || 'XRPUSDT'}
+            onSelectSymbol={(sym) => onSelectSymbol && onSelectSymbol(sym)}
+            timeframe="1h"
+            candles={candles || []}
+            stats={null}
+            fibLevels={[]}
+            livePrice={activeLivePrice}
+            btcLivePrice={btcLivePrice}
+            xrpLivePrice={xrpLivePrice}
+            xlmLivePrice={xlmLivePrice}
+            accountBalance={5}
+            riskPercent={2.0}
+            onApplyRecommendationToChart={() => onEnterApp('risk-chart')}
+          />
+        )}
+
+        {(!cyclesPaginatedMode || currentCyclesChapter.id === 'ten_set') && (
+          <TenSetAutoTraderLab
+            symbol={symbol || 'XRPUSDT'}
+            onSelectSymbol={(sym) => onSelectSymbol && onSelectSymbol(sym)}
+            candles={candles || []}
+            fibLevels={[]}
+            livePrice={activeLivePrice}
+            btcLivePrice={btcLivePrice}
+            xrpLivePrice={xrpLivePrice}
+            xlmLivePrice={xlmLivePrice}
+            accountBalance={5}
+            riskPercent={2.0}
+            onLogSetPositionToPortfolio={() => onEnterApp('portfolio-ledger')}
+          />
+        )}
+
+        {(!cyclesPaginatedMode || currentCyclesChapter.id === 'coin_history') && (
+          <CoinHistoryAndFoundersModule
+            btcLivePrice={btcLivePrice}
+            xrpLivePrice={xrpLivePrice}
+            xlmLivePrice={xlmLivePrice}
+            onSelectSymbolAndTrain={(sym, targetId) => {
+              onSelectSymbol?.(sym);
+              onEnterApp(targetId || 'ten-set-auto-trader');
+            }}
+            onOpenKsbcGoldLedger={() => onNavigatePage('ksbc')}
+          />
+        )}
+
+        {/* Clean End-of-Section Navigation Footer */}
+        {cyclesPaginatedMode && (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {prevCyclesChapter ? (
+                <button
+                  type="button"
+                  onClick={() => goToCyclesChapter(safeIdx - 1)}
+                  className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  ← Previous: {prevCyclesChapter.shortLabel}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onNavigatePage('welcome')}
+                  className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  ← Welcome Stage
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-mono tabular-nums font-semibold text-slate-700 dark:text-slate-300">
+                End of Page {safeIdx + 1} / {cyclesChapters.length}
+              </span>
+              <span aria-hidden="true">·</span>
+              <select
+                aria-label="Jump to Market Cycles section"
+                value={safeIdx}
+                onChange={(e) => goToCyclesChapter(Number(e.target.value))}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs font-medium cursor-pointer"
+              >
+                {cyclesChapters.map((ch, idx) => (
+                  <option key={ch.id} value={idx}>
+                    {ch.number}. {ch.fullTitle}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center justify-end">
+              {nextCyclesChapter ? (
+                <button
+                  type="button"
+                  onClick={() => goToCyclesChapter(safeIdx + 1)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  <span>Next: {nextCyclesChapter.fullTitle}</span>
+                  <ArrowRight className="w-4 h-4 shrink-0" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onEnterApp('start-here')}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <span>Enter Full 14-Section Training App</span>
+                  <ArrowRight className="w-4 h-4 shrink-0" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

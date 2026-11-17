@@ -12,6 +12,12 @@ import {
 } from 'lucide-react';
 import { AssetSymbol, Candle } from '../types/market';
 
+export type MarketCyclePartId =
+  | 'bull_vs_bear'
+  | 'four_seasons'
+  | 'monthly_rhythms'
+  | 'four_year_cycles';
+
 interface MarketCyclesEducationModuleProps {
   symbol?: AssetSymbol;
   onSelectSymbol?: (sym: AssetSymbol) => void;
@@ -20,6 +26,7 @@ interface MarketCyclesEducationModuleProps {
   xrpLivePrice: number;
   xlmLivePrice: number;
   onEnterApp?: (targetSectionId?: string) => void;
+  onlyPart?: MarketCyclePartId | 'all';
 }
 
 type CyclePhaseKey = 'accumulation' | 'markup' | 'distribution' | 'markdown';
@@ -348,10 +355,16 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
   xrpLivePrice,
   xlmLivePrice,
   onEnterApp,
+  onlyPart = 'all',
 }) => {
   const [selectedPhase, setSelectedPhase] = useState<CyclePhaseKey>('accumulation');
   const [selectedCycleId, setSelectedCycleId] = useState<HistoricalCycleId>('cycle4');
   const [quarterFilter, setQuarterFilter] = useState<QuarterFilter>('all');
+
+  const showBullVsBear = onlyPart === 'all' || onlyPart === 'bull_vs_bear';
+  const showFourSeasons = onlyPart === 'all' || onlyPart === 'four_seasons';
+  const showMonthlyRhythms = onlyPart === 'all' || onlyPart === 'monthly_rhythms';
+  const showFourYearCycles = onlyPart === 'all' || onlyPart === 'four_year_cycles';
 
   const activePhase = useMemo(
     () => FOUR_CYCLE_PHASES.find((p) => p.key === selectedPhase) ?? FOUR_CYCLE_PHASES[0],
@@ -423,13 +436,14 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
       shortTermPosture,
       isBullishShortTerm,
     };
-  }, [candles, symbol, xrpLivePrice, xlmLivePrice]);
+  }, [candles, symbol, btcLivePrice, xrpLivePrice, xlmLivePrice]);
 
   return (
     <div className="space-y-8">
       {/* ============================================================================
        * SECTION 1: VISUAL ANATOMY OF A BULL MARKET VS. A BEAR MARKET
        * ============================================================================ */}
+      {showBullVsBear && (
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-7 space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div className="space-y-1">
@@ -788,10 +802,12 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
           </table>
         </div>
       </section>
+      )}
 
       {/* ============================================================================
        * SECTION 2: THE 4 EMOTIONAL & SEASONAL PHASES OF EVERY MARKET CYCLE
        * ============================================================================ */}
+      {showFourSeasons && (
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-7 space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div className="space-y-1">
@@ -1020,10 +1036,12 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
           </div>
         </div>
       </section>
+      )}
 
       {/* ============================================================================
        * SECTION 3: CALENDAR SEASONALITY — TIMES OF THE YEAR & MONTHLY RHYTHMS
        * ============================================================================ */}
+      {showMonthlyRhythms && (
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-7 space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div className="space-y-1">
@@ -1201,10 +1219,12 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
           </div>
         </div>
       </section>
+      )}
 
       {/* ============================================================================
        * SECTION 4: THE PAST FOUR 4-YEAR CYCLES (2012–2028) & WHERE WE ARE RIGHT NOW
        * ============================================================================ */}
+      {showFourYearCycles && (
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-7 space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div className="space-y-1">
@@ -1613,6 +1633,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 };

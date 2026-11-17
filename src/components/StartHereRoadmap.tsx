@@ -322,13 +322,11 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
           <button
             type="button"
             onClick={onToggleBeginnerFocusMode}
-            className={`px-3 py-2 text-xs font-medium rounded-lg border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              beginnerFocusMode
-                ? 'border-sky-500/50 bg-sky-500/10 text-sky-600 dark:text-sky-400'
-                : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
+            className="px-3 py-2 text-xs font-medium rounded-lg border border-sky-500/50 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            {beginnerFocusMode ? 'Show Advanced Pro Panels' : 'Simplify Screen (Hide Pro Desk)'}
+            {beginnerFocusMode
+              ? 'Open 11-Module Skill & AI DEX Labs →'
+              : 'Jump to 11-Module Skill & AI DEX Labs →'}
           </button>
         </div>
       </div>
