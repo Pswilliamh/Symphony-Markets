@@ -4,24 +4,51 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Layers } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Layers, Lock } from 'lucide-react';
+import {
+  AcademyAdminConsoleModal,
+  AcademyPasscodeGateCard,
+  AcademyProgressBanner,
+  AcademyTierLevel,
+} from './components/AcademyTierGateAndAdminBar';
 import { CandleEducationDeck } from './components/CandleEducationDeck';
 import { CandlestickChart } from './components/CandlestickChart';
 import { CandlestickSymphonyComposer } from './components/CandlestickSymphonyComposer';
 import { CoinHistoryAndFoundersModule } from './components/CoinHistoryAndFoundersModule';
 import { DayTraderSkillSuite } from './components/DayTraderSkillSuite';
 import { DecentralizedAiDexDesk } from './components/DecentralizedAiDexDesk';
+import { FibonacciSymphonyGeometryModule } from './components/FibonacciSymphonyGeometryModule';
+import { FibonacciSymphonyMarkersStudio } from './components/FibonacciSymphonyMarkersStudio';
 import { LandingPageView, PublicPageTab } from './components/LandingPageView';
 import { LiveAiSignalHelper } from './components/LiveAiSignalHelper';
 import {
   MarketCyclePartId,
   MarketCyclesEducationModule,
 } from './components/MarketCyclesEducationModule';
+import { OpenMediaAndDocumentLibrary } from './components/OpenMediaAndDocumentLibrary';
 import { PortfolioAndToolsSection } from './components/PortfolioAndToolsSection';
-import { RiskSimulatorPanel } from './components/RiskSimulatorPanel';
+import {
+  ImportedAutoTraderDexSet,
+  RiskSimulatorPanel,
+} from './components/RiskSimulatorPanel';
 import { StartHereRoadmap } from './components/StartHereRoadmap';
 import { SymphonyCandlestickBackdrop, SymphonyHarpLogo } from './components/SymphonyHarpLogo';
 import { TenSetAutoTraderLab } from './components/TenSetAutoTraderLab';
+import {
+  AcademyAdminSettingsState,
+  AcademyPublicGatesState,
+  DEFAULT_ADMIN_SETTINGS_STATE,
+  DEFAULT_PUBLIC_GATES_STATE,
+  User,
+  auth,
+  fetchAcademyAdminSettingsFromFirestore,
+  fetchAcademyPublicGatesFromFirestore,
+  isBootstrapOwnerEmail,
+  onAuthStateChanged,
+  saveAcademyConfigurationToFirestore,
+  signInWithGoogleForAcademyAdmin,
+  signOutGoogleWalletGate,
+} from './firebase';
 import {
   calculateFibonacciLevels,
   enrichCandlesWithIndicators,
@@ -40,23 +67,26 @@ import {
   WatchedWallet,
 } from './types/market';
 
-type CurriculumGroupId = 'foundations' | 'live_desk' | 'pro_suites' | 'market_cycles';
+type CurriculumGroupId = AcademyTierLevel;
 
 type WorkshopChapterId =
   | 'start-here'
-  | 'ai-buy-sell-helper'
-  | 'ten-set-auto-trader'
   | 'coin-history'
-  | 'risk-chart'
-  | 'market-symphony'
-  | 'portfolio-ledger'
-  | 'skill-desk'
-  | 'ai-dex-lab'
-  | 'candlestick-guide'
   | 'cycle-bull-vs-bear'
   | 'cycle-four-seasons'
+  | 'market-symphony'
+  | 'risk-chart'
+  | 'candlestick-guide'
+  | 'fibonacci-symphony-geometry'
+  | 'fibonacci-symphony-markers'
+  | 'ai-buy-sell-helper'
+  | 'portfolio-ledger'
   | 'cycle-monthly-rhythms'
-  | 'cycle-four-year-clock';
+  | 'ten-set-auto-trader'
+  | 'skill-desk'
+  | 'ai-dex-lab'
+  | 'cycle-four-year-clock'
+  | 'open-library';
 
 interface CurriculumGroupMeta {
   id: CurriculumGroupId;
@@ -76,28 +106,28 @@ interface WorkshopChapterMeta {
 
 const CURRICULUM_GROUPS: CurriculumGroupMeta[] = [
   {
-    id: 'foundations',
+    id: 'beginner',
     roman: 'I',
-    label: '$5 Start, AI Signals & 10-Set',
-    rangeBadge: '01–04',
+    label: 'Beginners · Foundations (Open)',
+    rangeBadge: '01–05',
   },
   {
-    id: 'live_desk',
+    id: 'intermediate',
     roman: 'II',
-    label: 'Live Chart, Symphony & Wallet Ledger',
-    rangeBadge: '05–07',
+    label: 'Intermediate · Chart, Fib & XRPL DEX',
+    rangeBadge: '06–12',
   },
   {
-    id: 'pro_suites',
+    id: 'advanced',
     roman: 'III',
-    label: '11-Skill Desk, AI DEX & Candlesticks',
-    rangeBadge: '08–10',
+    label: 'Advanced · 10-Set, 11-Skill & DEX',
+    rangeBadge: '13–16',
   },
   {
-    id: 'market_cycles',
+    id: 'open_library',
     roman: 'IV',
-    label: 'Bull vs. Bear & 4-Year Market Cycles',
-    rangeBadge: '11–14',
+    label: 'Open Media & Document Library',
+    rangeBadge: 'Open',
   },
 ];
 
@@ -105,104 +135,126 @@ const WORKSHOP_CHAPTERS: WorkshopChapterMeta[] = [
   {
     id: 'start-here',
     number: '01',
-    groupId: 'foundations',
+    groupId: 'beginner',
     shortTitle: '01. $5 Start Here & Safety',
     fullTitle: '$5 Start Here & Real-Wallet Safety Roadmap',
   },
   {
-    id: 'ai-buy-sell-helper',
-    number: '02',
-    groupId: 'foundations',
-    shortTitle: '02. ★ AI Buy & Sell Helper',
-    fullTitle: 'Live AI Market Examiner: Recommended Buy, Stop-Loss & Sell Points',
-  },
-  {
-    id: 'ten-set-auto-trader',
-    number: '03',
-    groupId: 'foundations',
-    shortTitle: '03. ⚡ 10-Set Sequencer & Wallet',
-    fullTitle: 'Automated 10-Set Buy & Sell Sequencer (& Live Wallet Uptick)',
-  },
-  {
     id: 'coin-history',
-    number: '04',
-    groupId: 'foundations',
-    shortTitle: '04. 🏛 Coin History & Founders',
-    fullTitle: 'History of Our Coins: What They Represent & Their Founders',
-  },
-  {
-    id: 'risk-chart',
-    number: '05',
-    groupId: 'live_desk',
-    shortTitle: '05. Live Chart & 2% Risk',
-    fullTitle: 'Live Candlestick Chart & 2% Risk Simulator',
-  },
-  {
-    id: 'market-symphony',
-    number: '06',
-    groupId: 'live_desk',
-    shortTitle: '06. ♪ 8-Hour Symphony Graph',
-    fullTitle: '♪ 8-Hour Market Symphony Music Graph',
-  },
-  {
-    id: 'portfolio-ledger',
-    number: '07',
-    groupId: 'live_desk',
-    shortTitle: '07. Wallet Watch & Ledger',
-    fullTitle: 'Wallet Watch, Paper Portfolio & Alerts Ledger',
-  },
-  {
-    id: 'skill-desk',
-    number: '08',
-    groupId: 'pro_suites',
-    shortTitle: '08. Day-Trader-Skill Desk (11-Module)',
-    fullTitle: 'Day-Trader-Skill Desk — 11-Module Interactive Suite',
-  },
-  {
-    id: 'ai-dex-lab',
-    number: '09',
-    groupId: 'pro_suites',
-    shortTitle: '09. 24/7 AI Decentralized DEX Lab',
-    fullTitle: '24/7 AI Decentralized DEX Lab — 11-Skill On-Chain Architecture',
-  },
-  {
-    id: 'candlestick-guide',
-    number: '10',
-    groupId: 'pro_suites',
-    shortTitle: '10. Candlestick & Fibonacci Guide',
-    fullTitle: 'Candlestick Anatomy & Fibonacci Retracement Guide',
+    number: '02',
+    groupId: 'beginner',
+    shortTitle: '02. Coin History & Founders',
+    fullTitle: 'History of Our Coins: What They Represent & Their Founders (BTC, XRP, XLM, KSBC)',
   },
   {
     id: 'cycle-bull-vs-bear',
-    number: '11',
-    groupId: 'market_cycles',
-    shortTitle: '11. Bull Market vs. Bear Market',
-    fullTitle: 'What Is a Bull Market vs. a Bear Market? (And Why Do They Have Those Names?)',
+    number: '03',
+    groupId: 'beginner',
+    shortTitle: '03. Eagle Markets (Bull & Bear)',
+    fullTitle:
+      'The Ascending Eagle & Descending Eagle Markets — And Why Wall Street Calls Them Bull & Bear',
     cyclePart: 'bull_vs_bear',
   },
   {
     id: 'cycle-four-seasons',
-    number: '12',
-    groupId: 'market_cycles',
-    shortTitle: '12. How a Cycle Flows Through 4 Seasons',
+    number: '04',
+    groupId: 'beginner',
+    shortTitle: '04. 4 Market Cycle Seasons',
     fullTitle: 'How a Complete Market Cycle Flows Through 4 Seasons',
     cyclePart: 'four_seasons',
   },
   {
+    id: 'market-symphony',
+    number: '05',
+    groupId: 'beginner',
+    shortTitle: '05. ♪ 8-Hour Symphony Graph',
+    fullTitle: '♪ 8-Hour Market Symphony Music Graph',
+  },
+  {
+    id: 'risk-chart',
+    number: '06',
+    groupId: 'intermediate',
+    shortTitle: '06. Live Chart & Embedded XRPL DEX',
+    fullTitle: 'Live Candlestick Chart, 2% Risk & Embedded XRPL DEX Order Desk',
+  },
+  {
+    id: 'candlestick-guide',
+    number: '07',
+    groupId: 'intermediate',
+    shortTitle: '07. Candlestick & Fib Retracements',
+    fullTitle: 'Candlestick Anatomy & Fibonacci Retracement Guide',
+  },
+  {
+    id: 'fibonacci-symphony-geometry',
+    number: '08',
+    groupId: 'intermediate',
+    shortTitle: '08. ♪ 3-Point Fib Extensions & 144/233',
+    fullTitle: 'The Geometry of Creation, Musical Notes & 3-Point Fibonacci Extensions',
+  },
+  {
+    id: 'fibonacci-symphony-markers',
+    number: '09',
+    groupId: 'intermediate',
+    shortTitle: '09. ♬ Fib Symphony Buy/Sell Markers',
+    fullTitle: 'Dedicated Fibonacci Symphony Studio: Musical Buy, Stop & Sell Markers',
+  },
+  {
+    id: 'ai-buy-sell-helper',
+    number: '10',
+    groupId: 'intermediate',
+    shortTitle: '10. ★ Live AI Buy & Sell Helper',
+    fullTitle: 'Live AI Market Examiner: Recommended Buy, Stop-Loss & Sell Points',
+  },
+  {
+    id: 'portfolio-ledger',
+    number: '11',
+    groupId: 'intermediate',
+    shortTitle: '11. Wallet Watch & Paper Ledger',
+    fullTitle: 'Wallet Watch, Paper Portfolio & Alerts Ledger',
+  },
+  {
     id: 'cycle-monthly-rhythms',
-    number: '13',
-    groupId: 'market_cycles',
-    shortTitle: '13. Monthly & Time-of-Year Rhythms',
+    number: '12',
+    groupId: 'intermediate',
+    shortTitle: '12. Monthly & Yearly Rhythms',
     fullTitle: 'How the Market Moves by Time of the Year & Time of the Month',
     cyclePart: 'monthly_rhythms',
   },
   {
-    id: 'cycle-four-year-clock',
+    id: 'ten-set-auto-trader',
+    number: '13',
+    groupId: 'advanced',
+    shortTitle: '13. ⚡ 10-Set Sequencer & XRPL DEX',
+    fullTitle: 'Automated 10-Set Buy & Sell Sequencer (& Real XRPL DEX Bridge)',
+  },
+  {
+    id: 'skill-desk',
     number: '14',
-    groupId: 'market_cycles',
-    shortTitle: '14. Past Four 4-Year Cycles (Late 2026)',
+    groupId: 'advanced',
+    shortTitle: '14. Day-Trader-Skill Desk (11-Module)',
+    fullTitle: 'Day-Trader-Skill Desk — 11-Module Interactive Suite',
+  },
+  {
+    id: 'ai-dex-lab',
+    number: '15',
+    groupId: 'advanced',
+    shortTitle: '15. 24/7 AI Decentralized DEX Lab',
+    fullTitle: '24/7 AI Decentralized DEX Lab — 11-Skill On-Chain Architecture',
+  },
+  {
+    id: 'cycle-four-year-clock',
+    number: '16',
+    groupId: 'advanced',
+    shortTitle: '16. Past Four 4-Year Cycles (Late 2026)',
     fullTitle: 'The Past Four 4-Year Cycles & Where the Market Is Right Now (Late 2026)',
     cyclePart: 'four_year_cycles',
+  },
+  {
+    id: 'open-library',
+    number: '17',
+    groupId: 'open_library',
+    shortTitle: '17. Open Media & Document Library',
+    fullTitle: 'Open Media, Course Video & Document Reading Room (No Password Required)',
   },
 ];
 
@@ -221,6 +273,33 @@ export default function App() {
   const [timeframe, setTimeframe] = useState<Timeframe>('1h');
   const [activeChapterId, setActiveChapterId] = useState<WorkshopChapterId>('start-here');
   const [paginatedMode, setPaginatedMode] = useState<boolean>(true);
+
+  const [publicGates, setPublicGates] = useState<AcademyPublicGatesState>(
+    DEFAULT_PUBLIC_GATES_STATE
+  );
+  const [adminSettings, setAdminSettings] = useState<AcademyAdminSettingsState>(
+    DEFAULT_ADMIN_SETTINGS_STATE
+  );
+  const [academyUser, setAcademyUser] = useState<User | null>(null);
+  const [isAdminUser, setIsAdminUser] = useState<boolean>(false);
+  const [adminPreviewStudentGate, setAdminPreviewStudentGate] = useState<boolean>(false);
+  const [showAdminModal, setShowAdminModal] = useState<boolean>(false);
+  const [adminBusy, setAdminBusy] = useState<boolean>(false);
+  const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
+  const [intermediateUnlocked, setIntermediateUnlocked] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('symphony_int_unlocked') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [advancedUnlocked, setAdvancedUnlocked] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('symphony_adv_unlocked') === '1';
+    } catch {
+      return false;
+    }
+  });
 
   // Market State for BTC, XRP, and XLM
   const [candlesBySymbol, setCandlesBySymbol] = useState<Record<AssetSymbol, Candle[]>>({
@@ -385,6 +464,9 @@ export default function App() {
   ]);
 
   const [alertBanner, setAlertBanner] = useState<string | null>(null);
+  const [embeddedXrplAddress, setEmbeddedXrplAddress] = useState<string>('');
+  const [importedXrplDexSet, setImportedXrplDexSet] =
+    useState<ImportedAutoTraderDexSet | null>(null);
 
   // Sync Dark Mode class on <html>
   useEffect(() => {
@@ -395,6 +477,181 @@ export default function App() {
       root.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Load Public SHA-256 Passcode Gates & Orientation Video Metadata on Boot
+  useEffect(() => {
+    let active = true;
+    fetchAcademyPublicGatesFromFirestore()
+      .then((gates) => {
+        if (active) setPublicGates(gates);
+      })
+      .catch(() => {
+        // Fallback to built-in SHA-256 defaults if offline
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Sync Firebase Google Auth Session (Supports Both Primary Owner & Separate Admin Google Login)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      setAcademyUser(u);
+      if (!u || !u.emailVerified) {
+        setIsAdminUser(false);
+        return;
+      }
+      if (isBootstrapOwnerEmail(u.email)) {
+        setIsAdminUser(true);
+        try {
+          const settings = await fetchAcademyAdminSettingsFromFirestore();
+          setAdminSettings(settings);
+        } catch {
+          // Settings doc may not have been initialized yet
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleUnlockIntermediate = () => {
+    setIntermediateUnlocked(true);
+    try {
+      sessionStorage.setItem('symphony_int_unlocked', '1');
+    } catch {
+      // Ignore storage restriction
+    }
+  };
+
+  const handleUnlockAdvanced = () => {
+    setAdvancedUnlocked(true);
+    try {
+      sessionStorage.setItem('symphony_adv_unlocked', '1');
+    } catch {
+      // Ignore storage restriction
+    }
+  };
+
+  const handleLockStudentSessionGates = () => {
+    setIntermediateUnlocked(false);
+    setAdvancedUnlocked(false);
+    try {
+      sessionStorage.removeItem('symphony_int_unlocked');
+      sessionStorage.removeItem('symphony_adv_unlocked');
+    } catch {
+      // Ignore storage restriction
+    }
+  };
+
+  const handleGoogleAdminSignIn = async () => {
+    setAdminBusy(true);
+    setAdminAuthError(null);
+    try {
+      const signedUser = await signInWithGoogleForAcademyAdmin();
+      setAcademyUser(signedUser);
+      if (!signedUser.emailVerified) {
+        setIsAdminUser(false);
+        setAdminAuthError('Please use a Google account with a verified email address.');
+        return;
+      }
+
+      if (isBootstrapOwnerEmail(signedUser.email)) {
+        setIsAdminUser(true);
+        setAdminPreviewStudentGate(false);
+        const settings = await fetchAcademyAdminSettingsFromFirestore();
+        setAdminSettings(settings);
+        setAlertBanner(
+          `Admin Access Active (${signedUser.email}): All Beginner, Intermediate & Advanced sections unlocked.`
+        );
+        return;
+      }
+
+      try {
+        const settings = await fetchAcademyAdminSettingsFromFirestore();
+        if (
+          settings.secondaryAdminEmail &&
+          signedUser.email &&
+          settings.secondaryAdminEmail.toLowerCase() === signedUser.email.toLowerCase()
+        ) {
+          setIsAdminUser(true);
+          setAdminPreviewStudentGate(false);
+          setAdminSettings(settings);
+          setAlertBanner(
+            `Separate Admin Google Login Verified (${signedUser.email}): All curriculum tiers unlocked.`
+          );
+        } else {
+          setIsAdminUser(false);
+        }
+      } catch {
+        setIsAdminUser(false);
+        setAdminAuthError(
+          `Signed in as ${signedUser.email}, which is not yet registered as a Separate Admin Google Login. Sign in once with PsWilliamh@gmail.com to add this email in Admin Settings.`
+        );
+      }
+    } catch (err: unknown) {
+      setAdminAuthError(
+        err instanceof Error ? err.message : 'Google Sign-In was cancelled or blocked by browser.'
+      );
+    } finally {
+      setAdminBusy(false);
+    }
+  };
+
+  const handleGoogleAdminSignOut = async () => {
+    setAdminBusy(true);
+    setAdminAuthError(null);
+    try {
+      await signOutGoogleWalletGate(academyUser?.uid);
+      setAcademyUser(null);
+      setIsAdminUser(false);
+      setAdminPreviewStudentGate(false);
+    } finally {
+      setAdminBusy(false);
+    }
+  };
+
+  const handleSaveAdminConfiguration = async (draft: {
+    intermediatePasscodePlain: string;
+    advancedPasscodePlain: string;
+    intermediateGateEnabled: boolean;
+    advancedGateEnabled: boolean;
+    orientationVideoUrl: string;
+    orientationVideoTitle: string;
+    secondaryAdminEmail: string;
+  }) => {
+    if (!academyUser) return;
+    setAdminBusy(true);
+    setAdminAuthError(null);
+    try {
+      const saved = await saveAcademyConfigurationToFirestore({
+        user: academyUser,
+        ...draft,
+      });
+      setPublicGates(saved.publicGates);
+      setAdminSettings(saved.adminSettings);
+      setAlertBanner(
+        'Saved Intermediate & Advanced passcodes, Separate Admin Google Login, and Orientation Video settings.'
+      );
+    } catch (err: unknown) {
+      setAdminAuthError(
+        err instanceof Error ? err.message : 'Unable to save Admin configuration right now.'
+      );
+    } finally {
+      setAdminBusy(false);
+    }
+  };
+
+  const isTierLocked = (tier: CurriculumGroupId): boolean => {
+    if (tier === 'beginner' || tier === 'open_library') return false;
+    if (isAdminUser && !adminPreviewStudentGate) return false;
+    if (tier === 'intermediate') {
+      return publicGates.intermediateGateEnabled && !intermediateUnlocked;
+    }
+    if (tier === 'advanced') {
+      return publicGates.advancedGateEnabled && !advancedUnlocked;
+    }
+    return false;
+  };
 
   // Fetch initial market data for BTCUSDT, XRPUSDT, and XLMUSDT
   useEffect(() => {
@@ -652,6 +909,7 @@ export default function App() {
       resolvedId === 'skill-desk' ||
       resolvedId === 'ai-dex-lab' ||
       resolvedId === 'candlestick-guide' ||
+      resolvedId === 'fibonacci-symphony-geometry' ||
       resolvedId.startsWith('cycle-')
     ) {
       setBeginnerFocusMode(false);
@@ -702,15 +960,15 @@ export default function App() {
             e.preventDefault();
             navigatePublicPage('welcome');
           }}
-          className="relative overflow-hidden inline-flex items-center gap-2.5 font-editorial text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white pl-2 pr-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 whitespace-nowrap shrink-0"
+          className="relative overflow-hidden inline-flex items-center gap-2.5 font-editorial text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white pl-2 pr-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 whitespace-nowrap shrink-0"
         >
           <SymphonyCandlestickBackdrop className="opacity-25 dark:opacity-35" />
           <SymphonyHarpLogo variant="emblem" className="relative z-10 w-8 h-8 sm:w-9 sm:h-9" />
-          <span className="relative z-10">Symphony Markets</span>
+          <span className="relative z-10">Symphony Markets Academy</span>
         </a>
 
-        {/* Zone 2: Standalone Page Menu Items (6 concise single-line links) */}
-        <nav className="hidden md:flex items-center gap-5 text-sm font-medium text-slate-600 dark:text-slate-400">
+        {/* Zone 2: Standalone Page Menu Items (5 concise single-line links obeying Top Bar Contract) */}
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
           <button
             type="button"
             onClick={() => navigatePublicPage('symphony')}
@@ -720,7 +978,7 @@ export default function App() {
                 : 'hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            ♪ Symphony Music
+            ♪ Symphony
           </button>
           <button
             type="button"
@@ -753,18 +1011,7 @@ export default function App() {
                 : 'hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            Free Ebook
-          </button>
-          <button
-            type="button"
-            onClick={() => navigatePublicPage('podcast')}
-            className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              viewMode === 'landing' && publicPage === 'podcast'
-                ? 'text-amber-600 dark:text-amber-400 font-semibold'
-                : 'hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            Podcast
+            Open Library
           </button>
           <button
             type="button"
@@ -933,6 +1180,23 @@ export default function App() {
       ) : (
         /* Main Training Workspace Container (1440px max-w) */
         <main id="workspace" className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+          {/* 3-Tier Progressive Stewardship Status & Separate Admin Google Console Bar */}
+          <AcademyProgressBanner
+            activeTier={activeGroup.id}
+            intermediateUnlocked={intermediateUnlocked}
+            advancedUnlocked={advancedUnlocked}
+            isAdminUser={isAdminUser}
+            adminPreviewStudentGate={adminPreviewStudentGate}
+            onToggleAdminPreviewStudentGate={() => setAdminPreviewStudentGate((p) => !p)}
+            onOpenAdminModal={() => setShowAdminModal(true)}
+            onOpenLibraryChapter={() => {
+              setPaginatedMode(true);
+              navigateToChapter('open-library');
+            }}
+            orientationVideoUrl={publicGates.orientationVideoUrl}
+            orientationVideoTitle={publicGates.orientationVideoTitle}
+          />
+
           {/* Guiding Epigraph & Page-by-Page vs Full Scroll Mode Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
             <div className="flex flex-wrap items-center gap-3">
@@ -941,20 +1205,23 @@ export default function App() {
               </span>
               <button
                 type="button"
-                onClick={() => navigatePublicPage('guide')}
+                onClick={() => {
+                  setPaginatedMode(true);
+                  navigateToChapter('open-library');
+                }}
                 className="text-emerald-700 dark:text-emerald-400 hover:underline font-semibold whitespace-nowrap cursor-pointer"
               >
-                Free Ebook (PDF & EPUB) →
+                Open Media & Document Library →
               </button>
               <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">
                 ·
               </span>
               <button
                 type="button"
-                onClick={() => navigatePublicPage('story')}
+                onClick={() => navigatePublicPage('guide')}
                 className="text-sky-600 dark:text-sky-400 hover:underline font-medium whitespace-nowrap cursor-pointer"
               >
-                Promo Video Library →
+                Free Ebook (PDF & EPUB) →
               </button>
             </div>
 
@@ -968,7 +1235,7 @@ export default function App() {
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Page-by-Page Menu (14 Sections)
+                Page-by-Page Menu ({WORKSHOP_CHAPTERS.length} Sections)
               </button>
               <button
                 type="button"
@@ -987,17 +1254,18 @@ export default function App() {
             </div>
           </div>
 
-          {/* Grouped Curriculum Menu Bar (4 Logical Menu Groups + Section Selector + Top Prev/Next) */}
+          {/* Grouped Curriculum Menu Bar (Beginners · Intermediate · Advanced · Open Library) */}
           <nav
             aria-label="Training Curriculum Menu"
             className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3.5"
           >
-            {/* Row 1: 4 Grouped Menu Tabs */}
+            {/* Row 1: 4 Progressive Tier Tabs */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 w-full xl:w-auto flex-1">
                 {CURRICULUM_GROUPS.map((grp) => {
                   const isGroupActive = paginatedMode && activeGroup.id === grp.id;
                   const firstInGroup = WORKSHOP_CHAPTERS.find((c) => c.groupId === grp.id);
+                  const locked = isTierLocked(grp.id);
                   return (
                     <button
                       key={grp.id}
@@ -1014,18 +1282,19 @@ export default function App() {
                           : 'bg-slate-50 dark:bg-slate-950/70 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                     >
-                      <span className="text-xs font-semibold truncate">
-                        <span className="font-mono mr-1.5 opacity-80">{grp.roman}.</span>
-                        {grp.label}
+                      <span className="text-xs font-semibold truncate inline-flex items-center gap-1.5">
+                        <span className="font-mono opacity-80">{grp.roman}.</span>
+                        <span className="truncate">{grp.label}</span>
                       </span>
                       <span
-                        className={`text-[11px] font-mono tabular-nums px-1.5 py-0.5 rounded shrink-0 ${
+                        className={`inline-flex items-center gap-1 text-[11px] font-mono tabular-nums px-1.5 py-0.5 rounded shrink-0 ${
                           isGroupActive
                             ? 'bg-white/15 text-white'
                             : 'bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                         }`}
                       >
-                        {grp.rangeBadge}
+                        {locked && <Lock className="w-3 h-3 shrink-0" />}
+                        <span>{grp.rangeBadge}</span>
                       </span>
                     </button>
                   );
@@ -1039,18 +1308,20 @@ export default function App() {
                 <div className="flex flex-wrap items-center gap-2">
                   {chaptersInActiveGroup.map((ch) => {
                     const isCurrent = ch.id === activeChapter.id;
+                    const locked = isTierLocked(ch.groupId);
                     return (
                       <button
                         key={ch.id}
                         type="button"
                         onClick={() => navigateToChapter(ch.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                           isCurrent
                             ? 'bg-emerald-600 text-white border-emerald-600'
                             : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                         }`}
                       >
-                        {ch.shortTitle}
+                        {locked && <Lock className="w-3 h-3 opacity-80 shrink-0" />}
+                        <span>{ch.shortTitle}</span>
                       </button>
                     );
                   })}
@@ -1058,7 +1329,7 @@ export default function App() {
 
                 <div className="flex flex-wrap items-center gap-2 text-xs shrink-0">
                   <select
-                    aria-label="Jump directly to any of the 14 training sections"
+                    aria-label={`Jump directly to any of the ${WORKSHOP_CHAPTERS.length} training sections`}
                     value={activeChapter.id}
                     onChange={(e) => navigateToChapter(e.target.value)}
                     className="max-w-[260px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs font-medium cursor-pointer"
@@ -1066,7 +1337,7 @@ export default function App() {
                     {CURRICULUM_GROUPS.map((grp) => (
                       <optgroup
                         key={grp.id}
-                        label={`Group ${grp.roman}: ${grp.label} (${grp.rangeBadge})`}
+                        label={`Tier ${grp.roman}: ${grp.label} (${grp.rangeBadge})`}
                       >
                         {WORKSHOP_CHAPTERS.filter((ch) => ch.groupId === grp.id).map((ch) => (
                           <option key={ch.id} value={ch.id}>
@@ -1103,7 +1374,7 @@ export default function App() {
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
                 <span>
-                  <strong>Full Scroll View Active:</strong> Showing all 14 educational sections stacked on one page. Switch back to <strong>Page-by-Page Menu</strong> anytime for clean single-section focus.
+                  <strong>Full Scroll View Active:</strong> Open Beginner chapters and the Open Media & Document Library display immediately; Intermediate and Advanced sections respect active cohort passcode gates.
                 </span>
                 <button
                   type="button"
@@ -1116,7 +1387,35 @@ export default function App() {
             )}
           </nav>
 
-          {/* SECTION 01: Start Here — 5-Step $5 Real-Wallet Guided Training Module & AI Mentor */}
+          {/* PAGINATED PASSCODE GATE: Shown When Active Chapter Is in a Locked Intermediate or Advanced Tier */}
+          {paginatedMode &&
+            (activeChapter.groupId === 'intermediate' || activeChapter.groupId === 'advanced') &&
+            isTierLocked(activeChapter.groupId) && (
+              <AcademyPasscodeGateCard
+                requiredTier={activeChapter.groupId}
+                chapterNumber={activeChapter.number}
+                chapterTitle={activeChapter.fullTitle}
+                chaptersInTier={WORKSHOP_CHAPTERS.filter(
+                  (c) => c.groupId === activeChapter.groupId
+                ).map((c) => ({
+                  number: c.number,
+                  fullTitle: c.fullTitle,
+                }))}
+                publicGates={publicGates}
+                onUnlockIntermediate={handleUnlockIntermediate}
+                onUnlockAdvanced={handleUnlockAdvanced}
+                onOpenBeginnerStart={() => navigateToChapter('start-here')}
+                onOpenPublicLibrary={() => navigateToChapter('open-library')}
+                onOpenAdminModal={() => setShowAdminModal(true)}
+                isAdminUser={isAdminUser}
+                adminPreviewStudentGate={adminPreviewStudentGate}
+                onExitStudentPreview={() => setAdminPreviewStudentGate(false)}
+              />
+            )}
+
+          {/* ====================================================================
+           * TIER I: BEGINNERS — OPEN FOUNDATIONS (SECTIONS 01–05, NO PASSCODE)
+           * ==================================================================== */}
           {(!paginatedMode || activeChapter.id === 'start-here') && (
             <section id="start-here">
               <StartHereRoadmap
@@ -1163,62 +1462,6 @@ export default function App() {
             </section>
           )}
 
-          {/* SECTION 02: Live AI Market Examiner — Recommended Buy, Stop-Loss & Sell Points */}
-          {(!paginatedMode || activeChapter.id === 'ai-buy-sell-helper') && (
-            <section id="ai-buy-sell-helper">
-              <LiveAiSignalHelper
-                symbol={symbol}
-                onSelectSymbol={handleSelectSymbol}
-                timeframe={timeframe}
-                candles={activeCandles}
-                stats={activeStats}
-                fibLevels={fibLevels}
-                livePrice={livePrice}
-                btcLivePrice={btcLive}
-                xrpLivePrice={xrpLive}
-                xlmLivePrice={xlmLive}
-                accountBalance={accountBalance}
-                riskPercent={riskPercent}
-                onApplyRecommendationToChart={({
-                  entryPrice: recEntry,
-                  stopDistancePct: recStopPct,
-                  rrRatio: recRr,
-                }) => {
-                  setEntryPrice(recEntry);
-                  setStopDistancePct(recStopPct);
-                  setRrRatio(recRr);
-                  setTradeSide('long');
-                  setShowRiskOverlay(true);
-                  const dec = symbol === 'BTCUSDT' ? 2 : 4;
-                  setAlertBanner(
-                    `Loaded AI Buy & Sell Points onto Live ${symbol} Chart: Buy $${recEntry.toFixed(dec)} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
-                  );
-                  navigateToChapter('risk-chart');
-                }}
-              />
-            </section>
-          )}
-
-          {/* SECTION 03: Automated 10-Set Buy & Sell Sequencer (& Live $5 Wallet Uptick) */}
-          {(!paginatedMode || activeChapter.id === 'ten-set-auto-trader') && (
-            <section id="ten-set-auto-trader">
-              <TenSetAutoTraderLab
-                symbol={symbol}
-                onSelectSymbol={handleSelectSymbol}
-                candles={activeCandles}
-                fibLevels={fibLevels}
-                livePrice={livePrice}
-                btcLivePrice={btcLive}
-                xrpLivePrice={xrpLive}
-                xlmLivePrice={xlmLive}
-                accountBalance={accountBalance}
-                riskPercent={riskPercent}
-                onLogSetPositionToPortfolio={handleOpenPaperPosition}
-              />
-            </section>
-          )}
-
-          {/* SECTION 04: Coin History, Purpose & Founders Classroom Module */}
           {(!paginatedMode || activeChapter.id === 'coin-history') && (
             <section id="coin-history">
               <CoinHistoryAndFoundersModule
@@ -1234,186 +1477,40 @@ export default function App() {
             </section>
           )}
 
-          {/* SECTION 05: Live Candlestick Chart & 2% Risk Simulator */}
-          {(!paginatedMode || activeChapter.id === 'risk-chart') && (
-            <div id="risk-chart" className="space-y-6">
-              {/* Asset Selector & Live Telemetry Strip */}
-              <section className="flex flex-wrap items-center justify-between gap-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => handleSelectSymbol('BTCUSDT')}
-                      className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                        symbol === 'BTCUSDT'
-                          ? 'bg-amber-600 text-white'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      BTC / USDT ($
-                      {btcLive.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                      )
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectSymbol('XRPUSDT')}
-                      className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                        symbol === 'XRPUSDT'
-                          ? 'bg-sky-600 text-white'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      XRP / USDT (${xrpLive.toFixed(4)})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectSymbol('XLMUSDT')}
-                      className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                        symbol === 'XLMUSDT'
-                          ? 'bg-sky-600 text-white'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      XLM / USDT (${xlmLive.toFixed(4)})
-                    </button>
-                  </div>
-
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    <span>{activeStats?.name || 'Spot & Perpetual Paper Feed'}</span>
-                    <span aria-hidden="true" className="mx-2">
-                      ·
-                    </span>
-                    <span>
-                      {activeStats?.isLiveStream
-                        ? '● Live Exchange Feed Connected'
-                        : '● Simulated Live Market Feed'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Key Market & DEX Volatility Telemetry */}
-                <div className="flex flex-wrap items-center gap-5 text-xs font-mono tabular-nums">
-                  <div>
-                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                      Live Mark Price
-                    </span>
-                    <span className="text-base font-bold text-slate-900 dark:text-white">
-                      $
-                      {symbol === 'BTCUSDT'
-                        ? livePrice.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })
-                        : livePrice.toFixed(4)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                      24h Change
-                    </span>
-                    <span
-                      className={`font-semibold ${
-                        (activeStats?.priceChangePercent24h ?? 0) >= 0
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-rose-600 dark:text-rose-400'
-                      }`}
-                    >
-                      {(activeStats?.priceChangePercent24h ?? 0) >= 0 ? '+' : ''}
-                      {(activeStats?.priceChangePercent24h ?? 1.84).toFixed(2)}%
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                      24h Range (Low – High)
-                    </span>
-                    <span className="text-slate-800 dark:text-slate-200">
-                      ${(activeStats?.low24h ?? livePrice * 0.96).toFixed(symbol === 'BTCUSDT' ? 2 : 4)} – $
-                      {(activeStats?.high24h ?? livePrice * 1.04).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                      Hist. Volatility / ATR(14)
-                    </span>
-                    <span className="text-slate-800 dark:text-slate-200">
-                      {(activeStats?.annualizedVolatilityPct ?? 54.2).toFixed(1)}% · $
-                      {(activeStats?.atr14 ?? livePrice * 0.015).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-sans text-slate-500 dark:text-slate-400 block">
-                      DEX Pool Depth / Spread
-                    </span>
-                    <span className="text-slate-800 dark:text-slate-200">
-                      ${((activeStats?.dexLiquidityUsd ?? 45_000_000) / 1_000_000).toFixed(1)}M ·{' '}
-                      {(activeStats?.dexSpreadBps ?? 4.5).toFixed(1)} bps
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Primary Two-Zone Sandbox Layout: Interactive Chart + 2% Risk Simulator */}
-              <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <div className="lg:col-span-7 xl:col-span-8">
-                  {isLoading && activeCandles.length === 0 ? (
-                    <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-8 h-[480px] flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
-                      Loading {symbol} candlestick history and technical indicators...
-                    </div>
-                  ) : (
-                    <CandlestickChart
-                      symbol={symbol}
-                      timeframe={timeframe}
-                      onTimeframeChange={setTimeframe}
-                      candles={activeCandles}
-                      fibLevels={fibLevels}
-                      selectedCandleIndex={selectedCandleIndex}
-                      onSelectCandle={setSelectedCandleIndex}
-                      entryPrice={entryPrice}
-                      stopLoss={currentStopLoss}
-                      takeProfit={currentTakeProfit}
-                      tradeSide={tradeSide}
-                      showFibOverlay={showFibOverlay}
-                      onToggleFibOverlay={() => setShowFibOverlay((v) => !v)}
-                      showTrendBands={showTrendBands}
-                      onToggleTrendBands={() => setShowTrendBands((v) => !v)}
-                      showRiskOverlay={showRiskOverlay}
-                      onToggleRiskOverlay={() => setShowRiskOverlay((v) => !v)}
-                    />
-                  )}
-                </div>
-
-                <div className="lg:col-span-5 xl:col-span-4">
-                  <RiskSimulatorPanel
-                    symbol={symbol}
-                    livePrice={livePrice}
-                    atr14={activeStats?.atr14 ?? livePrice * 0.015}
-                    accountBalance={accountBalance}
-                    onAccountBalanceChange={setAccountBalance}
-                    entryPrice={entryPrice}
-                    onEntryPriceChange={setEntryPrice}
-                    stopDistancePct={stopDistancePct}
-                    onStopDistancePctChange={setStopDistancePct}
-                    riskPercent={riskPercent}
-                    onRiskPercentChange={setRiskPercent}
-                    rrRatio={rrRatio}
-                    onRrRatioChange={setRrRatio}
-                    tradeSide={tradeSide}
-                    onTradeSideChange={setTradeSide}
-                    instrument={instrument}
-                    onInstrumentChange={setInstrument}
-                    leverage={leverage}
-                    onLeverageChange={setLeverage}
-                    onOpenPaperPosition={handleOpenPaperPosition}
-                  />
-                </div>
-              </section>
-            </div>
+          {(!paginatedMode ||
+            activeChapter.id === 'cycle-bull-vs-bear' ||
+            activeChapter.id === 'cycle-four-seasons') && (
+            <section id={paginatedMode ? activeChapter.id : 'beginner-market-cycles'}>
+              <MarketCyclesEducationModule
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                candles={activeCandles}
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+                onEnterApp={handleEnterApp}
+                onlyPart={
+                  paginatedMode ? activeChapter.cyclePart ?? 'bull_vs_bear' : 'bull_vs_bear'
+                }
+              />
+            </section>
           )}
 
-          {/* SECTION 06: Dedicated 8-Hour Candlestick Symphony Music Graph Module */}
+          {!paginatedMode && (
+            <section id="cycle-four-seasons">
+              <MarketCyclesEducationModule
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                candles={activeCandles}
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+                onEnterApp={handleEnterApp}
+                onlyPart="four_seasons"
+              />
+            </section>
+          )}
+
           {(!paginatedMode || activeChapter.id === 'market-symphony') && (
             <section id="market-symphony">
               <CandlestickSymphonyComposer
@@ -1428,129 +1525,555 @@ export default function App() {
             </section>
           )}
 
-          {/* SECTION 07: Paper Portfolio, Read-Only Wallet Watch, Bot Sandbox & Alerts */}
-          {(!paginatedMode || activeChapter.id === 'portfolio-ledger') && (
-            <section id="portfolio-ledger">
-              <PortfolioAndToolsSection
-                activeSectionTab={activeBottomTab}
-                onSectionTabChange={setActiveBottomTab}
-                positions={positions}
-                onClosePosition={handleClosePosition}
-                btcPrice={btcLive}
-                xrpPrice={xrpLive}
-                xlmPrice={xlmLive}
-                candles={activeCandles}
-                watchedWallets={watchedWallets}
-                onAddWallet={(w) => setWatchedWallets((prev) => [w, ...prev])}
-                onRemoveWallet={(id) =>
-                  setWatchedWallets((prev) => prev.filter((item) => item.id !== id))
-                }
-                botStrategies={botStrategies}
-                onToggleBot={handleToggleBot}
-                onRunBotBacktest={handleRunBotBacktest}
-                alerts={alerts}
-                onAddAlert={(newAl) =>
-                  setAlerts((prev) => [
-                    { ...newAl, id: `al_${Date.now()}`, triggered: false },
-                    ...prev,
-                  ])
-                }
-                onDeleteAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
-              />
-            </section>
+          {/* ====================================================================
+           * TIER II: INTERMEDIATE — CHART, FIBONACCI & EMBEDDED XRPL DEX (SECTIONS 06–12)
+           * ==================================================================== */}
+          {!paginatedMode && isTierLocked('intermediate') && (
+            <AcademyPasscodeGateCard
+              requiredTier="intermediate"
+              chapterNumber="06–12"
+              chapterTitle="Intermediate Curriculum: Live Charting, Fibonacci Symphony Markers & Embedded XRPL DEX"
+              chaptersInTier={WORKSHOP_CHAPTERS.filter((c) => c.groupId === 'intermediate').map(
+                (c) => ({ number: c.number, fullTitle: c.fullTitle })
+              )}
+              publicGates={publicGates}
+              onUnlockIntermediate={handleUnlockIntermediate}
+              onUnlockAdvanced={handleUnlockAdvanced}
+              onOpenBeginnerStart={() => navigateToChapter('start-here')}
+              onOpenPublicLibrary={() => {
+                setPaginatedMode(true);
+                navigateToChapter('open-library');
+              }}
+              onOpenAdminModal={() => setShowAdminModal(true)}
+              isAdminUser={isAdminUser}
+              adminPreviewStudentGate={adminPreviewStudentGate}
+              onExitStudentPreview={() => setAdminPreviewStudentGate(false)}
+            />
           )}
 
-          {/* SECTION 08: Day-Trader-Skill Desk — 11-Module Interactive Suite */}
-          {(!paginatedMode || activeChapter.id === 'skill-desk') && (
-            <section id="skill-desk">
-              <DayTraderSkillSuite
-                symbol={symbol}
-                onSelectSymbol={handleSelectSymbol}
-                candles={activeCandles}
-                stats={activeStats}
-                fibLevels={fibLevels}
-                livePrice={livePrice}
-                accountBalance={accountBalance}
-                entryPrice={entryPrice}
-                onEntryPriceChange={setEntryPrice}
-                stopLoss={currentStopLoss}
-                takeProfit={currentTakeProfit}
-                stopDistancePct={stopDistancePct}
-                riskPercent={riskPercent}
-                rrRatio={rrRatio}
-                tradeSide={tradeSide}
-                instrument={instrument}
-                leverage={leverage}
-                positions={positions}
-                onOpenPaperPosition={handleOpenPaperPosition}
-                onAddAlert={(newAl) => {
-                  setAlerts((prev) => [
-                    { ...newAl, id: `al_${Date.now()}`, triggered: false },
-                    ...prev,
-                  ]);
-                  setAlertBanner(
-                    `Armed Alert: ${newAl.symbol} ${newAl.condition} $${newAl.targetPrice.toFixed(
-                      newAl.symbol === 'BTCUSDT' ? 2 : 4
-                    )}`
-                  );
+          {!isTierLocked('intermediate') && (
+            <>
+              {(!paginatedMode || activeChapter.id === 'risk-chart') && (
+                <div id="risk-chart" className="space-y-6">
+                  <section className="flex flex-wrap items-center justify-between gap-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectSymbol('BTCUSDT')}
+                          className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                            symbol === 'BTCUSDT'
+                              ? 'bg-amber-600 text-white'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          BTC / USDT ($
+                          {btcLive.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                          )
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectSymbol('XRPUSDT')}
+                          className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                            symbol === 'XRPUSDT'
+                              ? 'bg-sky-600 text-white'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          XRP / USDT (${xrpLive.toFixed(4)})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectSymbol('XLMUSDT')}
+                          className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                            symbol === 'XLMUSDT'
+                              ? 'bg-sky-600 text-white'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          XLM / USDT (${xlmLive.toFixed(4)})
+                        </button>
+                      </div>
+
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        <span>{activeStats?.name || 'Spot & Perpetual Paper Feed'}</span>
+                        <span aria-hidden="true" className="mx-2">
+                          ·
+                        </span>
+                        <span>
+                          {activeStats?.isLiveStream
+                            ? 'Live Exchange Feed Connected'
+                            : 'Simulated Live Market Feed'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-5 text-xs font-mono tabular-nums">
+                      <div>
+                        <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                          Live Mark Price
+                        </span>
+                        <span className="text-base font-bold text-slate-900 dark:text-white">
+                          $
+                          {symbol === 'BTCUSDT'
+                            ? livePrice.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                            : livePrice.toFixed(4)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                          24h Change
+                        </span>
+                        <span
+                          className={`font-semibold ${
+                            (activeStats?.priceChangePercent24h ?? 0) >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-rose-600 dark:text-rose-400'
+                          }`}
+                        >
+                          {(activeStats?.priceChangePercent24h ?? 0) >= 0 ? '+' : ''}
+                          {(activeStats?.priceChangePercent24h ?? 1.84).toFixed(2)}%
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                          24h Range (Low – High)
+                        </span>
+                        <span className="text-slate-800 dark:text-slate-200">
+                          ${(activeStats?.low24h ?? livePrice * 0.96).toFixed(symbol === 'BTCUSDT' ? 2 : 4)} – $
+                          {(activeStats?.high24h ?? livePrice * 1.04).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                          Hist. Volatility / ATR(14)
+                        </span>
+                        <span className="text-slate-800 dark:text-slate-200">
+                          {(activeStats?.annualizedVolatilityPct ?? 54.2).toFixed(1)}% · $
+                          {(activeStats?.atr14 ?? livePrice * 0.015).toFixed(symbol === 'BTCUSDT' ? 2 : 4)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-sans text-slate-500 dark:text-slate-400 block">
+                          DEX Pool Depth / Spread
+                        </span>
+                        <span className="text-slate-800 dark:text-slate-200">
+                          ${((activeStats?.dexLiquidityUsd ?? 45_000_000) / 1_000_000).toFixed(1)}M ·{' '}
+                          {(activeStats?.dexSpreadBps ?? 4.5).toFixed(1)} bps
+                        </span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <div className="lg:col-span-7 xl:col-span-8">
+                      {isLoading && activeCandles.length === 0 ? (
+                        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-8 h-[480px] flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+                          Loading {symbol} candlestick history and technical indicators...
+                        </div>
+                      ) : (
+                        <CandlestickChart
+                          symbol={symbol}
+                          timeframe={timeframe}
+                          onTimeframeChange={setTimeframe}
+                          candles={activeCandles}
+                          fibLevels={fibLevels}
+                          selectedCandleIndex={selectedCandleIndex}
+                          onSelectCandle={setSelectedCandleIndex}
+                          entryPrice={entryPrice}
+                          stopLoss={currentStopLoss}
+                          takeProfit={currentTakeProfit}
+                          tradeSide={tradeSide}
+                          showFibOverlay={showFibOverlay}
+                          onToggleFibOverlay={() => setShowFibOverlay((v) => !v)}
+                          showTrendBands={showTrendBands}
+                          onToggleTrendBands={() => setShowTrendBands((v) => !v)}
+                          showRiskOverlay={showRiskOverlay}
+                          onToggleRiskOverlay={() => setShowRiskOverlay((v) => !v)}
+                        />
+                      )}
+                    </div>
+
+                    <div className="lg:col-span-5 xl:col-span-4">
+                      <RiskSimulatorPanel
+                        symbol={symbol}
+                        livePrice={livePrice}
+                        atr14={activeStats?.atr14 ?? livePrice * 0.015}
+                        accountBalance={accountBalance}
+                        onAccountBalanceChange={setAccountBalance}
+                        entryPrice={entryPrice}
+                        onEntryPriceChange={setEntryPrice}
+                        stopDistancePct={stopDistancePct}
+                        onStopDistancePctChange={setStopDistancePct}
+                        riskPercent={riskPercent}
+                        onRiskPercentChange={setRiskPercent}
+                        rrRatio={rrRatio}
+                        onRrRatioChange={setRrRatio}
+                        tradeSide={tradeSide}
+                        onTradeSideChange={setTradeSide}
+                        instrument={instrument}
+                        onInstrumentChange={setInstrument}
+                        leverage={leverage}
+                        onLeverageChange={setLeverage}
+                        onOpenPaperPosition={handleOpenPaperPosition}
+                        connectedXrplAddress={
+                          embeddedXrplAddress ||
+                          watchedWallets.find((w) => w.network === 'XRPL')?.address ||
+                          ''
+                        }
+                        onChangeXrplAddress={(addr) => setEmbeddedXrplAddress(addr)}
+                        onSwitchToXrpSymbol={() => handleSelectSymbol('XRPUSDT')}
+                        importedTenSet={importedXrplDexSet}
+                      />
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'candlestick-guide') && (
+                <section id="candlestick-guide">
+                  <CandleEducationDeck
+                    symbol={symbol}
+                    candles={activeCandles}
+                    selectedCandleIndex={selectedCandleIndex}
+                    onSelectCandle={setSelectedCandleIndex}
+                    fibLevels={fibLevels}
+                    livePrice={livePrice}
+                    onUsePriceAsEntry={(price) => {
+                      setEntryPrice(price);
+                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
+                      setAlertBanner(
+                        `Set Entry Price to $${price.toFixed(dec)} from Candlestick & Fibonacci Guide`
+                      );
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'fibonacci-symphony-geometry') && (
+                <section id="fibonacci-symphony-geometry">
+                  <FibonacciSymphonyGeometryModule
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    livePrice={livePrice}
+                    onApplySetupToSimulator={({
+                      entryPrice: ep,
+                      stopLossPrice,
+                      takeProfitPrice,
+                      rrRatio: rr,
+                    }) => {
+                      setEntryPrice(ep);
+                      const stopPct = Math.max(
+                        0.5,
+                        Math.min(10, Number((((ep - stopLossPrice) / ep) * 100).toFixed(2)))
+                      );
+                      setStopDistancePct(stopPct);
+                      setRrRatio(rr);
+                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
+                      setAlertBanner(
+                        `Loaded 3-Point Fibonacci Setup (${symbol.replace(
+                          'USDT',
+                          ''
+                        )}): Point C Buy $${ep.toFixed(dec)} · 78.6% Stop $${stopLossPrice.toFixed(
+                          dec
+                        )} · 161.8% Golden Target $${takeProfitPrice.toFixed(dec)}`
+                      );
+                      navigateToChapter('risk-chart');
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'fibonacci-symphony-markers') && (
+                <section id="fibonacci-symphony-markers">
+                  <FibonacciSymphonyMarkersStudio
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    livePrice={livePrice}
+                    btcLivePrice={btcLive}
+                    xrpLivePrice={xrpLive}
+                    xlmLivePrice={xlmLive}
+                    onSendMarkerSetupToOrderDesk={({
+                      symbol: targetSym,
+                      entryPrice: ep,
+                      stopLossPrice,
+                      takeProfitPrice,
+                      rrRatio: rr,
+                      markerLabel,
+                    }) => {
+                      handleSelectSymbol(targetSym);
+                      setEntryPrice(ep);
+                      const stopPct = Math.max(
+                        0.5,
+                        Math.min(10, Number((((ep - stopLossPrice) / ep) * 100).toFixed(2)))
+                      );
+                      setStopDistancePct(stopPct);
+                      setRrRatio(rr);
+                      setTradeSide('long');
+                      setShowRiskOverlay(true);
+                      const dec = targetSym === 'BTCUSDT' ? 2 : 4;
+                      setAlertBanner(
+                        `Loaded ${markerLabel} (${targetSym.replace(
+                          'USDT',
+                          ''
+                        )}): Buy $${ep.toFixed(dec)} · 78.6% Stop $${stopLossPrice.toFixed(
+                          dec
+                        )} · Sell $${takeProfitPrice.toFixed(dec)}`
+                      );
+                      navigateToChapter('risk-chart');
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'ai-buy-sell-helper') && (
+                <section id="ai-buy-sell-helper">
+                  <LiveAiSignalHelper
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    timeframe={timeframe}
+                    candles={activeCandles}
+                    stats={activeStats}
+                    fibLevels={fibLevels}
+                    livePrice={livePrice}
+                    btcLivePrice={btcLive}
+                    xrpLivePrice={xrpLive}
+                    xlmLivePrice={xlmLive}
+                    accountBalance={accountBalance}
+                    riskPercent={riskPercent}
+                    onApplyRecommendationToChart={({
+                      entryPrice: recEntry,
+                      stopDistancePct: recStopPct,
+                      rrRatio: recRr,
+                    }) => {
+                      setEntryPrice(recEntry);
+                      setStopDistancePct(recStopPct);
+                      setRrRatio(recRr);
+                      setTradeSide('long');
+                      setShowRiskOverlay(true);
+                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
+                      setAlertBanner(
+                        `Loaded AI Buy & Sell Points onto Live ${symbol} Chart: Buy $${recEntry.toFixed(
+                          dec
+                        )} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
+                      );
+                      navigateToChapter('risk-chart');
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'portfolio-ledger') && (
+                <section id="portfolio-ledger">
+                  <PortfolioAndToolsSection
+                    activeSectionTab={activeBottomTab}
+                    onSectionTabChange={setActiveBottomTab}
+                    positions={positions}
+                    onClosePosition={handleClosePosition}
+                    btcPrice={btcLive}
+                    xrpPrice={xrpLive}
+                    xlmPrice={xlmLive}
+                    candles={activeCandles}
+                    watchedWallets={watchedWallets}
+                    onAddWallet={(w) => setWatchedWallets((prev) => [w, ...prev])}
+                    onRemoveWallet={(id) =>
+                      setWatchedWallets((prev) => prev.filter((item) => item.id !== id))
+                    }
+                    botStrategies={botStrategies}
+                    onToggleBot={handleToggleBot}
+                    onRunBotBacktest={handleRunBotBacktest}
+                    alerts={alerts}
+                    onAddAlert={(newAl) =>
+                      setAlerts((prev) => [
+                        { ...newAl, id: `al_${Date.now()}`, triggered: false },
+                        ...prev,
+                      ])
+                    }
+                    onDeleteAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'cycle-monthly-rhythms') && (
+                <section id="cycle-monthly-rhythms">
+                  <MarketCyclesEducationModule
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    btcLivePrice={btcLive}
+                    xrpLivePrice={xrpLive}
+                    xlmLivePrice={xlmLive}
+                    onEnterApp={handleEnterApp}
+                    onlyPart="monthly_rhythms"
+                  />
+                </section>
+              )}
+            </>
+          )}
+
+          {/* ====================================================================
+           * TIER III: ADVANCED — 10-SET, 11-SKILL & ON-CHAIN DEX (SECTIONS 13–16)
+           * ==================================================================== */}
+          {!paginatedMode && isTierLocked('advanced') && (
+            <AcademyPasscodeGateCard
+              requiredTier="advanced"
+              chapterNumber="13–16"
+              chapterTitle="Advanced Curriculum: 10-Set Sequencer, 11-Skill Desk & On-Chain DEX"
+              chaptersInTier={WORKSHOP_CHAPTERS.filter((c) => c.groupId === 'advanced').map(
+                (c) => ({ number: c.number, fullTitle: c.fullTitle })
+              )}
+              publicGates={publicGates}
+              onUnlockIntermediate={handleUnlockIntermediate}
+              onUnlockAdvanced={handleUnlockAdvanced}
+              onOpenBeginnerStart={() => navigateToChapter('start-here')}
+              onOpenPublicLibrary={() => {
+                setPaginatedMode(true);
+                navigateToChapter('open-library');
+              }}
+              onOpenAdminModal={() => setShowAdminModal(true)}
+              isAdminUser={isAdminUser}
+              adminPreviewStudentGate={adminPreviewStudentGate}
+              onExitStudentPreview={() => setAdminPreviewStudentGate(false)}
+            />
+          )}
+
+          {!isTierLocked('advanced') && (
+            <>
+              {(!paginatedMode || activeChapter.id === 'ten-set-auto-trader') && (
+                <section id="ten-set-auto-trader">
+                  <TenSetAutoTraderLab
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    fibLevels={fibLevels}
+                    livePrice={livePrice}
+                    btcLivePrice={btcLive}
+                    xrpLivePrice={xrpLive}
+                    xlmLivePrice={xlmLive}
+                    accountBalance={accountBalance}
+                    riskPercent={riskPercent}
+                    onLogSetPositionToPortfolio={handleOpenPaperPosition}
+                    onSendSetToEmbeddedXrplDex={(payload) => {
+                      handleSelectSymbol('XRPUSDT');
+                      setInstrument('spot');
+                      setLeverage(1);
+                      setTradeSide('long');
+                      setShowRiskOverlay(true);
+                      if (payload.walletAddress) {
+                        setEmbeddedXrplAddress(payload.walletAddress);
+                      }
+                      setImportedXrplDexSet({
+                        ...payload,
+                        nonce: Date.now(),
+                      });
+                      const numStr =
+                        payload.setNumber < 10
+                          ? `0${payload.setNumber}`
+                          : String(payload.setNumber);
+                      setAlertBanner(
+                        `Loaded Set #${numStr} (${payload.setupName}) into Step-by-Step Embedded XRPL DEX — ${payload.quantityXrp} XRP Ready!`
+                      );
+                      navigateToChapter('risk-chart');
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'skill-desk') && (
+                <section id="skill-desk">
+                  <DayTraderSkillSuite
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    stats={activeStats}
+                    fibLevels={fibLevels}
+                    livePrice={livePrice}
+                    accountBalance={accountBalance}
+                    entryPrice={entryPrice}
+                    onEntryPriceChange={setEntryPrice}
+                    stopLoss={currentStopLoss}
+                    takeProfit={currentTakeProfit}
+                    stopDistancePct={stopDistancePct}
+                    riskPercent={riskPercent}
+                    rrRatio={rrRatio}
+                    tradeSide={tradeSide}
+                    instrument={instrument}
+                    leverage={leverage}
+                    positions={positions}
+                    onOpenPaperPosition={handleOpenPaperPosition}
+                    onAddAlert={(newAl) => {
+                      setAlerts((prev) => [
+                        { ...newAl, id: `al_${Date.now()}`, triggered: false },
+                        ...prev,
+                      ]);
+                      setAlertBanner(
+                        `Armed Alert: ${newAl.symbol} ${newAl.condition} $${newAl.targetPrice.toFixed(
+                          newAl.symbol === 'BTCUSDT' ? 2 : 4
+                        )}`
+                      );
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'ai-dex-lab') && (
+                <section id="ai-dex-lab">
+                  <DecentralizedAiDexDesk
+                    symbol={symbol}
+                    candles={activeCandles}
+                    stats={activeStats}
+                    livePrice={livePrice}
+                    accountBalance={accountBalance}
+                    entryPrice={entryPrice}
+                    stopLoss={currentStopLoss}
+                    takeProfit={currentTakeProfit}
+                    riskPercent={riskPercent}
+                    rrRatio={rrRatio}
+                    tradeSide={tradeSide}
+                    onOpenPaperPosition={handleOpenPaperPosition}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'cycle-four-year-clock') && (
+                <section id="cycle-four-year-clock">
+                  <MarketCyclesEducationModule
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    btcLivePrice={btcLive}
+                    xrpLivePrice={xrpLive}
+                    xlmLivePrice={xlmLive}
+                    onEnterApp={handleEnterApp}
+                    onlyPart="four_year_cycles"
+                  />
+                </section>
+              )}
+            </>
+          )}
+
+          {/* ====================================================================
+           * TIER IV: OPEN MEDIA & DOCUMENT LIBRARY (SECTION 16 — ZERO PASSCODE)
+           * ==================================================================== */}
+          {(!paginatedMode || activeChapter.id === 'open-library') && (
+            <section id="open-library">
+              <OpenMediaAndDocumentLibrary
+                orientationVideoUrl={publicGates.orientationVideoUrl}
+                orientationVideoTitle={publicGates.orientationVideoTitle}
+                isAdminUnlocked={isAdminUser}
+                onOpenAdminConsole={() => setShowAdminModal(true)}
+                onJumpToBeginnerStart={() => {
+                  setPaginatedMode(true);
+                  navigateToChapter('start-here');
                 }}
-              />
-            </section>
-          )}
-
-          {/* SECTION 09: 24/7 AI Decentralized DEX Lab — 11-Skill On-Chain Architecture */}
-          {(!paginatedMode || activeChapter.id === 'ai-dex-lab') && (
-            <section id="ai-dex-lab">
-              <DecentralizedAiDexDesk
-                symbol={symbol}
-                candles={activeCandles}
-                stats={activeStats}
-                livePrice={livePrice}
-                accountBalance={accountBalance}
-                entryPrice={entryPrice}
-                stopLoss={currentStopLoss}
-                takeProfit={currentTakeProfit}
-                riskPercent={riskPercent}
-                rrRatio={rrRatio}
-                tradeSide={tradeSide}
-                onOpenPaperPosition={handleOpenPaperPosition}
-              />
-            </section>
-          )}
-
-          {/* SECTION 10: Candlestick Anatomy & Fibonacci Retracement Guide */}
-          {(!paginatedMode || activeChapter.id === 'candlestick-guide') && (
-            <section id="candlestick-guide">
-              <CandleEducationDeck
-                symbol={symbol}
-                candles={activeCandles}
-                selectedCandleIndex={selectedCandleIndex}
-                onSelectCandle={setSelectedCandleIndex}
-                fibLevels={fibLevels}
-                livePrice={livePrice}
-                onUsePriceAsEntry={(price) => {
-                  setEntryPrice(price);
-                  const dec = symbol === 'BTCUSDT' ? 2 : 4;
-                  setAlertBanner(
-                    `Set Entry Price to $${price.toFixed(dec)} from Candlestick & Fibonacci Guide`
-                  );
-                }}
-              />
-            </section>
-          )}
-
-          {/* SECTIONS 11–14: Bull vs. Bear, 4 Seasons, Monthly Rhythms & Past Four 4-Year Cycles */}
-          {(!paginatedMode || activeChapter.cyclePart) && (
-            <section id={activeChapter.cyclePart ? activeChapter.id : 'market-cycles'}>
-              <MarketCyclesEducationModule
-                symbol={symbol}
-                onSelectSymbol={handleSelectSymbol}
-                candles={activeCandles}
-                btcLivePrice={btcLive}
-                xrpLivePrice={xrpLive}
-                xlmLivePrice={xlmLive}
-                onEnterApp={handleEnterApp}
-                onlyPart={paginatedMode ? activeChapter.cyclePart ?? 'bull_vs_bear' : 'all'}
               />
             </section>
           )}
@@ -1657,6 +2180,26 @@ export default function App() {
         </main>
       )}
 
+      {/* Instructor Admin & Student Passcode Console Modal */}
+      <AcademyAdminConsoleModal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        currentUser={academyUser}
+        isAdminUser={isAdminUser}
+        publicGates={publicGates}
+        adminSettings={adminSettings}
+        intermediateUnlocked={intermediateUnlocked}
+        advancedUnlocked={advancedUnlocked}
+        onUnlockIntermediate={handleUnlockIntermediate}
+        onUnlockAdvanced={handleUnlockAdvanced}
+        onLockStudentSessionGates={handleLockStudentSessionGates}
+        onGoogleAdminSignIn={handleGoogleAdminSignIn}
+        onGoogleAdminSignOut={handleGoogleAdminSignOut}
+        onSaveConfiguration={handleSaveAdminConfiguration}
+        authError={adminAuthError}
+        isBusy={adminBusy}
+      />
+
       {/* Quiet Educational Disclaimer & Analemma Ventures Ecosystem Cross-Link Footer */}
       <footer
         className={`border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-3 ${
@@ -1667,7 +2210,7 @@ export default function App() {
           <div className="flex flex-wrap items-center gap-2">
             <SymphonyHarpLogo variant="vector" className="w-5 h-5" />
             <span>
-              Symphony Markets — Free Open-Source No-Scam Zone Sandbox (Hypothetical Simulation · Zero Custody · Not Financial Advice).
+              Symphony Markets Academy — Free Open-Source No-Scam Zone Sandbox (Hypothetical Simulation · Zero Custody · Not Financial Advice).
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-3">

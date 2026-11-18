@@ -23,7 +23,7 @@ function wrapLines(text: string, maxChars: number): string[] {
 
 export function createNoScamZonePdfBlob(recipientEmail?: string): Blob {
   const blocks: Array<{ font: 'F1' | 'F2'; size: number; leading: number; text: string }> = [
-    { font: 'F2', size: 18, leading: 26, text: 'SYMPHONY MARKETS - THE NO-SCAM ZONE GUIDE' },
+    { font: 'F2', size: 18, leading: 26, text: 'SYMPHONY MARKETS ACADEMY - THE NO-SCAM ZONE GUIDE' },
     {
       font: 'F1',
       size: 10,
@@ -38,7 +38,7 @@ export function createNoScamZonePdfBlob(recipientEmail?: string): Blob {
       font: 'F1',
       size: 10,
       leading: 14,
-      text: 'Years ago, our founder tried an online trading site that displayed a fake "Stop-Trading" safety button while stealing user deposits. Symphony Markets was created as an open-source No-Scam Zone so beginners can learn market mechanics safely without hype or deception.',
+      text: 'Years ago, our founder tried an online trading site that displayed a fake "Stop-Trading" safety button while stealing user deposits. Symphony Markets Academy was created as an open-source No-Scam Zone so beginners can learn market mechanics safely without hype or deception.',
     },
     { font: 'F2', size: 12, leading: 22, text: '1. The 5 Non-Negotiable Rules of the No-Scam Zone' },
     {
@@ -113,7 +113,7 @@ export function createNoScamZonePdfBlob(recipientEmail?: string): Blob {
       font: 'F1',
       size: 9,
       leading: 22,
-      text: 'Educational use only. Not financial advice. Open-source community project by Symphony Markets.',
+      text: 'Educational use only. Not financial advice. Open-source community project by Symphony Markets Academy.',
     },
   ];
 

@@ -10,7 +10,10 @@ import {
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
+import founderDeskImg from '../assets/images/founder_desk_story_1794561548330.jpg';
+import noScamCompassImg from '../assets/images/no_scam_compass_1794561548457.jpg';
 import { AssetSymbol, Candle } from '../types/market';
+import { SectionPromoVideoBanner } from './SectionPromoVideoBanner';
 
 export type MarketCyclePartId =
   | 'bull_vs_bear'
@@ -446,76 +449,100 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
       {showBullVsBear && (
       <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-7 space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-          <div className="space-y-1">
+          <div className="space-y-1.5 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-              <span>01. Visual Market Compass</span>
+              <span>01. Symphony Markets Academy Perspective</span>
               <span aria-hidden="true">·</span>
-              <span>Bull vs. Bear Anatomy</span>
+              <span>Ascending & Descending Eagle Markets</span>
               <span aria-hidden="true">·</span>
-              <span>Plain-English Illustrated Guide</span>
+              <span>Traditional Bull & Bear History</span>
             </div>
             <h2
               className="font-editorial text-xl sm:text-2xl font-bold text-slate-900 dark:text-white"
               style={{ textWrap: 'balance' }}
             >
-              What Is a Bull Market vs. a Bear Market? (And Why Do They Have Those Names?)
+              The Ascending Eagle & Descending Eagle Markets (And Why Wall Street Calls Them Bull & Bear)
             </h2>
           </div>
 
-          <div className="text-xs text-slate-600 dark:text-slate-400 max-w-md">
-            Markets do not move in straight lines—they breathe in seasons, just like nature and music. Understanding whether you are in a <strong>Bull</strong> or a <strong>Bear</strong> season protects you from buying tops in greed or selling bottoms in fear.
+          <div className="text-xs text-slate-600 dark:text-slate-400 max-w-md leading-relaxed">
+            Every student should know why traditional finance says <strong>“Bull”</strong> and <strong>“Bear”</strong>—yet inside <strong>Symphony Markets Academy</strong>, we view the market through the higher lens of an <strong>Eagle</strong>: soaring effortlessly upward on warm thermal currents, and descending with calm, purposeful focus to a chosen target point.
           </div>
         </div>
 
-        {/* Two Visual Side-by-Side Anatomy Cards: BULL vs BEAR */}
+        {/* Symphony Markets Academy Core Distinction Banner */}
+        <div className="rounded-xl border border-amber-200/90 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-4 sm:p-5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center text-xs sm:text-sm">
+          <div className="md:col-span-4 space-y-1">
+            <div className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+              Why Symphony Markets Academy Teaches the Eagle Mindset
+            </div>
+            <div className="font-editorial text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              Purposeful Flight Over Blind Force
+            </div>
+          </div>
+          <div className="md:col-span-8 text-slate-700 dark:text-slate-300 leading-relaxed">
+            Wall Street’s traditional animals describe <strong>blind combat</strong>—a bull violently thrusting its horns up, or a bear swiping its heavy paws down. An <strong>Eagle</strong> never wastes strength fighting the wind: in an <strong>Ascending Eagle Market</strong>, it spreads its wings on rising thermal patterns; in a <strong>Descending Eagle Market</strong>, it locks its eyes onto a precise <strong>Focal Point</strong> (such as its nest or a <strong>61.8% Fibonacci support zone</strong>) and glides down purposefully to accomplish its task before soaring again.
+          </div>
+        </div>
+
+        {/* Two Visual Side-by-Side Anatomy Cards: ASCENDING EAGLE (BULL) vs DESCENDING EAGLE (BEAR) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          {/* CARD A: BULL MARKET */}
+          {/* CARD A: THE ASCENDING EAGLE MARKET (TRADITIONAL: BULL MARKET) */}
           <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/15 p-5 sm:p-6 flex flex-col justify-between space-y-5">
             <div className="space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                     <TrendingUp className="w-4 h-4 shrink-0" />
-                    <span>Ascending Expansion Season · +20% or More Sustained Uptrend</span>
+                    <span>Soaring on Rising Thermal Patterns</span>
+                    <span aria-hidden="true">·</span>
+                    <span>Traditional Name: Bull Market</span>
                   </div>
                   <h3 className="font-editorial text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                    The Bull Market (“Horns Thrusting Upward”)
+                    The Ascending Eagle Market
                   </h3>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Symphony Markets Academy Name · Traditionally Called “The Bull Market” (Horns Thrusting Upward)
+                  </p>
                 </div>
                 <ArrowUpRight className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
               </div>
 
-              {/* Custom SVG Diagram: Bull Market Staircase (Higher Highs & Higher Lows) */}
+              {/* Custom SVG Diagram: Ascending Eagle Thermal Staircase (Higher Highs & Higher Lows) */}
               <div className="rounded-lg border border-emerald-200/80 dark:border-emerald-500/25 bg-slate-950 p-3.5">
                 <svg
-                  viewBox="0 0 520 175"
+                  viewBox="0 0 520 182"
                   className="w-full h-auto"
                   role="img"
-                  aria-label="Visual diagram of a Bull Market showing a staircase of Higher Highs and Higher Lows with green candlesticks and golden musical notes"
+                  aria-label="Visual diagram of an Ascending Eagle Market soaring upward on warm thermal currents through Higher Highs and Higher Lows"
                 >
                   {/* Subtle grid lines */}
-                  <line x1="20" y1="35" x2="500" y2="35" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
-                  <line x1="20" y1="85" x2="500" y2="85" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
-                  <line x1="20" y1="135" x2="500" y2="135" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="20" y1="38" x2="500" y2="38" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="20" y1="88" x2="500" y2="88" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="20" y1="138" x2="500" y2="138" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
 
-                  {/* Rising Support Floor Line */}
+                  {/* Subtle Rising Thermal Updraft Spirals beneath HL1 and HL2 */}
+                  <ellipse cx="155" cy="128" rx="22" ry="6" fill="none" stroke="#38BDF8" strokeOpacity="0.45" strokeDasharray="3 2" />
+                  <ellipse cx="300" cy="96" rx="24" ry="6" fill="none" stroke="#38BDF8" strokeOpacity="0.45" strokeDasharray="3 2" />
+
+                  {/* Rising Thermal Support Floor Line */}
                   <line
                     x1="35"
-                    y1="150"
+                    y1="154"
                     x2="475"
-                    y2="52"
+                    y2="54"
                     stroke="#10B981"
                     strokeWidth="1.5"
                     strokeDasharray="5 4"
-                    opacity="0.65"
+                    opacity="0.7"
                   />
-                  <text x="340" y="96" fill="#34D399" fontSize="10" fontFamily="monospace">
-                    Rising Support Floor (Buy Pullbacks Here)
+                  <text x="292" y="128" fill="#34D399" fontSize="10" fontFamily="monospace">
+                    Rising Thermal Floor (Catch Updrafts Here)
                   </text>
 
-                  {/* Bullish Staircase Path: Higher Low 1 -> Higher High 1 -> Higher Low 2 -> Higher High 2 -> Higher Low 3 -> Higher High 3 */}
+                  {/* Ascending Eagle Flight Path */}
                   <polyline
-                    points="35,145 105,98 155,120 245,64 300,88 405,28 445,50 485,18"
+                    points="35,148 105,100 155,122 245,66 300,90 405,30 445,50 488,20"
                     fill="none"
                     stroke="#10B981"
                     strokeWidth="3"
@@ -523,160 +550,185 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
                     strokeLinejoin="round"
                   />
 
-                  {/* Representative Candlesticks along the Bull Staircase */}
-                  {/* Green expansion candles */}
-                  <line x1="75" y1="102" x2="75" y2="132" stroke="#10B981" strokeWidth="2" />
-                  <rect x="70" y="108" width="10" height="18" rx="1.5" fill="#10B981" />
+                  {/* Stylized Eagle Wing Silhouette at Summit */}
+                  <path
+                    d="M472,22 Q482,12 492,20 Q498,11 506,17"
+                    fill="none"
+                    stroke="#FBBF24"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  />
 
-                  {/* Red pullback rest candle at HL1 */}
-                  <line x1="155" y1="106" x2="155" y2="128" stroke="#F43F5E" strokeWidth="2" />
-                  <rect x="150" y="110" width="10" height="12" rx="1.5" fill="#F43F5E" />
+                  {/* Representative Candlesticks along the Thermal Staircase */}
+                  <line x1="75" y1="106" x2="75" y2="136" stroke="#10B981" strokeWidth="2" />
+                  <rect x="70" y="112" width="10" height="18" rx="1.5" fill="#10B981" />
 
-                  {/* Green expansion candle 2 */}
-                  <line x1="215" y1="68" x2="215" y2="102" stroke="#10B981" strokeWidth="2" />
-                  <rect x="210" y="72" width="10" height="24" rx="1.5" fill="#10B981" />
+                  <line x1="155" y1="108" x2="155" y2="130" stroke="#F43F5E" strokeWidth="2" />
+                  <rect x="150" y="112" width="10" height="12" rx="1.5" fill="#F43F5E" />
 
-                  {/* Red pullback rest candle at HL2 */}
-                  <line x1="300" y1="74" x2="300" y2="96" stroke="#F43F5E" strokeWidth="2" />
-                  <rect x="295" y="78" width="10" height="12" rx="1.5" fill="#F43F5E" />
+                  <line x1="215" y1="70" x2="215" y2="104" stroke="#10B981" strokeWidth="2" />
+                  <rect x="210" y="74" width="10" height="24" rx="1.5" fill="#10B981" />
 
-                  {/* Green expansion candle 3 */}
-                  <line x1="370" y1="34" x2="370" y2="70" stroke="#10B981" strokeWidth="2" />
-                  <rect x="365" y="38" width="10" height="26" rx="1.5" fill="#10B981" />
+                  <line x1="300" y1="76" x2="300" y2="98" stroke="#F43F5E" strokeWidth="2" />
+                  <rect x="295" y="80" width="10" height="12" rx="1.5" fill="#F43F5E" />
+
+                  <line x1="370" y1="36" x2="370" y2="72" stroke="#10B981" strokeWidth="2" />
+                  <rect x="365" y="40" width="10" height="26" rx="1.5" fill="#10B981" />
 
                   {/* Key Nodes & Labels */}
-                  <circle cx="105" cy="98" r="4" fill="#34D399" />
-                  <text x="80" y="88" fill="#A7F3D0" fontSize="10" fontWeight="bold" fontFamily="monospace">
+                  <circle cx="105" cy="100" r="4" fill="#34D399" />
+                  <text x="80" y="90" fill="#A7F3D0" fontSize="10" fontWeight="bold" fontFamily="monospace">
                     HH 1
                   </text>
 
-                  <circle cx="155" cy="120" r="4.5" fill="#FBBF24" />
-                  <text x="132" y="140" fill="#FDE68A" fontSize="10" fontWeight="bold" fontFamily="monospace">
-                    HL 1 (♩ Rest)
+                  <circle cx="155" cy="122" r="4.5" fill="#FBBF24" />
+                  <text x="115" y="146" fill="#FDE68A" fontSize="9.5" fontWeight="bold" fontFamily="monospace">
+                    HL 1 (♩ Thermal)
                   </text>
 
-                  <circle cx="245" cy="64" r="4" fill="#34D399" />
-                  <text x="225" y="54" fill="#A7F3D0" fontSize="10" fontWeight="bold" fontFamily="monospace">
+                  <circle cx="245" cy="66" r="4" fill="#34D399" />
+                  <text x="225" y="56" fill="#A7F3D0" fontSize="10" fontWeight="bold" fontFamily="monospace">
                     HH 2 (♪)
                   </text>
 
-                  <circle cx="300" cy="88" r="4.5" fill="#FBBF24" />
-                  <text x="275" y="108" fill="#FDE68A" fontSize="10" fontWeight="bold" fontFamily="monospace">
-                    HL 2 (♩ Dip)
+                  <circle cx="300" cy="90" r="4.5" fill="#FBBF24" />
+                  <text x="260" y="111" fill="#FDE68A" fontSize="9.5" fontWeight="bold" fontFamily="monospace">
+                    HL 2 (♩ Thermal)
                   </text>
 
-                  <circle cx="405" cy="28" r="4.5" fill="#34D399" />
-                  <text x="370" y="18" fill="#6EE7B7" fontSize="10" fontWeight="bold" fontFamily="monospace">
-                    HH 3 (♬ Peak)
+                  <circle cx="405" cy="30" r="4.5" fill="#34D399" />
+                  <text x="364" y="20" fill="#6EE7B7" fontSize="10" fontWeight="bold" fontFamily="monospace">
+                    HH 3 (♬ Soar)
                   </text>
 
-                  {/* Top-left title badge inside SVG */}
-                  <text x="24" y="24" fill="#34D399" fontSize="11" fontWeight="bold" fontFamily="sans-serif">
-                    ▲ BULL STAIRCASE: Higher Highs (HH) + Higher Lows (HL)
+                  {/* Top-left title inside SVG */}
+                  <text x="24" y="24" fill="#34D399" fontSize="10.5" fontWeight="bold" fontFamily="sans-serif">
+                    ▲ ASCENDING EAGLE: Soaring on Rising Thermals (HH + HL)
                   </text>
                 </svg>
               </div>
 
               <div className="space-y-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 <p>
-                  <strong>Why It’s Called a Bull:</strong> In nature, when a bull charges, it lowers its head and <strong>thrusts its horns upward into the air</strong>. On a price chart, a Bull Market is a sustained season where buyers outnumber sellers, pushing prices up in a staircase of <strong>Higher Highs (HH)</strong> and <strong>Higher Lows (HL)</strong>.
+                  <strong>Our Academy Distinction (Ascending Eagle):</strong> An eagle does not flap frantically to climb—it spreads its wings and catches <strong>warm rising thermal currents</strong>, circling effortlessly higher from one updraft to the next (<span className="font-mono">Higher Highs</span> and <span className="font-mono">Higher Lows</span>).
                 </p>
                 <p>
-                  <strong>What Red Candles Mean in a Bull Market:</strong> Notice in the picture above that even a strong Bull Market has red candles (`HL 1` and `HL 2`). In a Bull Market, a red dip is not a crash—it is a <strong>healthy musical breath (Fibonacci pullback)</strong> before the next upward wave.
+                  <strong>Traditional History (“Bull Market”):</strong> Historically, Wall Street called an uptrend a <em>Bull Market</em> because when a bull charges, it lowers its head and <strong>thrusts its horns upward into the air</strong>.
+                </p>
+                <p>
+                  <strong>What Red Pullbacks Mean During Ascent:</strong> Notice `HL 1` and `HL 2` above—even a soaring eagle glides slightly inward to lock into the next rising thermal column (a <strong>Fibonacci 38.2%–61.8% musical breath</strong>) before ascending to a higher peak.
                 </p>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-emerald-200/80 dark:border-emerald-500/25 space-y-2 text-xs">
+            <div className="pt-3 border-t border-emerald-200/80 dark:border-emerald-500/25 space-y-1.5 text-xs">
               <div className="font-semibold text-emerald-800 dark:text-emerald-300">
-                Wise $5 Self-Custody Rule in a Bull Market:
+                Wise $5 Stewardship Rule in an Ascending Eagle Market:
               </div>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                Never buy at the tip of a giant green spike out of FOMO (Fear Of Missing Out). Wait patiently for price to rest on its rising support floor (`HL`), keep your max risk at <strong>2% ($0.10 on $5)</strong>, and take partial profits as your targets hit.
+                Never chase the tip of a vertical green spike in FOMO. Wait calmly for price to glide back onto its rising thermal support (`HL`), cap your risk at <strong>2% ($0.10 on $5)</strong>, and harvest partial gains at Fibonacci extension targets (`127.2%` & `161.8%`).
               </p>
             </div>
           </div>
 
-          {/* CARD B: BEAR MARKET */}
-          <div className="rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50/40 dark:bg-rose-950/15 p-5 sm:p-6 flex flex-col justify-between space-y-5">
+          {/* CARD B: THE DESCENDING EAGLE MARKET (TRADITIONAL: BEAR MARKET) */}
+          <div className="rounded-xl border border-sky-200 dark:border-sky-500/30 bg-sky-50/40 dark:bg-sky-950/15 p-5 sm:p-6 flex flex-col justify-between space-y-5">
             <div className="space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-rose-700 dark:text-rose-400">
-                    <TrendingDown className="w-4 h-4 shrink-0" />
-                    <span>Descending Reset Season · -20% to -80% Sustained Drawdown</span>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400">
+                    <Compass className="w-4 h-4 shrink-0" />
+                    <span>Purposeful Descent to a Focal Point</span>
+                    <span aria-hidden="true">·</span>
+                    <span>Traditional Name: Bear Market</span>
                   </div>
                   <h3 className="font-editorial text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                    The Bear Market (“Paws Swiping Downward”)
+                    The Descending Eagle Market
                   </h3>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Symphony Markets Academy Name · Traditionally Called “The Bear Market” (Paws Swiping Downward)
+                  </p>
                 </div>
-                <ArrowDownRight className="w-6 h-6 text-rose-600 dark:text-rose-400 shrink-0" />
+                <ArrowDownRight className="w-6 h-6 text-sky-600 dark:text-sky-400 shrink-0" />
               </div>
 
-              {/* Custom SVG Diagram: Bear Market Staircase (Lower Highs & Lower Lows -> Accumulation Floor) */}
-              <div className="rounded-lg border border-rose-200/80 dark:border-rose-500/25 bg-slate-950 p-3.5">
+              {/* Custom SVG Diagram: Descending Eagle Glide Path to Focal Point (Nest / 61.8% / Accumulation Floor) */}
+              <div className="rounded-lg border border-sky-200/80 dark:border-sky-500/25 bg-slate-950 p-3.5">
                 <svg
-                  viewBox="0 0 520 175"
+                  viewBox="0 0 520 182"
                   className="w-full h-auto"
                   role="img"
-                  aria-label="Visual diagram of a Bear Market showing Lower Highs and Lower Lows stepping down into a flat Winter Accumulation floor"
+                  aria-label="Visual diagram of a Descending Eagle Market gliding purposefully toward a precise focal point at the support nest"
                 >
                   {/* Subtle grid lines */}
-                  <line x1="20" y1="35" x2="500" y2="35" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
-                  <line x1="20" y1="85" x2="500" y2="85" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
-                  <line x1="20" y1="135" x2="500" y2="135" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="20" y1="38" x2="500" y2="38" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="20" y1="88" x2="500" y2="88" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="20" y1="138" x2="500" y2="138" stroke="#1E293B" strokeWidth="1" strokeDasharray="3 3" />
 
-                  {/* Descending Resistance Roof Line */}
+                  {/* Purposeful Glide Vector Line toward Focal Point */}
                   <line
                     x1="45"
-                    y1="24"
+                    y1="26"
                     x2="365"
-                    y2="122"
-                    stroke="#F43F5E"
+                    y2="144"
+                    stroke="#38BDF8"
                     strokeWidth="1.5"
                     strokeDasharray="5 4"
-                    opacity="0.65"
+                    opacity="0.7"
                   />
-                  <text x="155" y="48" fill="#FDA4AF" fontSize="10" fontFamily="monospace">
-                    Descending Ceiling (Bull Traps Fail Here)
+                  <text x="152" y="50" fill="#BAE6FD" fontSize="10" fontFamily="monospace">
+                    Focused Descent Corridor (Eyes Locked on Target)
                   </text>
 
-                  {/* Bearish Staircase Path: Peak -> LL1 -> LH1 -> LL2 -> LH2 -> LL3 -> Flat Winter Floor */}
+                  {/* Descending Staircase Path: Peak -> LL1 -> LH1 -> LL2 -> LH2 -> Focal Point Nest */}
                   <polyline
-                    points="35,25 105,92 150,62 230,130 275,102 350,148 415,142 485,145"
+                    points="35,26 105,92 150,64 230,128 275,102 365,146 435,144 492,126"
                     fill="none"
                     stroke="#F43F5E"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  {/* Green Liftoff from Focal Point Nest */}
+                  <polyline
+                    points="365,146 435,144 492,126"
+                    fill="none"
+                    stroke="#10B981"
                     strokeWidth="3"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
 
-                  {/* Highlighted Flat Accumulation Zone on the Right */}
+                  {/* Highlighted Focal Point Nest / Value Zone */}
                   <rect
-                    x="342"
+                    x="338"
                     y="128"
-                    width="150"
-                    height="30"
-                    rx="4"
-                    fill="#0EA5E9"
+                    width="162"
+                    height="32"
+                    rx="5"
+                    fill="#F59E0B"
                     fillOpacity="0.16"
-                    stroke="#38BDF8"
-                    strokeWidth="1"
-                    strokeDasharray="3 3"
+                    stroke="#FBBF24"
+                    strokeWidth="1.2"
+                    strokeDasharray="4 3"
                   />
-                  <text x="352" y="122" fill="#7DD3FC" fontSize="10" fontWeight="bold" fontFamily="monospace">
-                    Winter Accumulation Floor
+                  {/* Concentric Focal-Point Bullseye Rings at 365, 146 */}
+                  <circle cx="365" cy="146" r="11" fill="none" stroke="#FBBF24" strokeWidth="1.3" />
+                  <circle cx="365" cy="146" r="5" fill="#FBBF24" />
+                  <text x="342" y="121" fill="#FDE68A" fontSize="10" fontWeight="bold" fontFamily="monospace">
+                    ◎ Focal Point Nest (61.8% / Value Floor)
                   </text>
 
-                  {/* Representative Candlesticks along the Bear Staircase */}
-                  <line x1="75" y1="45" x2="75" y2="85" stroke="#F43F5E" strokeWidth="2" />
-                  <rect x="70" y="50" width="10" height="28" rx="1.5" fill="#F43F5E" />
+                  {/* Representative Candlesticks */}
+                  <line x1="75" y1="46" x2="75" y2="86" stroke="#F43F5E" strokeWidth="2" />
+                  <rect x="70" y="52" width="10" height="28" rx="1.5" fill="#F43F5E" />
 
-                  <line x1="150" y1="54" x2="150" y2="76" stroke="#10B981" strokeWidth="2" />
-                  <rect x="145" y="60" width="10" height="12" rx="1.5" fill="#10B981" />
+                  <line x1="150" y1="56" x2="150" y2="78" stroke="#10B981" strokeWidth="2" />
+                  <rect x="145" y="62" width="10" height="12" rx="1.5" fill="#10B981" />
 
-                  <line x1="195" y1="80" x2="195" y2="122" stroke="#F43F5E" strokeWidth="2" />
-                  <rect x="190" y="85" width="10" height="28" rx="1.5" fill="#F43F5E" />
+                  <line x1="195" y1="82" x2="195" y2="122" stroke="#F43F5E" strokeWidth="2" />
+                  <rect x="190" y="86" width="10" height="28" rx="1.5" fill="#F43F5E" />
 
                   {/* Nodes & Labels */}
                   <circle cx="105" cy="92" r="4" fill="#FB7185" />
@@ -684,45 +736,46 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
                     LL 1
                   </text>
 
-                  <circle cx="150" cy="62" r="4" fill="#FBBF24" />
-                  <text x="130" y="52" fill="#FDE68A" fontSize="10" fontWeight="bold" fontFamily="monospace">
+                  <circle cx="150" cy="64" r="4" fill="#38BDF8" />
+                  <text x="130" y="54" fill="#BAE6FD" fontSize="10" fontWeight="bold" fontFamily="monospace">
                     LH 1
                   </text>
 
-                  <circle cx="230" cy="130" r="4" fill="#FB7185" />
-                  <text x="208" y="148" fill="#FECDD3" fontSize="10" fontWeight="bold" fontFamily="monospace">
+                  <circle cx="230" cy="128" r="4" fill="#FB7185" />
+                  <text x="206" y="146" fill="#FECDD3" fontSize="10" fontWeight="bold" fontFamily="monospace">
                     LL 2
                   </text>
 
-                  <circle cx="275" cy="102" r="4" fill="#FBBF24" />
-                  <text x="262" y="92" fill="#FDE68A" fontSize="10" fontWeight="bold" fontFamily="monospace">
+                  <circle cx="275" cy="102" r="4" fill="#38BDF8" />
+                  <text x="262" y="92" fill="#BAE6FD" fontSize="10" fontWeight="bold" fontFamily="monospace">
                     LH 2
                   </text>
 
-                  <circle cx="350" cy="148" r="4.5" fill="#38BDF8" />
-
-                  <text x="24" y="165" fill="#FDA4AF" fontSize="11" fontWeight="bold" fontFamily="sans-serif">
-                    ▼ BEAR STAIRCASE: Lower Highs (LH) + Lower Lows (LL) → Discount Floor
+                  <text x="24" y="170" fill="#BAE6FD" fontSize="10.5" fontWeight="bold" fontFamily="sans-serif">
+                    ▼ DESCENDING EAGLE: Purposeful Glide to Focal Point (♩ Cello Rest)
                   </text>
                 </svg>
               </div>
 
               <div className="space-y-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 <p>
-                  <strong>Why It’s Called a Bear:</strong> When a bear attacks, it stands up and <strong>swipes its heavy paws downward toward the ground</strong>. On a chart, a Bear Market is a multi-month period where sellers dominate, pressing prices down in a staircase of <strong>Lower Highs (LH)</strong> and <strong>Lower Lows (LL)</strong>.
+                  <strong>Our Academy Distinction (Descending Eagle):</strong> An eagle never falls out of the sky in panic. When an eagle descends, it folds its wings with precision, locks onto a <strong>Focal Point</strong>—whether returning to its nest or gathering nourishment—and glides straight to that calculated destination to <strong>accomplish a specific task</strong>.
                 </p>
                 <p>
-                  <strong>Why Bear Markets Are Actually a Gift for Prepared Learners:</strong> Unprepared gamblers fear Bear Markets because they used leverage or bought the hype peak. Prepared self-custody learners treat the Bear Market like <strong>Winter Planting Season</strong>—it clears out scams and puts real utility assets on sale at a 50%–75% discount.
+                  <strong>Traditional History (“Bear Market”):</strong> Historically, Wall Street called a downtrend a <em>Bear Market</em> because a bear stands up and <strong>swipes its heavy paws downward toward the ground</strong> (<span className="font-mono">Lower Highs</span> and <span className="font-mono">Lower Lows</span>).
+                </p>
+                <p>
+                  <strong>Why Purposeful Descent Is a Gift for Prepared Stewards:</strong> Unprepared gamblers fear downward movement, whereas trained Symphony stewards recognize the market is descending toward a mathematical <strong>Focal Point</strong> (the <strong>61.8% Golden Pocket</strong> or <strong>Accumulation Nest</strong>) where true value is gathered.
                 </p>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-rose-200/80 dark:border-rose-500/25 space-y-2 text-xs">
-              <div className="font-semibold text-rose-800 dark:text-rose-300">
-                Wise $5 Self-Custody Rule in a Bear Market:
+            <div className="pt-3 border-t border-sky-200/80 dark:border-sky-500/25 space-y-1.5 text-xs">
+              <div className="font-semibold text-sky-900 dark:text-sky-300">
+                Wise $5 Stewardship Rule in a Descending Eagle Market:
               </div>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                Keep your coins off centralized exchanges (in your own self-custody wallet), never use Futures leverage to “win back losses,” and wait until Lower Lows flatten into a quiet <strong>Winter Accumulation Floor</strong> before slowly accumulating Spot.
+                Do not step in mid-air while price is still descending. Keep your assets safe in self-custody (1x Spot, zero leverage) and wait patiently until the eagle lands squarely on its <strong>Focal Point Nest</strong> and confirms support before acting.
               </p>
             </div>
           </div>
@@ -733,47 +786,47 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 text-slate-600 dark:text-slate-400">
-                <th className="py-3 px-4 font-semibold">Market Dimension</th>
+                <th className="py-3 px-4 font-semibold">Academy & Market Dimension</th>
                 <th className="py-3 px-4 font-semibold text-emerald-700 dark:text-emerald-400">
-                  ▲ Bull Market (Summer Growth)
+                  ▲ Ascending Eagle Market (Traditional: Bull)
                 </th>
-                <th className="py-3 px-4 font-semibold text-rose-700 dark:text-rose-400">
-                  ▼ Bear Market (Winter Reset)
+                <th className="py-3 px-4 font-semibold text-sky-700 dark:text-sky-400">
+                  ▼ Descending Eagle Market (Traditional: Bear)
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
               <tr>
                 <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">
-                  1. Candlestick Staircase
+                  1. Eagle Flight vs. Wall Street Name
                 </td>
                 <td className="py-2.5 px-4">
-                  Higher Highs (HH) & Higher Lows (HL); Price stays above rising 50 & 200 EMA
+                  Soars upward on warm thermal currents (Wall Street: “Bull horns thrusting up”)
                 </td>
                 <td className="py-2.5 px-4">
-                  Lower Highs (LH) & Lower Lows (LL); Price stays below falling 50 & 200 EMA
+                  Descends purposefully to a chosen Focal Point / Nest (Wall Street: “Bear paws swiping down”)
                 </td>
               </tr>
               <tr>
                 <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">
-                  2. Crowd Emotion & News
+                  2. Candlestick & Fibonacci Structure
                 </td>
                 <td className="py-2.5 px-4">
-                  Excitement, FOMO, media headlines celebrating record highs
+                  Higher Highs (HH) & Higher Lows (HL); projects upward to 100%, 127.2% & 161.8% Φ targets
                 </td>
                 <td className="py-2.5 px-4">
-                  Fear, boredom, headlines claiming “crypto is dead forever”
+                  Lower Highs (LH) & Lower Lows (LL); glides into 61.8% Golden Pocket or Winter Accumulation Nest
                 </td>
               </tr>
               <tr>
                 <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">
-                  3. Biggest Beginner Mistake
+                  3. Crowd Emotion vs. Steward Focus
                 </td>
                 <td className="py-2.5 px-4">
-                  Buying parabolic green candles at the ceiling without a stop-loss
+                  Crowd chases hype peaks; Steward rides thermals calmly and scales out at Fibonacci walls
                 </td>
                 <td className="py-2.5 px-4">
-                  Panic-selling at the bottom or using 10x leverage on fake “Bull Trap” bounces
+                  Crowd panics in fear; Steward observes the focal destination and prepares patient Spot entries
                 </td>
               </tr>
               <tr>
@@ -789,13 +842,13 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
               </tr>
               <tr>
                 <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">
-                  5. Symphony Musical Analogy
+                  5. Symphony Musical Marker
                 </td>
                 <td className="py-2.5 px-4 font-mono">
-                  ♫ Rising Harp Crescendo (Harvest partial gains as notes climb)
+                  ♫ Ascending Golden Harp (C4 → E5 → 161.8% Φ Finale)
                 </td>
                 <td className="py-2.5 px-4 font-mono">
-                  ♩ Calm Cello Rest (Preserve cash/stablecoins & study for Spring)
+                  ♩ Grounding Bowed Cello & 8:5 Golden Pocket Pickup
                 </td>
               </tr>
             </tbody>
@@ -1246,6 +1299,34 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
             Every 4 years (210,000 blocks), the new supply of Bitcoin created every 10 minutes is <strong>cut in half</strong>—creating a predictable 4-year rhythm across the entire crypto market.
           </div>
         </div>
+
+        {/* Dedicated 4-Year Cycle GPS & Survival Finance Video Lessons */}
+        <SectionPromoVideoBanner
+          sectionBadge="Symphony Markets Academy · 4-Year Cycle GPS & Survival Defense Films"
+          headline="The Antidote to Loose Cycles (6:14) & Survival Finance (5:07)"
+          description="Watch how open-math stewardship, KSBC Gold RWA reserves, and the Live 16-Year Logarithmic Cycle Map (2012–2028) anchor students in Late Year 3 (November 2026 Value Reset & Accumulation Bridge)—so you never buy peak hype or panic-sell engineered lows."
+          accentTone="amber"
+          tracks={[
+            {
+              id: 'cycle_antidote_loose_cycles',
+              tabLabel: '01 · The Antidote to Loose Cycles (6:14)',
+              title: 'Symphony Markets Academy — The Antidote to Loose Cycles',
+              duration: '6:14',
+              videoSrc: '/assets/The_Antidote_to_Loose_Cycles.mp4',
+              driveFileId: '1RCuSGFs76KSTkdQBPDXrSN5ND8y_ZBBi',
+              posterSrc: noScamCompassImg,
+            },
+            {
+              id: 'cycle_survival_finance',
+              tabLabel: '02 · Survival Finance & Traditional Markets (5:07)',
+              title: 'Symphony Markets Academy — Survival Finance & Traditional Markets',
+              duration: '5:07',
+              videoSrc: '/assets/Survival_Finance_Traditional_Markets.mp4',
+              driveFileId: '1pCtFdKXo6Fhd88QnSCoH95qlRTXAf5Dj',
+              posterSrc: founderDeskImg,
+            },
+          ]}
+        />
 
         {/* Visual 4-Year Rhythm Formula Strip (Year 1 -> Year 2 -> Year 3 -> Year 4) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">

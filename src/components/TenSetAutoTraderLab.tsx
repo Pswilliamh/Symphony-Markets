@@ -57,6 +57,16 @@ interface TenSetAutoTraderLabProps {
   onLogSetPositionToPortfolio?: (
     pos: Omit<PaperPosition, 'id' | 'openedAt' | 'status'>
   ) => void;
+  onSendSetToEmbeddedXrplDex?: (payload: {
+    setNumber: number;
+    setupName: string;
+    buyPrice: number;
+    stopLossPrice: number;
+    sellPrice: number;
+    quantityXrp: number;
+    rrRatio: number;
+    walletAddress?: string;
+  }) => void;
 }
 
 type ExecutionMode = 'simulated' | 'trust_wallet_live';
@@ -152,6 +162,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
   accountBalance,
   riskPercent,
   onLogSetPositionToPortfolio,
+  onSendSetToEmbeddedXrplDex,
 }) => {
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('simulated');
   const [completedSetsCount, setCompletedSetsCount] = useState<number>(10);
@@ -1005,7 +1016,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
       handleClassroomQuickUnlock();
     }
 
-    const orderSummaryText = `Symphony Markets Set #${selectedSet.setNumber} (${activeCoinTicker}/USD 1x Spot) | Buy ${formatCoinQty(selectedSet.quantity)} @ $${formatCoinPrice(selectedSet.buyPrice)} | Safety Stop $${formatCoinPrice(selectedSet.stopLossPrice)} | Target Sell $${formatCoinPrice(selectedSet.sellPrice)}`;
+    const orderSummaryText = `Symphony Markets Academy Set #${selectedSet.setNumber} (${activeCoinTicker}/USD 1x Spot) | Buy ${formatCoinQty(selectedSet.quantity)} @ $${formatCoinPrice(selectedSet.buyPrice)} | Safety Stop $${formatCoinPrice(selectedSet.stopLossPrice)} | Target Sell $${formatCoinPrice(selectedSet.sellPrice)}`;
 
     try {
       if (navigator.clipboard?.writeText) {
@@ -1054,7 +1065,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
   // Copy Master 10-Set Batch Plan to clipboard
   const handleCopyMasterTenSetBatch = async () => {
-    const header = `Symphony Markets — Master 10-Set Buy & Sell Plan (${activeCoinTicker}/USD · 1x Spot · ${
+    const header = `Symphony Markets Academy — Master 10-Set Buy & Sell Plan (${activeCoinTicker}/USD · 1x Spot · ${
       isSizingFromLiveWallet
         ? `Live Wallet: ${verifiedWallet?.spendableCoins.toFixed(qtyDecimals)} ${activeCoinTicker} Spendable`
         : `Budget: $${batchSummary.startBal.toFixed(2)}`
@@ -1104,7 +1115,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
         method: 'eth_requestAccounts',
       })) as string[];
       const signer = accounts?.[0] || trustWalletAddress;
-      const msgToSign = `Confirm Symphony Markets Master 10-Set Plan\nPair: ${activeCoinTicker}/USD (1x Spot)\nSet #${selectedSet.setNumber}: Buy ${formatCoinQty(selectedSet.quantity)} @ $${formatCoinPrice(selectedSet.buyPrice)} -> Sell $${formatCoinPrice(selectedSet.sellPrice)}`;
+      const msgToSign = `Confirm Symphony Markets Academy Master 10-Set Plan\nPair: ${activeCoinTicker}/USD (1x Spot)\nSet #${selectedSet.setNumber}: Buy ${formatCoinQty(selectedSet.quantity)} @ $${formatCoinPrice(selectedSet.buyPrice)} -> Sell $${formatCoinPrice(selectedSet.sellPrice)}`;
 
       await provider.request({
         method: 'personal_sign',
@@ -1348,7 +1359,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
 
   // Copy Complete 10-Set Mark-Hit Completion Report for Students / Class Notes
   const handleCopyCompletionReport = async () => {
-    const header = `Symphony Markets — 10-Set Buy & Sell Completion Report (${activeCoinTicker}/USD)\nResult: ${batchSummary.wins} Target Sells Hit · ${batchSummary.losses} Safety Stops Hit · Net +${batchSummary.totalR.toFixed(1)}R (${batchSummary.startCoins.toFixed(qtyDecimals)} -> ${batchSummary.endCoins.toFixed(qtyDecimals)} ${activeCoinTicker})`;
+    const header = `Symphony Markets Academy — 10-Set Buy & Sell Completion Report (${activeCoinTicker}/USD)\nResult: ${batchSummary.wins} Target Sells Hit · ${batchSummary.losses} Safety Stops Hit · Net +${batchSummary.totalR.toFixed(1)}R (${batchSummary.startCoins.toFixed(qtyDecimals)} -> ${batchSummary.endCoins.toFixed(qtyDecimals)} ${activeCoinTicker})`;
     const lines = markHitReceipts
       .map(
         (r) =>
@@ -1980,6 +1991,13 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
               }
               liveXrpPrice={xrpLivePrice || effectiveBasePrice}
               selectedSetNumber={selectedSet.setNumber}
+              onSelectSetNumber={(num) => {
+                if (num > completedSetsCount) {
+                  setCompletedSetsCount(num);
+                }
+                setSelectedSetNumber(num);
+              }}
+              allTenSets={tenSets}
               setupName={selectedSet.setupName}
               recommendedBuyPrice={selectedSet.buyPrice}
               recommendedStopPrice={selectedSet.stopLossPrice}
@@ -2134,7 +2152,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                     </span>
                   </div>
                   <p className="text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
-                    Symphony Markets never holds your private keys. Running 10 sets in 15 seconds is a <strong>safe fast-forward rehearsal</strong> sized from your real coins—so <strong>0.00 {activeCoinTicker}</strong> moved on the blockchain.
+                    Symphony Markets Academy never holds your private keys. Running 10 sets in 15 seconds is a <strong>safe fast-forward rehearsal</strong> sized from your real coins—so <strong>0.00 {activeCoinTicker}</strong> moved on the blockchain.
                   </p>
                 </div>
                 <div className="md:border-l md:border-amber-200/80 dark:md:border-slate-800 md:pl-3">
@@ -2850,6 +2868,56 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
               <span>{showWalletSignDrawer ? 'Hide Wallet Ticket' : 'Xaman / Trust Wallet Ticket'}</span>
             </button>
 
+            {onSendSetToEmbeddedXrplDex && (
+              <button
+                type="button"
+                onClick={() => {
+                  const refXrp = xrpLivePrice || livePrice || 1.0;
+                  const currentCoinPrice =
+                    activeCoinTicker === 'BTC'
+                      ? btcLivePrice
+                      : activeCoinTicker === 'XLM'
+                      ? xlmLivePrice
+                      : refXrp;
+                  const scaleToXrp =
+                    activeCoinTicker === 'XRP' ? 1 : refXrp / Math.max(0.0001, currentCoinPrice);
+                  const reserveCushion = 0.5;
+                  const safeQty =
+                    activeCoinTicker === 'XRP' && isSizingFromLiveWallet && verifiedWallet
+                      ? Number(
+                          Math.max(
+                            0.5,
+                            Math.min(selectedSet.quantity, verifiedWallet.spendableCoins - reserveCushion)
+                          ).toFixed(2)
+                        )
+                      : activeCoinTicker === 'XRP'
+                      ? Number(Math.max(0.5, Math.min(selectedSet.quantity, 2)).toFixed(2))
+                      : 2;
+
+                  onSendSetToEmbeddedXrplDex({
+                    setNumber: selectedSet.setNumber,
+                    setupName: selectedSet.setupName,
+                    buyPrice: Number((selectedSet.buyPrice * scaleToXrp).toFixed(4)),
+                    stopLossPrice: Number((selectedSet.stopLossPrice * scaleToXrp).toFixed(4)),
+                    sellPrice: Number((selectedSet.sellPrice * scaleToXrp).toFixed(4)),
+                    quantityXrp: safeQty,
+                    rrRatio: Math.abs(selectedSet.rMultiple) || 2,
+                    walletAddress:
+                      verifiedWallet?.coinTicker === 'XRP'
+                        ? verifiedWallet.address
+                        : trustWalletAddress.trim().startsWith('r')
+                        ? trustWalletAddress.trim()
+                        : undefined,
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <span>
+                  ⚡ Open Set #{selectedSet.setNumber < 10 ? `0${selectedSet.setNumber}` : selectedSet.setNumber} in Embedded XRPL DEX →
+                </span>
+              </button>
+            )}
+
             {onLogSetPositionToPortfolio && (
               <button
                 type="button"
@@ -2972,7 +3040,7 @@ export const TenSetAutoTraderLab: React.FC<TenSetAutoTraderLabProps> = ({
                           Why &ldquo;Open Xaman DEX&rdquo; Shows an XRPL DEX QR Code on Computer
                         </div>
                         <p>
-                          Because Symphony Markets is <strong>100% non-custodial</strong> (no private keys or developer custody), a browser button never silently executes a trade for you. On a computer, Xaman shows an <strong>XRPL DEX QR code</strong>—open <strong>Xaman on your Android phone</strong>, tap the middle blue <strong>Scan QR</strong> button, and Xaman opens its built-in DEX Trade screen right on your phone!
+                          Because Symphony Markets Academy is <strong>100% non-custodial</strong> (no private keys or developer custody), a browser button never silently executes a trade for you. On a computer, Xaman shows an <strong>XRPL DEX QR code</strong>—open <strong>Xaman on your Android phone</strong>, tap the middle blue <strong>Scan QR</strong> button, and Xaman opens its built-in DEX Trade screen right on your phone!
                         </p>
                       </div>
                       <div className="space-y-1 md:border-l md:border-slate-200 dark:md:border-slate-800 md:pl-3">

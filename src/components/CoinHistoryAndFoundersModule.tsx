@@ -102,7 +102,7 @@ const COIN_PROFILES: CoinHistoryProfile[] = [
       },
       {
         year: '2012 · 2016 · 2020 · 2024',
-        event: 'Four historic Bitcoin Halvings establish the 4-Year Market Cycle GPS taught across Symphony Markets.',
+        event: 'Four historic Bitcoin Halvings establish the 4-Year Market Cycle GPS taught across Symphony Markets Academy.',
       },
     ],
     trainSymbol: 'BTCUSDT',
@@ -239,9 +239,9 @@ const COIN_PROFILES: CoinHistoryProfile[] = [
     founders: [
       {
         name: 'William Hardrick, DQP-KS',
-        role: 'Founder & Systems Knowledge Architect · Analemma Ventures & Symphony Markets',
+        role: 'Founder & Systems Knowledge Architect · Analemma Ventures & Symphony Markets Academy',
         contribution:
-          'Spiritual Sciences Pneumatology Researcher (DQP-KS) and author of "Quantum Analemma A.I. Technology Cycle" & "The Sovereign Mind & The Honest Market." Created Symphony Markets and the KSBC Crystalline Gold RWA blueprint after witnessing predatory "stop-trading" scams harm everyday beginners—building a 100% free, non-custodial sanctuary grounded in 432 Hz / 528 Hz emotional regulation and mathematical discipline.',
+          'Spiritual Sciences Pneumatology Researcher (DQP-KS) and author of "Quantum Analemma A.I. Technology Cycle" & "The Sovereign Mind & The Honest Market." Created Symphony Markets Academy and the KSBC Crystalline Gold RWA blueprint after witnessing predatory "stop-trading" scams harm everyday beginners—building a 100% free, non-custodial sanctuary grounded in 432 Hz / 528 Hz emotional regulation and mathematical discipline.',
       },
       {
         name: 'Analemma Ventures & Symphony Classroom Community',
@@ -529,7 +529,7 @@ export const CoinHistoryAndFoundersModule: React.FC<CoinHistoryAndFoundersModule
             <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-400">
               <ShieldCheck className="w-4 h-4 shrink-0" />
               <span>
-                2. How Students Train With {activeProfile.ticker} in Symphony Markets
+                2. How Students Train With {activeProfile.ticker} in Symphony Markets Academy
               </span>
             </div>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">

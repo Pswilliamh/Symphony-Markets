@@ -48,7 +48,7 @@ export const FREQUENCY_PERSPECTIVE_BANNERS: FrequencyBannerItem[] = [
     symphonyFrequencyLabel: 'The Symphony Way · Sovereign Self-Custody Flow',
     symphonyBullets: [
       'True abundance never asks for your private keys or takes custody of your money.',
-      'Your $5 stays safely inside your own wallet while Symphony Markets views only your public window address.',
+      'Your $5 stays safely inside your own wallet while Symphony Markets Academy views only your public window address.',
       'Uses sub-penny XRPL and Stellar rails (~$0.0001 fee) so your value flows like music without friction.',
     ],
     takeaway: 'When you hold your own key, no scam platform can ever lock the exit door on your future.',
@@ -89,7 +89,7 @@ export const FREQUENCY_PERSPECTIVE_BANNERS: FrequencyBannerItem[] = [
       'Visual step-by-step tools, Plain-English AI Mentor, and our 8-Hour Candlestick Music Graph make learning intuitive.',
       'Includes the KSBC Gold Real-World Asset (RWA) Classroom so you understand tangible stewardship.',
     ],
-    takeaway: 'Scams hide behind complex jargon to charge fees; Symphony Markets turns wisdom into a clear visual song.',
+    takeaway: 'Scams hide behind complex jargon to charge fees; Symphony Markets Academy turns wisdom into a clear visual song.',
   },
 ];
 

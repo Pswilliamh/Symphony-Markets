@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import videoCoverStopsImg from '../assets/images/video_cover_stops_1794561549253.jpg';
 import { CANDLE_PATTERNS } from '../services/marketData';
 import {
   AssetSymbol,
@@ -7,6 +8,7 @@ import {
   CandlePatternType,
   FibonacciLevel,
 } from '../types/market';
+import { SectionPromoVideoBanner } from './SectionPromoVideoBanner';
 
 interface CandleEducationDeckProps {
   symbol: AssetSymbol;
@@ -299,6 +301,25 @@ export const CandleEducationDeck: React.FC<CandleEducationDeckProps> = ({
 
   return (
     <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-5 flex flex-col gap-5">
+      {/* Fibonacci Part 1 Video Lesson: The Rhythm of the Crowd */}
+      <SectionPromoVideoBanner
+        sectionBadge="Fibonacci Part 1 Video · Synced From Google Drive"
+        headline="Fibonacci Part 1 — The Rhythm of the Crowd (5:36)"
+        description="Watch how collective buyer and seller psychology forms natural Fibonacci retracement bands (38.2%, 50.0%, and the 61.8% Golden Pocket) and why waiting for candlestick confirmation at support protects your 2% risk boundary."
+        accentTone="sky"
+        tracks={[
+          {
+            id: 'candle_fib_part1_rhythm',
+            tabLabel: 'Fibonacci Part 1: Rhythm of the Crowd',
+            title: 'The Rhythm of the Crowd (Fibonacci Part 1)',
+            duration: '5:36',
+            videoSrc: '/assets/The_Rhythm_of_the_Crowd.mp4',
+            driveFileId: '1kCLZNmmcUAXP5XuRcAWfWnkWBXTs3YD5',
+            posterSrc: videoCoverStopsImg,
+          },
+        ]}
+      />
+
       {/* Header & Mode Switch */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>

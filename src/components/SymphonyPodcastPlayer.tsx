@@ -21,7 +21,7 @@ export const PODCAST_CHAPTERS: PodcastChapter[] = [
     startSeconds: 0,
     title: '01. The Fake “Stop Trading” Button & Predatory UI Theater',
     summary:
-      'Why centralized scam dashboards ignore user commands like a locked casino exit—and how Symphony Markets was born as the architectural antidote.',
+      'Why centralized scam dashboards ignore user commands like a locked casino exit—and how Symphony Markets Academy was born as the architectural antidote.',
   },
   {
     id: 'ch_covenant',

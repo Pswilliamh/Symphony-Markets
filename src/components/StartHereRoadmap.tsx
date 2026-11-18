@@ -279,7 +279,7 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
             Learn Market Decisions Safely with a $5 Real-Wallet Roadmap
           </h1>
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-            Every slider, AI check, and trade ticket inside Symphony Markets runs in a <strong>100% simulated learning sandbox</strong>. When you choose to test a real $5 Spot swap on public Stellar (XLM) or XRP Ledger rails, you do so strictly inside your own external self-custody wallet app.
+            Every slider, AI check, and trade ticket inside Symphony Markets Academy runs in a <strong>100% simulated learning sandbox</strong>. When you choose to test a real $5 Spot swap on public Stellar (XLM) or XRP Ledger rails, you do so strictly inside your own external self-custody wallet app.
           </p>
         </div>
 
@@ -334,29 +334,38 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
       {/* Collapsible Interactive Red-Flag Scam X-Ray */}
       {showScamXRay && <ScamScreenXRayInspector />}
 
-      {/* Dedicated $5 Blueprint Section Video ("Symphony markets five dollar") */}
+      {/* Dedicated $5 Blueprint & Survival Finance Section Video */}
       <SectionPromoVideoBanner
-        sectionBadge="$5 Blueprint Section Video · Synced From Google Drive"
-        headline="Symphony Markets — Five Dollar ($5) Blueprint Promo"
-        description="See how the $5 Spot Roadmap, sub-penny XRPL/Stellar self-custody rails, and the 2.0% (10-Cent) risk cap protect beginners from wipeouts—plus switch to the full 4:40 $5 Blueprint walkthrough anytime."
+        sectionBadge="$5 Blueprint & Survival Finance · Synced From Google Drive"
+        headline="Symphony Markets Academy — Survival Finance & The $5 Blueprint"
+        description="Watch our new 5:07 Survival Finance walkthrough on why capital preservation comes before profit, how the $5 Spot Roadmap and sub-penny XRPL/Stellar rails work, and how the 2.0% (10-Cent) risk cap protects students from wipeouts."
         accentTone="sky"
         tracks={[
           {
-            id: 'five_dollar_promo',
-            tabLabel: '01 · Five Dollar Promo',
-            title: 'Symphony Markets Five Dollar Promo',
-            duration: '0:10',
-            videoSrc: '/api/drive-video/1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
-            driveFileId: '1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
+            id: 'survival_finance_full',
+            tabLabel: '01 · Survival Finance (5:07)',
+            title: 'Survival Finance & Traditional Markets',
+            duration: '5:07',
+            videoSrc: '/assets/Survival_Finance_Traditional_Markets.mp4',
+            driveFileId: '1pCtFdKXo6Fhd88QnSCoH95qlRTXAf5Dj',
             posterSrc: videoCoverWalletImg,
           },
           {
             id: 'five_dollar_full',
-            tabLabel: '02 · Full $5 Blueprint',
-            title: 'Symphony Markets: The $5 Blueprint',
+            tabLabel: '02 · Full $5 Blueprint (4:40)',
+            title: 'Symphony Markets Academy: The $5 Blueprint',
             duration: '4:40',
             videoSrc: '/assets/aistudio/Symphony_Markets__The__5_Blueprint_781e68ab.mp4',
             driveFileId: '1RNomMOr0irdvq0nsbm8nQh2fhooCPoBp',
+            posterSrc: videoCoverWalletImg,
+          },
+          {
+            id: 'five_dollar_promo',
+            tabLabel: '03 · Five Dollar Promo (0:10)',
+            title: 'Symphony Markets Academy Five Dollar Promo',
+            duration: '0:10',
+            videoSrc: '/api/drive-video/1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
+            driveFileId: '1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
             posterSrc: videoCoverWalletImg,
           },
         ]}
@@ -447,7 +456,7 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
                   Rule C — Never Type Your 12-Word Secret Phrase Anywhere:
                 </strong>{' '}
                 <span className="text-slate-600 dark:text-slate-300">
-                  Keep your $5 safely inside your own wallet app on your phone. To track your live balance inside Symphony Markets, paste <strong>only your Public Receive Address</strong> (starts with <span className="font-mono">G...</span> for XLM or <span className="font-mono">r...</span> for XRP).
+                  Keep your $5 safely inside your own wallet app on your phone. To track your live balance inside Symphony Markets Academy, paste <strong>only your Public Receive Address</strong> (starts with <span className="font-mono">G...</span> for XLM or <span className="font-mono">r...</span> for XRP).
                 </span>
               </div>
             </div>
@@ -818,7 +827,7 @@ export const StartHereRoadmap: React.FC<StartHereRoadmapProps> = ({
                 Left = Your Private 12-Word / Secret Numbers Key (Never Share) · Right = Your Public Viewing Window (Safe to Paste)
               </h3>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                Think of your wallet as having two completely different parts: your <strong>Private Key</strong> (12-word phrase in Trust Wallet, or 8-row Secret Numbers / phrase in Xaman) is the physical brass master key locked inside your own Android phone—anyone who sees it can open the safe. Your <strong>Public Receive Address</strong> (<span className="font-mono">r...</span> in Xaman/XRPL or <span className="font-mono">G...</span> in Stellar) is simply a bulletproof glass window that lets you (or Symphony Markets) view the balance from the outside with zero ability to touch your coins.
+                Think of your wallet as having two completely different parts: your <strong>Private Key</strong> (12-word phrase in Trust Wallet, or 8-row Secret Numbers / phrase in Xaman) is the physical brass master key locked inside your own Android phone—anyone who sees it can open the safe. Your <strong>Public Receive Address</strong> (<span className="font-mono">r...</span> in Xaman/XRPL or <span className="font-mono">G...</span> in Stellar) is simply a bulletproof glass window that lets you (or Symphony Markets Academy) view the balance from the outside with zero ability to touch your coins.
               </p>
             </div>
           </div>

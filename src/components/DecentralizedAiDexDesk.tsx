@@ -594,17 +594,35 @@ export const DecentralizedAiDexDesk: React.FC<DecentralizedAiDexDeskProps> = ({
         </div>
       </div>
 
-      {/* Dedicated Antidote to Predation / On-Chain AMM (x * y = k) Promo Video */}
+      {/* Dedicated Antidote to Loose Cycles / On-Chain AMM (x * y = k) Promo Video */}
       <SectionPromoVideoBanner
-        sectionBadge="Antidote to Predation · On-Chain AMM Section Video"
-        headline="Symphony Markets — Antidote to Predation (x · y = k Open AMM)"
-        description="Watch how transparent crystalline AMM liquidity pools (Asset A · Asset B = k) replace predatory middlemen with open, auditable on-chain math."
+        sectionBadge="Symphony Markets Academy · On-Chain AMM (x · y = k) & Cycle Defense"
+        headline="The Antidote to Loose Cycles (6:14) & Open AMM Liquidity (x · y = k)"
+        description="Watch how transparent crystalline AMM liquidity pools (Asset A · Asset B = k) and institutional risk defense replace predatory middlemen and spread markups with open, auditable on-chain math."
         accentTone="emerald"
         tracks={[
           {
+            id: 'dex_antidote_loose_cycles',
+            tabLabel: '01 · Antidote to Loose Cycles (6:14)',
+            title: 'Symphony Markets Academy — The Antidote to Loose Cycles',
+            duration: '6:14',
+            videoSrc: '/assets/The_Antidote_to_Loose_Cycles.mp4',
+            driveFileId: '1RCuSGFs76KSTkdQBPDXrSN5ND8y_ZBBi',
+            posterSrc: dexAmmPoolImg,
+          },
+          {
+            id: 'dex_survival_finance',
+            tabLabel: '02 · Survival Finance & AMM (5:07)',
+            title: 'Symphony Markets Academy — Survival Finance & Traditional Markets',
+            duration: '5:07',
+            videoSrc: '/assets/Survival_Finance_Traditional_Markets.mp4',
+            driveFileId: '1pCtFdKXo6Fhd88QnSCoH95qlRTXAf5Dj',
+            posterSrc: dexAmmPoolImg,
+          },
+          {
             id: 'predation_amm_promo',
-            tabLabel: '01 · Predation AMM Promo',
-            title: 'Symphony Markets Promo — Antidote to Predation',
+            tabLabel: '03 · Predation AMM Reel (0:10)',
+            title: 'Symphony Markets Academy — Antidote to Predation Reel',
             duration: '0:10',
             videoSrc: '/api/drive-video/1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
             driveFileId: '1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
@@ -612,8 +630,8 @@ export const DecentralizedAiDexDesk: React.FC<DecentralizedAiDexDeskProps> = ({
           },
           {
             id: 'predation_full_video',
-            tabLabel: '02 · Full Antidote Walkthrough',
-            title: 'Symphony Markets: The Antidote to Predation',
+            tabLabel: '04 · Antidote to Predation (6:04)',
+            title: 'Symphony Markets Academy: The Antidote to Predation',
             duration: '6:04',
             videoSrc: '/assets/symphony-antidote.mp4',
             driveFileId: '1vgJ0QiwY1aVtJwr-iPtKLdxTdcVqTTnr',

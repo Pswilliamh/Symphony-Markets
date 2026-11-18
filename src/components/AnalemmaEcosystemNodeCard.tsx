@@ -16,7 +16,7 @@ export const AnalemmaEcosystemNodeCard: React.FC<AnalemmaEcosystemNodeCardProps>
   const liveNodeUrl =
     typeof window !== 'undefined' ? window.location.origin : 'https://symphony-markets.app';
 
-  const resumeEmbedSnippet = `<iframe src="${liveNodeUrl}" title="Symphony Markets — Analemma Ventures Systems Knowledge Engineering Simulator" width="100%" height="720" style="border:1px solid rgba(56,189,248,0.3);border-radius:12px;" loading="lazy"></iframe>`;
+  const resumeEmbedSnippet = `<iframe src="${liveNodeUrl}" title="Symphony Markets Academy — Analemma Ventures Systems Knowledge Engineering Simulator" width="100%" height="720" style="border:1px solid rgba(56,189,248,0.3);border-radius:12px;" loading="lazy"></iframe>`;
 
   const handleCopy = async (mode: 'url' | 'embed') => {
     const text = mode === 'url' ? liveNodeUrl : resumeEmbedSnippet;
@@ -49,7 +49,7 @@ export const AnalemmaEcosystemNodeCard: React.FC<AnalemmaEcosystemNodeCardProps>
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
             Within the broader <strong>Analemma Ventures</strong> portfolio,{' '}
-            <strong>Symphony Markets</strong> operates as a live educational flagship for{' '}
+            <strong>Symphony Markets Academy</strong> operates as a live educational flagship for{' '}
             <strong>Systems Knowledge Engineering</strong>—translating institutional market math
             into calm, verifiable visual models that partners, educators, and sponsors can test
             firsthand or embed directly inside <strong>Digital Visual Resume Pro 1.0</strong>.

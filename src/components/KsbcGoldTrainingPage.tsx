@@ -120,17 +120,26 @@ export const KsbcGoldTrainingPage: React.FC<KsbcGoldTrainingPageProps> = ({
         </div>
       </div>
 
-      {/* Dedicated KSBC Gold Section Promo Video ("KSBC Gold Symphony markets promo") */}
+      {/* Dedicated KSBC Gold & Antidote to Loose Cycles Section Video */}
       <SectionPromoVideoBanner
-        sectionBadge="KSBC Gold Section Video · Synced From Google Drive"
-        headline="KSBC Gold — Symphony Markets Promo"
-        description="Watch how physical 999.9 fine gold bars encased in transparent crystalline columns map 1:1 onto public ledger proofs with open-source Automated Market Maker (x · y = k) math."
+        sectionBadge="KSBC Gold & Open-Ledger Antidote · Synced From Google Drive"
+        headline="KSBC Gold — Symphony Markets Academy & The Antidote to Loose Cycles"
+        description="Watch how physical 999.9 fine gold bars encased in transparent crystalline columns map 1:1 onto public ledger proofs with open-source Automated Market Maker (x · y = k) math—and switch between the KSBC Gold Promo and our full 6:14 Antidote to Loose Cycles film."
         accentTone="amber"
         tracks={[
           {
+            id: 'ksbc_antidote_full',
+            tabLabel: '01 · Antidote to Loose Cycles (6:14)',
+            title: 'The Antidote to Loose Cycles — KSBC Gold RWA & Open AMM Math',
+            duration: '6:14',
+            videoSrc: '/assets/The_Antidote_to_Loose_Cycles.mp4',
+            driveFileId: '1RCuSGFs76KSTkdQBPDXrSN5ND8y_ZBBi',
+            posterSrc: goldRwaBlueprintImg,
+          },
+          {
             id: 'ksbc_gold_promo',
-            tabLabel: 'KSBC Gold Promo',
-            title: 'KSBC Gold Symphony Markets Promo',
+            tabLabel: '02 · KSBC Gold Promo (0:10)',
+            title: 'KSBC Gold Symphony Markets Academy Promo',
             duration: '0:10',
             videoSrc: KSBC_PROMO_VIDEO_SRC,
             driveFileId: '1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7',

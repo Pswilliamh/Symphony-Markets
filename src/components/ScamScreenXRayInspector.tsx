@@ -31,7 +31,7 @@ const XRAY_HOTSPOTS: XRayHotspot[] = [
     whyPeopleFallForIt:
       'Seeing a green balance tick upward every single hour triggers excitement and false trust before a beginner realizes no real exchange trade ever happened.',
     noScamZoneStandard:
-      'Real markets move up and down every day—nobody on earth can guarantee daily percentage profits. Symphony Markets shows real live volatility, losses as well as gains, and teaches disciplined 2% risk sizing.',
+      'Real markets move up and down every day—nobody on earth can guarantee daily percentage profits. Symphony Markets Academy shows real live volatility, losses as well as gains, and teaches disciplined 2% risk sizing.',
   },
   {
     id: 'fake_stop',
@@ -39,7 +39,7 @@ const XRAY_HOTSPOTS: XRayHotspot[] = [
     shortLabel: '02 · Fake “Stop Trading” Button',
     scamElementTitle: 'Trap 02: Deceptive “STOP TRADING / PROTECT FUNDS” Button',
     howTheTrapWorks:
-      'The exact scam that inspired Symphony Markets: a sleek button on a fake broker dashboard that claims to halt trading and protect your balance, while in reality your deposit was stolen the moment you sent it.',
+      'The exact scam that inspired Symphony Markets Academy: a sleek button on a fake broker dashboard that claims to halt trading and protect your balance, while in reality your deposit was stolen the moment you sent it.',
     whyPeopleFallForIt:
       'Beginners feel safe when they see a big emergency brake button on a professional-looking dashboard, assuming regulators verify every website.',
     noScamZoneStandard:
@@ -55,7 +55,7 @@ const XRAY_HOTSPOTS: XRayHotspot[] = [
     whyPeopleFallForIt:
       'It looks like a normal login or verification form, and scammers create artificial urgency (“Your wallet will be restricted in 15 minutes”).',
     noScamZoneStandard:
-      'Your 12/24-word phrase IS the master key to all your funds—never type it into any website or share it with anyone. Symphony Markets only ever reads Public Receive Addresses (starting with r... or G...), which are 100% read-only.',
+      'Your 12/24-word phrase IS the master key to all your funds—never type it into any website or share it with anyone. Symphony Markets Academy only ever reads Public Receive Addresses (starting with r... or G...), which are 100% read-only.',
   },
   {
     id: 'withdrawal_trap',
@@ -272,12 +272,12 @@ export const ScamScreenXRayInspector: React.FC = () => {
             </div>
           </div>
 
-          {/* Green Shield Box: Symphony Markets No-Scam Zone Antidote */}
+          {/* Green Shield Box: Symphony Markets Academy No-Scam Zone Antidote */}
           <div className="p-4 rounded-xl bg-emerald-500/8 border border-emerald-500/30 space-y-1.5">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
               <ShieldCheck className="w-4 h-4 shrink-0" />
               <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-              <span>Symphony Markets No-Scam Zone Protection</span>
+              <span>Symphony Markets Academy No-Scam Zone Protection</span>
             </div>
             <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
               {activeSpot.noScamZoneStandard}

@@ -165,3 +165,117 @@ export function playTradeSetSymphonyNote(params: {
     // Audio playback is non-blocking if browser autoplay policy prevents sound
   }
 }
+
+/**
+ * Plays a two-note harmonic ratio interval (e.g. 144 Hz + 233 Hz Phi dyad,
+ * 3:2 Perfect Fifth, 8:5 Golden Pocket Minor Sixth, or 1.618 Golden Target)
+ * so students can literally HEAR how Fibonacci math translates into music.
+ */
+export function playFibonacciHarmonicInterval(params: {
+  rootHz: number;
+  targetHz: number;
+  tone?: 'harp' | 'cello' | 'warm_chord';
+}): void {
+  const ctx = getOrCreateAudioContext();
+  if (!ctx) return;
+
+  try {
+    const now = ctx.currentTime;
+    const isCello = params.tone === 'cello';
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(isCello ? 760 : 1850, now);
+    filter.Q.setValueAtTime(0.75, now);
+
+    const delay = ctx.createDelay();
+    delay.delayTime.setValueAtTime(0.2, now);
+    const feedback = ctx.createGain();
+    feedback.gain.setValueAtTime(0.22, now);
+    const wet = ctx.createGain();
+    wet.gain.setValueAtTime(0.2, now);
+
+    filter.connect(ctx.destination);
+    filter.connect(delay);
+    delay.connect(feedback);
+    feedback.connect(delay);
+    delay.connect(wet);
+    wet.connect(ctx.destination);
+
+    const triggerNote = (
+      freq: number,
+      peak: number,
+      startOffset: number,
+      dur: number,
+      oscType: OscillatorType
+    ) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = oscType;
+      osc.frequency.setValueAtTime(Math.max(65, Math.min(2400, freq)), now + startOffset);
+      const t0 = now + startOffset;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.linearRampToValueAtTime(peak, t0 + (isCello ? 0.08 : 0.03));
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(gain);
+      gain.connect(filter);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.04);
+    };
+
+    // Play root anchor followed rapidly by harmonic ratio note, ringing together as a dyad
+    triggerNote(params.rootHz, 0.095, 0, 1.35, isCello ? 'sine' : 'triangle');
+    triggerNote(params.targetHz, 0.11, 0.18, 1.45, 'triangle');
+    if (params.tone === 'warm_chord') {
+      triggerNote(params.rootHz * 2, 0.045, 0.32, 1.35, 'sine');
+    }
+  } catch {
+    // Non-blocking audio fallback
+  }
+}
+
+/**
+ * Plays the 3-Point Fibonacci Wave Symphony:
+ * Point A (Origin C4) -> Point B (Impulse Peak G4) -> Point C (61.8% Golden Pocket Rest E4)
+ * -> 100% Wave (C5) -> 127.2% Bridge (E5) -> 161.8% Golden Target Finale (A5 Chord)
+ */
+export function playThreeWaveFibonacciSymphony(): void {
+  const ctx = getOrCreateAudioContext();
+  if (!ctx) return;
+
+  try {
+    const now = ctx.currentTime;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1900, now);
+    filter.connect(ctx.destination);
+
+    const sequence: Array<{ freq: number; offset: number; dur: number; peak: number; type: OscillatorType }> = [
+      { freq: 256.87, offset: 0.0, dur: 0.55, peak: 0.09, type: 'triangle' }, // Point A: Origin Low (C4)
+      { freq: 384.87, offset: 0.42, dur: 0.6, peak: 0.105, type: 'triangle' }, // Point B: Wave 1 Peak (G4, 3:2)
+      { freq: 311.13, offset: 0.9, dur: 0.7, peak: 0.09, type: 'sine' }, // Point C: 61.8% Golden Pocket Pullback (Eb4/E4)
+      { freq: 513.74, offset: 1.5, dur: 0.6, peak: 0.1, type: 'triangle' }, // 100% Extension (C5 Octave, 2:1)
+      { freq: 647.27, offset: 1.98, dur: 0.65, peak: 0.105, type: 'triangle' }, // 127.2% Extension (E5, sqrt(Phi))
+      { freq: 432.0 * 1.618, offset: 2.48, dur: 1.45, peak: 0.12, type: 'triangle' }, // 161.8% Golden Target Finale
+      { freq: 432.0, offset: 2.5, dur: 1.45, peak: 0.065, type: 'sine' }, // Harmonic root under Finale
+    ];
+
+    for (const step of sequence) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = step.type;
+      osc.frequency.setValueAtTime(step.freq, now + step.offset);
+      const t0 = now + step.offset;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.linearRampToValueAtTime(step.peak, t0 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + step.dur);
+      osc.connect(gain);
+      gain.connect(filter);
+      osc.start(t0);
+      osc.stop(t0 + step.dur + 0.04);
+    }
+  } catch {
+    // Non-blocking audio fallback
+  }
+}
+

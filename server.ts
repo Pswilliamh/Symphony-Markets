@@ -396,7 +396,7 @@ Provide specific numerical Recommended Buy Zone 1 (Primary Pullback/Support Buy)
 Starting Rehearsal Balance (sized from their wallet): $${startingBalance} -> Projected Ending Rehearsal Balance after 10 Sets: $${endingBalance} (Projected Net PnL: $${netPnlUsd}, Wins: ${winCount}, Controlled 1R Stops: ${lossCount}).
 
 IMPORTANT NON-CUSTODIAL TRUTH TO CLARIFY FOR THE STUDENT:
-Because Symphony Markets is 100% non-custodial (read-only public address, zero private keys held), this fast-forward 10-set run is a SIMULATED MATHEMATICAL REHEARSAL sized from their real wallet—it did NOT move coins on the blockchain or change their actual on-chain Trust Wallet / Xaman balance yet. Explain clearly that to grow their actual on-chain wallet balance, they place & sign real Limit Buy / Sell offers inside Xaman DEX or Trust Wallet and wait for live market prices to reach those marks over real time.
+Because Symphony Markets Academy is 100% non-custodial (read-only public address, zero private keys held), this fast-forward 10-set run is a SIMULATED MATHEMATICAL REHEARSAL sized from their real wallet—it did NOT move coins on the blockchain or change their actual on-chain Trust Wallet / Xaman balance yet. Explain clearly that to grow their actual on-chain wallet balance, they place & sign real Limit Buy / Sell offers inside Xaman DEX or Trust Wallet and wait for live market prices to reach those marks over real time.
 
 Here are the 10 Buy & Sell Sets rehearsed:
 ${setsSummary}
@@ -413,7 +413,7 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
         contents: prompt,
         config: {
           systemInstruction:
-            'You are a transparent, plain-English trading mentor at Symphony Markets. Always populate EVERY JSON field (headline, whatTheEngineDid, whyTenSetsMatter, stopLossLesson, advancedStudentTakeaways) with concise 3-5 sentence paragraphs. Never claim a simulated rehearsal already changed the user’s real on-chain wallet balance; clearly distinguish read-only wallet sizing (rehearsal projection) from real signed on-chain DEX trades in Xaman or Trust Wallet.',
+            'You are a transparent, plain-English trading mentor at Symphony Markets Academy. Always populate EVERY JSON field (headline, whatTheEngineDid, whyTenSetsMatter, stopLossLesson, advancedStudentTakeaways) with concise 3-5 sentence paragraphs. Never claim a simulated rehearsal already changed the user’s real on-chain wallet balance; clearly distinguish read-only wallet sizing (rehearsal projection) from real signed on-chain DEX trades in Xaman or Trust Wallet.',
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           responseMimeType: 'application/json',
           responseSchema: {
@@ -485,12 +485,246 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
     });
   });
 
-  // Default Google Drive Asset IDs from the shared Symphony Markets folder & Video Media subfolder
+  // Live XRPL Mainnet DEX Orderbook & Account Proxy (for Embedded XRPL DEX Desk inside RiskSimulatorPanel)
+  const XRPL_ENDPOINTS = ['https://xrplcluster.com/', 'https://s1.ripple.com:51234/'];
+  const XRPL_RLUSD_HEX = '524C555344000000000000000000000000000000';
+  const XRPL_RLUSD_ISSUER = 'rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De';
+
+  async function callXrplRpc(method: string, params: Record<string, unknown>): Promise<unknown> {
+    let lastError: Error | null = null;
+    for (const endpoint of XRPL_ENDPOINTS) {
+      try {
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ method, params: [params] }),
+        });
+        if (resp.ok) {
+          return await resp.json();
+        }
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error('XRPL RPC network error');
+      }
+    }
+    throw lastError ?? new Error('Unable to reach XRPL Mainnet RPC nodes.');
+  }
+
+  app.get('/api/xrpl-orderbook', async (_req, res) => {
+    try {
+      // Asks: Makers selling XRP (TakerGets = XRP drops) for RLUSD (TakerPays = RLUSD)
+      // Bids: Makers selling RLUSD (TakerGets = RLUSD) to buy XRP (TakerPays = XRP drops)
+      const [asksRaw, bidsRaw] = (await Promise.all([
+        callXrplRpc('book_offers', {
+          taker_gets: { currency: 'XRP' },
+          taker_pays: { currency: XRPL_RLUSD_HEX, issuer: XRPL_RLUSD_ISSUER },
+          limit: 6,
+        }),
+        callXrplRpc('book_offers', {
+          taker_gets: { currency: XRPL_RLUSD_HEX, issuer: XRPL_RLUSD_ISSUER },
+          taker_pays: { currency: 'XRP' },
+          limit: 6,
+        }),
+      ])) as Array<{
+        result?: {
+          ledger_current_index?: number;
+          offers?: Array<{
+            Account?: string;
+            Sequence?: number;
+            TakerGets?: string | { value?: string };
+            TakerPays?: string | { value?: string };
+            taker_gets_funded?: string | { value?: string };
+            taker_pays_funded?: string | { value?: string };
+          }>;
+        };
+      }>;
+
+      const parseAsk = (o: {
+        TakerGets?: string | { value?: string };
+        TakerPays?: string | { value?: string };
+      }) => {
+        const xrpDrops = typeof o.TakerGets === 'string' ? Number(o.TakerGets) : 0;
+        const rlusdVal =
+          typeof o.TakerPays === 'object' && o.TakerPays ? Number(o.TakerPays.value || 0) : 0;
+        const xrp = xrpDrops / 1_000_000;
+        if (xrp <= 0 || rlusdVal <= 0) return null;
+        return {
+          priceUsd: Number((rlusdVal / xrp).toFixed(4)),
+          xrpSize: Number(xrp.toFixed(2)),
+          rlusdTotal: Number(rlusdVal.toFixed(2)),
+        };
+      };
+
+      const parseBid = (o: {
+        TakerGets?: string | { value?: string };
+        TakerPays?: string | { value?: string };
+      }) => {
+        const rlusdVal =
+          typeof o.TakerGets === 'object' && o.TakerGets ? Number(o.TakerGets.value || 0) : 0;
+        const xrpDrops = typeof o.TakerPays === 'string' ? Number(o.TakerPays) : 0;
+        const xrp = xrpDrops / 1_000_000;
+        if (xrp <= 0 || rlusdVal <= 0) return null;
+        return {
+          priceUsd: Number((rlusdVal / xrp).toFixed(4)),
+          xrpSize: Number(xrp.toFixed(2)),
+          rlusdTotal: Number(rlusdVal.toFixed(2)),
+        };
+      };
+
+      const asks = (asksRaw?.result?.offers ?? [])
+        .map(parseAsk)
+        .filter((x): x is NonNullable<typeof x> => Boolean(x))
+        .filter((x) => x.priceUsd > 0.05 && x.priceUsd < 50)
+        .sort((a, b) => a.priceUsd - b.priceUsd)
+        .slice(0, 4);
+
+      const bids = (bidsRaw?.result?.offers ?? [])
+        .map(parseBid)
+        .filter((x): x is NonNullable<typeof x> => Boolean(x))
+        .filter((x) => x.priceUsd > 0.05 && x.priceUsd < 50)
+        .sort((a, b) => b.priceUsd - a.priceUsd)
+        .slice(0, 4);
+
+      res.json({
+        pair: 'XRP/RLUSD',
+        issuer: XRPL_RLUSD_ISSUER,
+        ledgerIndex: asksRaw?.result?.ledger_current_index ?? bidsRaw?.result?.ledger_current_index ?? null,
+        bestBid: bids[0]?.priceUsd ?? null,
+        bestAsk: asks[0]?.priceUsd ?? null,
+        asks,
+        bids,
+        fetchedAt: new Date().toISOString(),
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'XRPL orderbook fetch failed.';
+      res.status(502).json({ error: message });
+    }
+  });
+
+  app.post('/api/xrpl-account', async (req, res) => {
+    const account = String(req.body?.account ?? '').trim();
+    if (!/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(account)) {
+      res.status(400).json({ error: 'Enter a valid XRPL r... public address.' });
+      return;
+    }
+
+    try {
+      const [acctJson, linesJson, offersJson] = (await Promise.all([
+        callXrplRpc('account_info', { account, strict: true, ledger_index: 'current' }),
+        callXrplRpc('account_lines', { account, ledger_index: 'current' }),
+        callXrplRpc('account_offers', { account, ledger_index: 'current' }),
+      ])) as Array<{
+        result?: {
+          error?: string;
+          account_data?: { Balance?: string; OwnerCount?: number };
+          lines?: Array<{ currency?: string; account?: string; balance?: string }>;
+          offers?: Array<{
+            seq?: number;
+            taker_gets?: string | { currency?: string; value?: string };
+            taker_pays?: string | { currency?: string; value?: string };
+          }>;
+        };
+      }>;
+
+      if (acctJson?.result?.error === 'actNotFound') {
+        res.json({
+          activated: false,
+          account,
+          totalXrp: 0,
+          reservedXrp: 1,
+          spendableXrp: 0,
+          hasRlusdTrustline: false,
+          rlusdBalance: 0,
+          openOffers: [],
+        });
+        return;
+      }
+
+      const drops = Number(acctJson?.result?.account_data?.Balance ?? 0);
+      const ownerCount = Number(acctJson?.result?.account_data?.OwnerCount ?? 0);
+      const totalXrp = Number((drops / 1_000_000).toFixed(4));
+      const reservedXrp = Number(Math.min(totalXrp, 1 + ownerCount * 0.2).toFixed(4));
+      const spendableXrp = Number(Math.max(0, totalXrp - reservedXrp).toFixed(4));
+
+      let hasRlusdTrustline = false;
+      let rlusdBalance = 0;
+      for (const ln of linesJson?.result?.lines ?? []) {
+        const cur = String(ln.currency || '');
+        const bal = Number(ln.balance || 0);
+        if (cur === XRPL_RLUSD_HEX) {
+          hasRlusdTrustline = true;
+          rlusdBalance += Math.max(0, bal);
+        } else if (cur === 'USD' || cur === 'USDC') {
+          rlusdBalance += Math.max(0, bal);
+        }
+      }
+
+      const openOffers: Array<{
+        seq: number;
+        side: 'BUY_XRP' | 'SELL_XRP';
+        xrpAmount: number;
+        usdAmount: number;
+        limitPriceUsd: number;
+      }> = [];
+
+      for (const off of offersJson?.result?.offers ?? []) {
+        const seq = Number(off.seq || 0);
+        if (typeof off.taker_gets === 'string' && typeof off.taker_pays === 'object' && off.taker_pays) {
+          const xrpAmt = Number(off.taker_gets) / 1_000_000;
+          const usdAmt = Number(off.taker_pays.value || 0);
+          if (xrpAmt > 0 && usdAmt > 0) {
+            openOffers.push({
+              seq,
+              side: 'SELL_XRP',
+              xrpAmount: Number(xrpAmt.toFixed(4)),
+              usdAmount: Number(usdAmt.toFixed(4)),
+              limitPriceUsd: Number((usdAmt / xrpAmt).toFixed(4)),
+            });
+          }
+        } else if (
+          typeof off.taker_gets === 'object' &&
+          off.taker_gets &&
+          typeof off.taker_pays === 'string'
+        ) {
+          const usdAmt = Number(off.taker_gets.value || 0);
+          const xrpAmt = Number(off.taker_pays) / 1_000_000;
+          if (xrpAmt > 0 && usdAmt > 0) {
+            openOffers.push({
+              seq,
+              side: 'BUY_XRP',
+              xrpAmount: Number(xrpAmt.toFixed(4)),
+              usdAmount: Number(usdAmt.toFixed(4)),
+              limitPriceUsd: Number((usdAmt / xrpAmt).toFixed(4)),
+            });
+          }
+        }
+      }
+
+      res.json({
+        activated: true,
+        account,
+        totalXrp,
+        reservedXrp,
+        spendableXrp,
+        hasRlusdTrustline,
+        rlusdBalance: Number(rlusdBalance.toFixed(4)),
+        openOffers,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'XRPL account lookup failed.';
+      res.status(502).json({ error: message });
+    }
+  });
+
+  // Default Google Drive Asset IDs from the shared Symphony Markets Academy folder & Video Media subfolder
   // Folder: https://drive.google.com/drive/folders/1hPDCoTd5K4163HsDW7_LtQXXB8VvBkv3
   // Video Media Subfolder: https://drive.google.com/drive/folders/1UbpPHFwQ9WSu7X1-O8qmNk7UCyroS5og
   const DEFAULT_DRIVE_VIDEO_ID = '1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw'; // Symphony_Markets__The_No-Scam_Sandbox.mp4
   const ANTIDOTE_DRIVE_VIDEO_ID = '1vgJ0QiwY1aVtJwr-iPtKLdxTdcVqTTnr'; // Symphony_Markets__The_Antidote_to_Predation.mp4
   const BLUEPRINT_DRIVE_VIDEO_ID = '1RNomMOr0irdvq0nsbm8nQh2fhooCPoBp'; // Symphony_Markets__The__5_Blueprint.mp4
+  const RHYTHM_OF_CROWD_DRIVE_VIDEO_ID = '1kCLZNmmcUAXP5XuRcAWfWnkWBXTs3YD5'; // The_Rhythm_of_the_Crowd.mp4 (Fibonacci Part 1)
+  const SURVIVAL_FINANCE_DRIVE_VIDEO_ID = '1pCtFdKXo6Fhd88QnSCoH95qlRTXAf5Dj'; // Survival_Finance_Traditional_Markets.mp4 (5:07)
+  const ORGANIC_RHYTHM_DRIVE_VIDEO_ID = '1s-wUCvu1e3p3Rp93k1mzgi1TYHBuHw3i'; // The_Organic_Rhythm_of_Trading.mp4 (7:03)
+  const ANTIDOTE_LOOSE_CYCLES_DRIVE_VIDEO_ID = '1RCuSGFs76KSTkdQBPDXrSN5ND8y_ZBBi'; // The_Antidote_to_Loose_Cycles.mp4 (6:14)
   // Newly added 10-second Promo Series streamed via /api/drive-video/:fileId:
   // - 1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7 (Promo 1: KSBC Gold RWA & Open Math Proof)
   // - 1IANyjDSGVeC_7ksdot8cmAuNcZrSO8nO (Promo 2: 11-Module Day-Trader-Skill Sandbox)
@@ -557,6 +791,14 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
             'aistudio',
             'Symphony_Markets__The__5_Blueprint_781e68ab.mp4'
           )
+        : rawId === RHYTHM_OF_CROWD_DRIVE_VIDEO_ID
+        ? path.join(__dirname, 'public', 'assets', 'The_Rhythm_of_the_Crowd.mp4')
+        : rawId === SURVIVAL_FINANCE_DRIVE_VIDEO_ID
+        ? path.join(__dirname, 'public', 'assets', 'Survival_Finance_Traditional_Markets.mp4')
+        : rawId === ORGANIC_RHYTHM_DRIVE_VIDEO_ID
+        ? path.join(__dirname, 'public', 'assets', 'The_Organic_Rhythm_of_Trading.mp4')
+        : rawId === ANTIDOTE_LOOSE_CYCLES_DRIVE_VIDEO_ID
+        ? path.join(__dirname, 'public', 'assets', 'The_Antidote_to_Loose_Cycles.mp4')
         : null;
 
     if (localVideoCandidate && fs.existsSync(localVideoCandidate)) {
@@ -604,7 +846,61 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
       return;
     }
 
-    // Upstream Google Drive streaming with strict 2 MB Range clamping so responses never exceed Cloud Run's 32 MB limit
+    await streamGoogleDriveVideoChunk(rawId, req, res);
+  });
+
+  app.get('/api/drive-pdf', async (req, res) => {
+    const isDownload = req.query.download === '1';
+    const docKey = String(req.query.doc || 'manifesto').trim();
+    const docMeta = DRIVE_DOCS_MAP[docKey] ?? DRIVE_DOCS_MAP.manifesto;
+
+    try {
+      const fs = await import('fs');
+      const localDocPath = path.join(__dirname, 'public', 'assets', docMeta.localFile);
+      let fileBuffer: Buffer | null = null;
+
+      if (fs.existsSync(localDocPath)) {
+        fileBuffer = fs.readFileSync(localDocPath);
+      } else {
+        const driveUrl = `https://drive.google.com/uc?export=download&id=${docMeta.driveId || DEFAULT_DRIVE_PDF_ID}`;
+        const upstream = await fetch(driveUrl, { redirect: 'follow' });
+        if (!upstream.ok) {
+          throw new Error(`Google Drive returned status ${upstream.status}`);
+        }
+        const arrayBuf = await upstream.arrayBuffer();
+        fileBuffer = Buffer.from(arrayBuf);
+      }
+
+      res.setHeader('Content-Type', docMeta.mimeType);
+      res.setHeader('Content-Length', String(fileBuffer.length));
+      res.setHeader(
+        'Content-Disposition',
+        `${isDownload ? 'attachment' : 'inline'}; filename="${docMeta.downloadName}"`
+      );
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.send(fileBuffer);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to retrieve document from Google Drive.';
+      res.status(502).json({ error: message });
+    }
+  });
+
+  const ASSET_VIDEO_FILENAME_TO_DRIVE_ID: Record<string, string> = {
+    'The_Organic_Rhythm_of_Trading.mp4': ORGANIC_RHYTHM_DRIVE_VIDEO_ID,
+    'The_Antidote_to_Loose_Cycles.mp4': ANTIDOTE_LOOSE_CYCLES_DRIVE_VIDEO_ID,
+    'Survival_Finance_Traditional_Markets.mp4': SURVIVAL_FINANCE_DRIVE_VIDEO_ID,
+    'The_Rhythm_of_the_Crowd.mp4': RHYTHM_OF_CROWD_DRIVE_VIDEO_ID,
+    'symphony-welcome.mp4': DEFAULT_DRIVE_VIDEO_ID,
+    'symphony-antidote.mp4': ANTIDOTE_DRIVE_VIDEO_ID,
+    'Symphony_Markets__The__5_Blueprint_781e68ab.mp4': BLUEPRINT_DRIVE_VIDEO_ID,
+  };
+
+  async function streamGoogleDriveVideoChunk(
+    rawId: string,
+    req: express.Request,
+    res: express.Response
+  ) {
     const abortController = new AbortController();
     req.on('close', () => {
       if (!res.writableEnded) {
@@ -613,7 +909,9 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
     });
 
     try {
-      const driveUrl = `https://drive.google.com/uc?export=download&id=${encodeURIComponent(rawId)}`;
+      const driveUrl = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(
+        rawId
+      )}&export=download&confirm=t`;
       const rangeHeader = req.headers.range;
       let start = 0;
       let end = MAX_VIDEO_CHUNK_BYTES - 1;
@@ -655,7 +953,7 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
       }
       res.setHeader('Cache-Control', 'public, max-age=3600');
 
-      if (!upstream.body) {
+      if (req.method === 'HEAD' || !upstream.body) {
         res.end();
         return;
       }
@@ -674,46 +972,9 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
         res.end();
       }
     }
-  });
+  }
 
-  app.get('/api/drive-pdf', async (req, res) => {
-    const isDownload = req.query.download === '1';
-    const docKey = String(req.query.doc || 'manifesto').trim();
-    const docMeta = DRIVE_DOCS_MAP[docKey] ?? DRIVE_DOCS_MAP.manifesto;
-
-    try {
-      const fs = await import('fs');
-      const localDocPath = path.join(__dirname, 'public', 'assets', docMeta.localFile);
-      let fileBuffer: Buffer | null = null;
-
-      if (fs.existsSync(localDocPath)) {
-        fileBuffer = fs.readFileSync(localDocPath);
-      } else {
-        const driveUrl = `https://drive.google.com/uc?export=download&id=${docMeta.driveId || DEFAULT_DRIVE_PDF_ID}`;
-        const upstream = await fetch(driveUrl, { redirect: 'follow' });
-        if (!upstream.ok) {
-          throw new Error(`Google Drive returned status ${upstream.status}`);
-        }
-        const arrayBuf = await upstream.arrayBuffer();
-        fileBuffer = Buffer.from(arrayBuf);
-      }
-
-      res.setHeader('Content-Type', docMeta.mimeType);
-      res.setHeader('Content-Length', String(fileBuffer.length));
-      res.setHeader(
-        'Content-Disposition',
-        `${isDownload ? 'attachment' : 'inline'}; filename="${docMeta.downloadName}"`
-      );
-      res.setHeader('Cache-Control', 'public, max-age=3600');
-      res.send(fileBuffer);
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to retrieve document from Google Drive.';
-      res.status(502).json({ error: message });
-    }
-  });
-
-  // Serve local /assets/*.mp4 and /assets/*.m4a media in 2 MB Range chunks so 30MB-45MB files never hit Cloud Run's 32 MB response cap
+  // Serve local /assets/*.mp4 and /assets/*.m4a media in 2 MB Range chunks (or stream Drive-backed HD MP4s without storing >40MB binaries in GitHub)
   app.get(/^\/assets\/.+\.(mp4|m4a|mp3|ogg|webm)$/i, async (req, res, next) => {
     try {
       const fs = await import('fs');
@@ -726,6 +987,12 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
         if (distCandidate.startsWith(distRoot + path.sep) && fs.existsSync(distCandidate)) {
           candidatePath = distCandidate;
         } else {
+          const baseFile = path.basename(decodedPath);
+          const mappedDriveId = ASSET_VIDEO_FILENAME_TO_DRIVE_ID[baseFile];
+          if (mappedDriveId) {
+            await streamGoogleDriveVideoChunk(mappedDriveId, req, res);
+            return;
+          }
           next();
           return;
         }
@@ -847,7 +1114,7 @@ Write a crystal-clear, encouraging Masterclass Explanation with concise, well-ba
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Symphony Markets server listening on http://0.0.0.0:${PORT}`);
+    console.log(`Symphony Markets Academy server listening on http://0.0.0.0:${PORT}`);
   });
 }
 

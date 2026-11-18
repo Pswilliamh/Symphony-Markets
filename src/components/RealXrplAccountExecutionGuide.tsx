@@ -4,11 +4,26 @@ import {
   ArrowRight,
   CheckCircle2,
   Copy,
+  Download,
   ExternalLink,
+  Layers,
+  ListOrdered,
   RefreshCw,
   ShieldCheck,
   Wallet,
 } from 'lucide-react';
+
+export interface XrplImportableTradeSet {
+  setNumber: number;
+  setupName: string;
+  patternBadge: string;
+  buyPrice: number;
+  stopLossPrice: number;
+  sellPrice: number;
+  quantity: number;
+  rMultiple: number;
+  outcome: 'WIN_TARGET_HIT' | 'CONTROLLED_1R_STOP';
+}
 
 interface RealXrplAccountExecutionGuideProps {
   walletAddress: string;
@@ -20,6 +35,8 @@ interface RealXrplAccountExecutionGuideProps {
   reservedXrp: number;
   liveXrpPrice: number;
   selectedSetNumber: number;
+  onSelectSetNumber?: (setNum: number) => void;
+  allTenSets?: XrplImportableTradeSet[];
   setupName: string;
   recommendedBuyPrice: number;
   recommendedStopPrice: number;
@@ -29,6 +46,7 @@ interface RealXrplAccountExecutionGuideProps {
 }
 
 type RealTradeStrategyMode = 'sell_target_first' | 'split_half_rlusd' | 'buy_pullback_rlusd';
+type TenSetImportExecutionStyle = 'one_by_one_sequential' | 'all_ten_micro_grid';
 
 interface DecodedXrplOffer {
   seq: number;
@@ -123,6 +141,8 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
   reservedXrp,
   liveXrpPrice,
   selectedSetNumber,
+  onSelectSetNumber,
+  allTenSets = [],
   setupName,
   recommendedBuyPrice,
   recommendedStopPrice,
@@ -154,6 +174,9 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
   });
 
   const [isSyncingXrpl, setIsSyncingXrpl] = useState<boolean>(false);
+  const [executionStyle, setExecutionStyle] =
+    useState<TenSetImportExecutionStyle>('one_by_one_sequential');
+  const [completedRealSetNumbers, setCompletedRealSetNumbers] = useState<number[]>([]);
   const [strategyMode, setStrategyMode] = useState<RealTradeStrategyMode>('sell_target_first');
   const [customXrpSize, setCustomXrpSize] = useState<number>(() => {
     const safeMax = Math.max(0.5, Number((effectiveSpendable - 0.5).toFixed(2)));
@@ -172,11 +195,20 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
     ? readiness.exactReservedXrp
     : effectiveReserved;
 
-  // Keep 0.50 XRP cushion for RLUSD TrustLine (0.20 XRP) + Open DEX Offer (0.20 XRP) + network fee drops
+  // Keep 0.50 XRP cushion for 1-by-1 mode (0.20 TrustLine + 0.20 1 Open Offer + 0.10 fee cushion)
   const reserveCushionXrp = readiness.hasRlusdTrustline ? 0.3 : 0.5;
   const maxSafeDexXrp = useMemo(
     () => Number(Math.max(0, activeSpendableXrp - reserveCushionXrp).toFixed(2)),
     [activeSpendableXrp, reserveCushionXrp]
+  );
+
+  // For "All 10 Sets Micro-Grid" mode: 10 open offers lock 10 * 0.20 = 2.00 XRP owner reserve + 0.30 cushion = 2.30 XRP
+  const allTenOffersReserveLock = Number((10 * 0.2 + (readiness.hasRlusdTrustline ? 0.1 : 0.3)).toFixed(2));
+  const allTenTradablePoolXrp = Number(
+    Math.max(0, activeSpendableXrp - allTenOffersReserveLock).toFixed(2)
+  );
+  const perSetMicroSliceXrp = Number(
+    Math.max(0.25, allTenTradablePoolXrp / 10).toFixed(2)
   );
 
   // Keep customXrpSize clamped within maxSafeDexXrp when wallet updates
@@ -289,9 +321,6 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
       }
 
       // Decode open XRPL DEX offers
-      // Remember XRPL OfferCreate convention:
-      // - taker_gets = what the counterparty gets = what YOU are selling/giving up
-      // - taker_pays = what the counterparty pays = what YOU want to receive
       const rawOffers: Array<{
         seq?: number;
         taker_gets?: string | { currency?: string; value?: string };
@@ -302,7 +331,6 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
       for (const off of rawOffers) {
         const seq = Number(off.seq || 0);
         if (typeof off.taker_gets === 'string' && typeof off.taker_pays === 'object' && off.taker_pays) {
-          // User gives XRP (drops), receives Issued Currency (e.g. RLUSD) -> SELL XRP
           const xrpAmt = Number(off.taker_gets) / 1_000_000;
           const usdAmt = Number(off.taker_pays.value || 0);
           const curLabel = decodeCurrencyName(String(off.taker_pays.currency || 'USD'));
@@ -321,7 +349,6 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           off.taker_gets &&
           typeof off.taker_pays === 'string'
         ) {
-          // User gives Issued Currency (e.g. RLUSD), receives XRP (drops) -> BUY XRP
           const usdAmt = Number(off.taker_gets.value || 0);
           const xrpAmt = Number(off.taker_pays) / 1_000_000;
           const curLabel = decodeCurrencyName(String(off.taker_gets.currency || 'USD'));
@@ -338,7 +365,6 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
         }
       }
 
-      // Inspect recent TrustSet / OfferCreate / OfferCancel transactions
       const rawTxs: Array<{
         tx?: { TransactionType?: string; hash?: string; ledger_index?: number };
         tx_json?: { TransactionType?: string; hash?: string; ledger_index?: number };
@@ -404,19 +430,113 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
     return () => window.clearInterval(timer);
   }, [walletAddress, checkLiveXrplAccount]);
 
-  // Compute exact order ticket math for the chosen strategy mode & XRP size
+  // Build 10-set list (fallback if parent hasn't passed allTenSets)
+  const tenSetsList: XrplImportableTradeSet[] = useMemo(() => {
+    if (allTenSets && allTenSets.length > 0) {
+      return allTenSets;
+    }
+    return Array.from({ length: 10 }, (_, idx) => {
+      const num = idx + 1;
+      const offset = (idx - 2) * 0.0025;
+      return {
+        setNumber: num,
+        setupName: num === selectedSetNumber ? setupName : `Set #0${num} Technical Confluence`,
+        patternBadge: `Set #${num < 10 ? `0${num}` : num}`,
+        buyPrice: Number(Math.max(0.05, recommendedBuyPrice + offset).toFixed(4)),
+        stopLossPrice: Number(Math.max(0.04, recommendedStopPrice + offset).toFixed(4)),
+        sellPrice: Number(Math.max(0.06, recommendedSellPrice + offset).toFixed(4)),
+        quantity: customXrpSize,
+        rMultiple: num === 3 || num === 7 ? -1.0 : 2.0,
+        outcome: num === 3 || num === 7 ? 'CONTROLLED_1R_STOP' : 'WIN_TARGET_HIT',
+      };
+    });
+  }, [
+    allTenSets,
+    selectedSetNumber,
+    setupName,
+    recommendedBuyPrice,
+    recommendedStopPrice,
+    recommendedSellPrice,
+    customXrpSize,
+  ]);
+
+  // Build the 10-Set XRPL OfferCreate JSON bundle for either Sequential or Micro-Grid import
+  const tenSetXrplBundle = useMemo(() => {
+    const accountField = walletAddress.trim().startsWith('r')
+      ? { Account: walletAddress.trim() }
+      : {};
+    return tenSetsList.map((s) => {
+      const qtyForThisMode =
+        executionStyle === 'all_ten_micro_grid'
+          ? perSetMicroSliceXrp
+          : Math.max(0.5, Number(customXrpSize.toFixed(2)));
+
+      if (strategyMode === 'buy_pullback_rlusd') {
+        const rlusdCost = Number((qtyForThisMode * s.buyPrice).toFixed(4));
+        return {
+          setNumber: s.setNumber,
+          setupName: s.setupName,
+          executionStyle,
+          side: 'BUY_XRP_LIMIT',
+          xrpQuantity: qtyForThisMode,
+          limitPriceRlusd: Number(s.buyPrice.toFixed(4)),
+          safetyStopAlertUsd: Number(s.stopLossPrice.toFixed(4)),
+          targetSellLimitRlusd: Number(s.sellPrice.toFixed(4)),
+          xrplOfferCreateTx: {
+            TransactionType: 'OfferCreate',
+            ...accountField,
+            TakerGets: {
+              currency: RLUSD_HEX,
+              issuer: RLUSD_ISSUER,
+              value: rlusdCost.toFixed(4),
+            },
+            TakerPays: String(Math.round(qtyForThisMode * 1_000_000)),
+          },
+        };
+      }
+
+      // Default when holding XRP: Sell XRP at Target Sell Limit (or Re-Buy on Pullback)
+      const rlusdProceeds = Number((qtyForThisMode * s.sellPrice).toFixed(4));
+      return {
+        setNumber: s.setNumber,
+        setupName: s.setupName,
+        executionStyle,
+        side: 'SELL_XRP_LIMIT',
+        xrpQuantity: qtyForThisMode,
+        limitPriceRlusd: Number(s.sellPrice.toFixed(4)),
+        pullbackRebuyPriceRlusd: Number(s.buyPrice.toFixed(4)),
+        safetyStopAlertUsd: Number(s.stopLossPrice.toFixed(4)),
+        xrplOfferCreateTx: {
+          TransactionType: 'OfferCreate',
+          ...accountField,
+          TakerGets: String(Math.round(qtyForThisMode * 1_000_000)),
+          TakerPays: {
+            currency: RLUSD_HEX,
+            issuer: RLUSD_ISSUER,
+            value: rlusdProceeds.toFixed(4),
+          },
+        },
+      };
+    });
+  }, [tenSetsList, walletAddress, executionStyle, perSetMicroSliceXrp, customXrpSize, strategyMode]);
+
+  // Compute exact order ticket math for the currently selected Set
   const activeOrderTicket = useMemo(() => {
-    const safeXrp = Math.max(0.5, Number(customXrpSize.toFixed(2)));
+    const baseQty =
+      executionStyle === 'all_ten_micro_grid'
+        ? perSetMicroSliceXrp
+        : Math.max(0.5, Number(customXrpSize.toFixed(2)));
+    const safeXrp = Number(baseQty.toFixed(2));
     const targetSell = Number(recommendedSellPrice.toFixed(4));
     const pullbackBuy = Number(recommendedBuyPrice.toFixed(4));
     const spotLimit = Number(effectivePrice.toFixed(4));
 
     if (strategyMode === 'sell_target_first') {
       const receiveRlusd = Number((safeXrp * targetSell).toFixed(4));
-      const rebuyXrpAtDip = pullbackBuy > 0 ? Number((receiveRlusd / pullbackBuy).toFixed(4)) : safeXrp;
+      const rebuyXrpAtDip =
+        pullbackBuy > 0 ? Number((receiveRlusd / pullbackBuy).toFixed(4)) : safeXrp;
       const gainedXrp = Number(Math.max(0, rebuyXrpAtDip - safeXrp).toFixed(4));
 
-      // XRPL OfferCreate: User SELLS XRP (TakerGets = drops string) for RLUSD (TakerPays = RLUSD object)
       const xrplOfferTx: Record<string, unknown> = {
         TransactionType: 'OfferCreate',
         ...(walletAddress.trim().startsWith('r') ? { Account: walletAddress.trim() } : {}),
@@ -434,14 +554,16 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
         xrpQty: safeXrp,
         limitPrice: targetSell,
         totalRlusd: receiveRlusd,
-        headline: `Leg 1: Sell ${safeXrp.toFixed(2)} XRP @ $${targetSell.toFixed(4)} → Receive $${receiveRlusd.toFixed(4)} RLUSD`,
+        headline: `Set #${selectedSetNumber < 10 ? `0${selectedSetNumber}` : selectedSetNumber} Leg 1: Sell ${safeXrp.toFixed(2)} XRP @ $${targetSell.toFixed(4)} → Receive $${receiveRlusd.toFixed(4)} RLUSD`,
         followUpNote: `Once XRP reaches $${targetSell.toFixed(4)} and fills into $${receiveRlusd.toFixed(2)} RLUSD, place Leg 2 (Buy XRP Limit @ $${pullbackBuy.toFixed(4)}) to buy back ~${rebuyXrpAtDip.toFixed(2)} XRP (+${gainedXrp.toFixed(2)} extra XRP added to your wallet!).`,
         xrplOfferTx,
       };
     }
 
     if (strategyMode === 'split_half_rlusd') {
-      const halfXrp = Number(Math.max(0.5, Math.min(maxSafeDexXrp, activeSpendableXrp * 0.48)).toFixed(2));
+      const halfXrp = Number(
+        Math.max(0.5, Math.min(maxSafeDexXrp, activeSpendableXrp * 0.48)).toFixed(2)
+      );
       const receiveRlusd = Number((halfXrp * spotLimit).toFixed(4));
       const xrplOfferTx: Record<string, unknown> = {
         TransactionType: 'OfferCreate',
@@ -467,12 +589,15 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
     }
 
     // Mode C: Buy XRP on Pullback using existing RLUSD
-    const spendableRlusd = readiness.rlusdBalance > 0.5 ? readiness.rlusdBalance : Number((safeXrp * pullbackBuy).toFixed(4));
-    const buyXrpQty = pullbackBuy > 0 ? Number((spendableRlusd / pullbackBuy).toFixed(4)) : safeXrp;
+    const spendableRlusd =
+      readiness.rlusdBalance > 0.5 && executionStyle === 'one_by_one_sequential'
+        ? readiness.rlusdBalance
+        : Number((safeXrp * pullbackBuy).toFixed(4));
+    const buyXrpQty =
+      pullbackBuy > 0 ? Number((spendableRlusd / pullbackBuy).toFixed(4)) : safeXrp;
     const xrplOfferTx: Record<string, unknown> = {
       TransactionType: 'OfferCreate',
       ...(walletAddress.trim().startsWith('r') ? { Account: walletAddress.trim() } : {}),
-      // User BUYS XRP: User gives RLUSD (TakerGets = RLUSD object), receives XRP (TakerPays = drops string)
       TakerGets: {
         currency: RLUSD_HEX,
         issuer: RLUSD_ISSUER,
@@ -487,20 +612,22 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
       xrpQty: buyXrpQty,
       limitPrice: pullbackBuy,
       totalRlusd: Number(spendableRlusd.toFixed(4)),
-      headline: `Buy Pullback: Buy ${buyXrpQty.toFixed(2)} XRP @ $${pullbackBuy.toFixed(4)} using $${spendableRlusd.toFixed(2)} RLUSD`,
+      headline: `Set #${selectedSetNumber < 10 ? `0${selectedSetNumber}` : selectedSetNumber} Buy Pullback: Buy ${buyXrpQty.toFixed(2)} XRP @ $${pullbackBuy.toFixed(4)} using $${spendableRlusd.toFixed(2)} RLUSD`,
       followUpNote: `Requires $${spendableRlusd.toFixed(2)} RLUSD in your wallet. Once filled at $${pullbackBuy.toFixed(4)}, place your Target Sell Limit at $${targetSell.toFixed(4)}!`,
       xrplOfferTx,
     };
   }, [
+    executionStyle,
+    perSetMicroSliceXrp,
     customXrpSize,
     recommendedSellPrice,
     recommendedBuyPrice,
     effectivePrice,
     strategyMode,
     walletAddress,
+    selectedSetNumber,
     maxSafeDexXrp,
     activeSpendableXrp,
-    selectedSetNumber,
     readiness.rlusdBalance,
   ]);
 
@@ -511,6 +638,59 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
       window.setTimeout(() => setCopiedField(null), 2200);
     } catch {
       setCopiedField(null);
+    }
+  };
+
+  const handleDownloadTenSetFile = (format: 'json' | 'csv') => {
+    try {
+      let content = '';
+      let mime = 'application/json';
+      let filename = 'symphony-10set-xrpl-offers.json';
+
+      if (format === 'json') {
+        content = JSON.stringify(
+          {
+            exportedAt: new Date().toISOString(),
+            network: 'XRPL_MAINNET',
+            pair: 'XRP/RLUSD',
+            rlusdIssuer: RLUSD_ISSUER,
+            executionStyle,
+            walletAddress: walletAddress.trim() || 'r_YOUR_XAMAN_OR_TRUST_WALLET_ADDRESS',
+            sets: tenSetXrplBundle,
+          },
+          null,
+          2
+        );
+      } else {
+        mime = 'text/csv';
+        filename = 'symphony-10set-xrpl-ladder.csv';
+        const header =
+          'Set,SetupName,ExecutionMode,Side,XRP_Qty,BuyPullback_RLUSD,SafetyStop_USD,TargetSell_RLUSD';
+        const rows = tenSetsList.map((s) => {
+          const qty =
+            executionStyle === 'all_ten_micro_grid'
+              ? perSetMicroSliceXrp.toFixed(2)
+              : customXrpSize.toFixed(2);
+          return `${s.setNumber},"${s.setupName}",${executionStyle},${
+            strategyMode === 'buy_pullback_rlusd' ? 'BUY_XRP' : 'SELL_XRP'
+          },${qty},${s.buyPrice.toFixed(4)},${s.stopLossPrice.toFixed(4)},${s.sellPrice.toFixed(4)}`;
+        });
+        content = [header, ...rows].join('\n');
+      }
+
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setCopiedField(`dl_${format}`);
+      window.setTimeout(() => setCopiedField(null), 2200);
+    } catch {
+      // Ignore download failure
     }
   };
 
@@ -593,6 +773,47 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
     }
   };
 
+  const handleSignAllTenMicroGridInCrossmark = async () => {
+    const crossmark = window.xrpl?.crossmark;
+    if (!crossmark?.signAndSubmitAndWait) {
+      setCrossmarkStatus(
+        'Crossmark desktop extension not detected. To import on phone or Sologenic, click "Load Set" on any row below or use One-by-One Sequential Mode!'
+      );
+      return;
+    }
+    setIsSigningCrossmark(true);
+    try {
+      let signerAddr = walletAddress.trim();
+      if (!signerAddr.startsWith('r') && crossmark.signInAndWait) {
+        const signInRes = await crossmark.signInAndWait();
+        signerAddr = signInRes?.response?.data?.address || '';
+        if (signerAddr && onChangeWalletAddress) {
+          onChangeWalletAddress(signerAddr);
+        }
+      }
+      let signedCount = 0;
+      for (const item of tenSetXrplBundle) {
+        setCrossmarkStatus(
+          `Signing Micro-Grid Set #${item.setNumber}/10 (${item.xrpQuantity.toFixed(2)} XRP @ $${item.limitPriceRlusd.toFixed(4)}) in Crossmark...`
+        );
+        const txPayload: Record<string, unknown> = {
+          ...item.xrplOfferCreateTx,
+          ...(signerAddr.startsWith('r') ? { Account: signerAddr } : {}),
+        };
+        await crossmark.signAndSubmitAndWait(txPayload);
+        signedCount += 1;
+      }
+      setCrossmarkStatus(
+        `✓ Broadcast ${signedCount}/10 Micro-Grid OfferCreate transactions to XRPL Mainnet! Refreshing live orderbook...`
+      );
+      void checkLiveXrplAccount();
+    } catch {
+      setCrossmarkStatus('Batch signing stopped or cancelled by user.');
+    } finally {
+      setIsSigningCrossmark(false);
+    }
+  };
+
   const setNumFormatted = selectedSetNumber < 10 ? `0${selectedSetNumber}` : `${selectedSetNumber}`;
   const startUsdDisplay =
     rehearsalStartUsd !== undefined
@@ -621,7 +842,7 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
             How to Trade Your Real {activeSpendableXrp.toFixed(2)} XRP (${startUsdDisplay.toFixed(2)}) Account On-Chain
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            Your 10-Set rehearsal proved the 1:2+ math (${startUsdDisplay.toFixed(2)} → ${endUsdDisplay.toFixed(2)}) in 15 seconds without touching your wallet because Symphony Markets never holds your secret recovery phrase. Follow the <strong>4 live steps below</strong> to place a real on-chain trade on the <strong>XRP Ledger DEX (`XRP / RLUSD`)</strong> so fills happen directly inside your own XRP account.
+            Your 10-Set rehearsal proved the 1:2+ math (${startUsdDisplay.toFixed(2)} → ${endUsdDisplay.toFixed(2)}) in 15 seconds without touching your wallet because Symphony Markets Academy never holds your secret recovery phrase. Below, you can <strong>import your 10 sets into the XRPL DEX</strong> and see why running <strong>One-by-One Sequential</strong> vs. <strong>All 10 Micro-Grid</strong> matters for an {activeSpendableXrp.toFixed(2)} XRP wallet.
           </p>
         </div>
 
@@ -634,6 +855,241 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           <RefreshCw className={`w-3.5 h-3.5 ${isSyncingXrpl ? 'animate-spin' : ''}`} />
           <span>{isSyncingXrpl ? 'Checking XRPL...' : 'Sync XRPL Orderbook'}</span>
         </button>
+      </div>
+
+      {/* NEW CLASSROOM COMPARISON & 10-SET XRPL DEX IMPORTER: "Should We Run All 10 or One by One?" */}
+      <div className="rounded-xl border border-sky-300/80 dark:border-sky-500/40 bg-sky-50/40 dark:bg-slate-900/90 p-4 sm:p-5 space-y-4 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1 max-w-2xl">
+            <div className="font-mono font-bold text-sky-700 dark:text-sky-400">
+              CLASSROOM QUESTION · CAN WE IMPORT OUR 10 TRADES INTO XRPL DEX? RUN ALL 10 OR ONE BY ONE?
+            </div>
+            <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+              Yes—You Can Import All 10 Sets! For {activeSpendableXrp.toFixed(2)} XRP, Run Them One-by-One (`Set #01 → #10`) to Compound & Save Reserve
+            </h4>
+          </div>
+
+          {/* Interactive Mode Switcher: One-by-One Sequential vs. All 10 Micro-Grid Batch */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setExecutionStyle('one_by_one_sequential')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                executionStyle === 'one_by_one_sequential'
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <ListOrdered className="w-3.5 h-3.5" />
+              <span>One-by-One Sequential (Recommended)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setExecutionStyle('all_ten_micro_grid')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                executionStyle === 'all_ten_micro_grid'
+                  ? 'bg-sky-600 text-white'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>All 10 Micro-Ladder ({perSetMicroSliceXrp.toFixed(2)} XRP × 10)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Side-by-Side Comparison: Why One-by-One Beats All-10-At-Once on an 8.94 XRP Wallet */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div
+            onClick={() => setExecutionStyle('one_by_one_sequential')}
+            className={`p-3.5 rounded-xl border transition-colors cursor-pointer space-y-1.5 ${
+              executionStyle === 'one_by_one_sequential'
+                ? 'border-emerald-500 bg-white dark:bg-slate-950 shadow-sm'
+                : 'border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/60'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                ✓ Method 1: Run One-by-One (`Set #01 → #02 → ... → #10`)
+              </span>
+              <span className="font-mono text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                Best for {activeSpendableXrp.toFixed(2)} XRP
+              </span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong>1. Reuses & Compounds Your Full Balance:</strong> You only have{' '}
+              <span className="font-mono font-semibold">{activeSpendableXrp.toFixed(2)} XRP</span> once. Set #02 reuses the <em>same</em> XRP plus the profit earned from Set #01—which is how ${startUsdDisplay.toFixed(2)} compounds to ${endUsdDisplay.toFixed(2)}.
+            </p>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong>2. Locks Only 0.20 XRP Owner Reserve:</strong> XRPL temporarily locks{' '}
+              <span className="font-mono">0.20 XRP</span> per open offer. Running <strong>1 set at a time</strong> leaves{' '}
+              <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                {maxSafeDexXrp.toFixed(2)} XRP (94%)
+              </span>{' '}
+              free to work for you!
+            </p>
+          </div>
+
+          <div
+            onClick={() => setExecutionStyle('all_ten_micro_grid')}
+            className={`p-3.5 rounded-xl border transition-colors cursor-pointer space-y-1.5 ${
+              executionStyle === 'all_ten_micro_grid'
+                ? 'border-sky-500 bg-white dark:bg-slate-950 shadow-sm'
+                : 'border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-950/60'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-bold text-sky-700 dark:text-sky-400">
+                Method 2: Import All 10 at Once (`10-Order Micro-Grid`)
+              </span>
+              <span className="font-mono text-[11px] font-semibold text-sky-700 dark:text-sky-300">
+                {perSetMicroSliceXrp.toFixed(2)} XRP / Set
+              </span>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong>1. Why You Must Slice Into 10 Small Pieces:</strong> Placing 10 full{' '}
+              <span className="font-mono">{maxSafeDexXrp.toFixed(2)} XRP</span> orders at the same time would require{' '}
+              <span className="font-mono">{(maxSafeDexXrp * 10).toFixed(1)} XRP</span>. To place all 10 at once, we split your balance into 10 micro-orders of{' '}
+              <span className="font-mono font-semibold">{perSetMicroSliceXrp.toFixed(2)} XRP</span> each.
+            </p>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong>2. 10 Open Offers Lock 2.00 XRP Reserve:</strong> Having 10 open offers on XRPL at the same time temporarily locks{' '}
+              <span className="font-mono font-semibold text-amber-700 dark:text-amber-400">
+                10 × 0.20 = 2.00 XRP
+              </span>{' '}
+              in owner reserve until those offers fill or cancel.
+            </p>
+          </div>
+        </div>
+
+        {/* Interactive 10-Set Queue Importer Strip (Click any Set #01-#10 to load into XRPL Ticket, or Export/Sign All 10) */}
+        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="font-bold text-slate-900 dark:text-white">
+              {executionStyle === 'one_by_one_sequential'
+                ? `10-Set Sequential Queue · Click Any Set to Import into XRPL Ticket (Currently Loaded: Set #${setNumFormatted})`
+                : `10-Set Micro-Grid Batch Importer (${perSetMicroSliceXrp.toFixed(2)} XRP × 10 Sets = ${(perSetMicroSliceXrp * 10).toFixed(2)} XRP Total)`}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {executionStyle === 'one_by_one_sequential' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!completedRealSetNumbers.includes(selectedSetNumber)) {
+                      setCompletedRealSetNumbers((prev) => [...prev, selectedSetNumber]);
+                    }
+                    const nextSet = selectedSetNumber >= 10 ? 1 : selectedSetNumber + 1;
+                    if (onSelectSetNumber) {
+                      onSelectSetNumber(nextSet);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <span>
+                    ✓ Mark Set #{setNumFormatted} Done & Load Set #
+                    {selectedSetNumber >= 10
+                      ? '01'
+                      : selectedSetNumber + 1 < 10
+                      ? `0${selectedSetNumber + 1}`
+                      : selectedSetNumber + 1}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {executionStyle === 'all_ten_micro_grid' && (
+                <button
+                  type="button"
+                  disabled={isSigningCrossmark}
+                  onClick={() => void handleSignAllTenMicroGridInCrossmark()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>
+                    {isSigningCrossmark
+                      ? 'Signing 10 Sets...'
+                      : `Sign All 10 Micro-Sets in Crossmark (${perSetMicroSliceXrp.toFixed(2)} XRP ea)`}
+                  </span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() =>
+                  void handleCopyText(
+                    'all10_xrpl_json',
+                    JSON.stringify(tenSetXrplBundle, null, 2)
+                  )
+                }
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Copy className="w-3 h-3" />
+                <span>
+                  {copiedField === 'all10_xrpl_json'
+                    ? '10-Set JSON Copied ✓'
+                    : 'Copy 10-Set XRPL JSON'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDownloadTenSetFile('json')}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Download className="w-3 h-3" />
+                <span>{copiedField === 'dl_json' ? 'Downloaded ✓' : 'Export JSON'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDownloadTenSetFile('csv')}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Download className="w-3 h-3" />
+                <span>{copiedField === 'dl_csv' ? 'Downloaded ✓' : 'Export CSV'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 10 Interactive Set Queue Buttons */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1.5 font-mono tabular-nums">
+            {tenSetsList.map((s) => {
+              const isSelected = s.setNumber === selectedSetNumber;
+              const isDone = completedRealSetNumbers.includes(s.setNumber);
+              const lbl = s.setNumber < 10 ? `0${s.setNumber}` : `${s.setNumber}`;
+              return (
+                <button
+                  key={s.setNumber}
+                  type="button"
+                  onClick={() => {
+                    if (onSelectSetNumber) {
+                      onSelectSetNumber(s.setNumber);
+                    }
+                  }}
+                  className={`p-2 rounded-lg border text-left transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 text-slate-900 dark:text-white'
+                      : isDone
+                      ? 'border-emerald-300/60 dark:border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[11px] font-bold">
+                    <span>#{lbl}</span>
+                    <span>{isDone ? '✓ Done' : isSelected ? 'Active' : ''}</span>
+                  </div>
+                  <div className="text-[10px] text-sky-700 dark:text-sky-400 truncate">
+                    Buy ${s.buyPrice.toFixed(3)}
+                  </div>
+                  <div className="text-[10px] text-emerald-700 dark:text-emerald-400 truncate">
+                    Sell ${s.sellPrice.toFixed(3)}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Quick Public r... Address Bar if user hasn't pasted their r... address yet */}
@@ -688,10 +1144,15 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
             2. Spendable & Max Safe Trade
           </div>
           <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
-            {activeSpendableXrp.toFixed(2)} XRP Free · {maxSafeDexXrp.toFixed(2)} Safe
+            {activeSpendableXrp.toFixed(2)} XRP Free ·{' '}
+            {executionStyle === 'all_ten_micro_grid'
+              ? `${perSetMicroSliceXrp.toFixed(2)} XRP × 10`
+              : `${maxSafeDexXrp.toFixed(2)} Safe`}
           </div>
           <div className="font-sans text-[11px] text-slate-600 dark:text-slate-400">
-            Keeps {reserveCushionXrp.toFixed(2)} XRP cushion for DEX offer lock
+            {executionStyle === 'all_ten_micro_grid'
+              ? `Reserves ${allTenOffersReserveLock.toFixed(2)} XRP for 10 open offers`
+              : `Keeps ${reserveCushionXrp.toFixed(2)} XRP cushion for 1 active offer`}
           </div>
         </div>
 
@@ -806,7 +1267,7 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
         <div className="lg:col-span-7 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-3.5">
           <div className="space-y-1">
             <div className="font-bold text-slate-900 dark:text-white text-sm">
-              Step 2 · Pick Your First Real Order Side & Safe XRP Size (Set #{setNumFormatted} · {setupName})
+              Step 2 · Pick Your Order Side & Safe XRP Size (Set #{setNumFormatted} · {setupName})
             </div>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
               Because your wallet currently holds <strong>{activeSpendableXrp.toFixed(2)} XRP</strong>
@@ -855,14 +1316,14 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           </div>
 
           {/* Labeled Safe XRP Trade Size Presets + Slider */}
-          {strategyMode !== 'split_half_rlusd' && (
+          {strategyMode !== 'split_half_rlusd' && executionStyle === 'one_by_one_sequential' && (
             <div className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label
                   htmlFor="real-xrp-size-slider"
                   className="font-semibold text-slate-800 dark:text-slate-200"
                 >
-                  Real Trade Size:{' '}
+                  Real Trade Size (One-by-One Mode):{' '}
                   <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
                     {customXrpSize.toFixed(2)} XRP (≈ ${(customXrpSize * effectivePrice).toFixed(2)} USD)
                   </span>
@@ -880,7 +1341,9 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
                     type="button"
                     onClick={() =>
                       setCustomXrpSize(
-                        Number(Math.max(0.5, Math.min(maxSafeDexXrp, activeSpendableXrp * 0.5)).toFixed(2))
+                        Number(
+                          Math.max(0.5, Math.min(maxSafeDexXrp, activeSpendableXrp * 0.5)).toFixed(2)
+                        )
                       )
                     }
                     className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 font-mono text-[11px] font-semibold text-slate-800 dark:text-slate-200 cursor-pointer whitespace-nowrap shrink-0"
@@ -910,6 +1373,17 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
             </div>
           )}
 
+          {executionStyle === 'all_ten_micro_grid' && (
+            <div className="p-3 rounded-lg bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-500/30 text-slate-700 dark:text-slate-300">
+              <strong>10-Set Micro-Ladder Sizing Active:</strong> Each of the 10 sets is sized at{' '}
+              <span className="font-mono font-bold text-sky-700 dark:text-sky-400">
+                {perSetMicroSliceXrp.toFixed(2)} XRP
+              </span>{' '}
+              (totaling <span className="font-mono">{(perSetMicroSliceXrp * 10).toFixed(2)} XRP</span> across 10 orders while keeping{' '}
+              <span className="font-mono">{allTenOffersReserveLock.toFixed(2)} XRP</span> free for the 10 open offer reserves).
+            </div>
+          )}
+
           <div className="text-slate-700 dark:text-slate-300 leading-relaxed">
             <strong className="text-slate-900 dark:text-white">{activeOrderTicket.headline}</strong>
             <p className="mt-1 text-slate-600 dark:text-slate-400">{activeOrderTicket.followUpNote}</p>
@@ -921,7 +1395,7 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
       <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-300/80 dark:border-emerald-500/40 space-y-4 text-xs">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="font-bold text-slate-900 dark:text-white text-sm">
-            Step 3 · Copy Exact Numbers & Sign Non-Custodially (Xaman Phone, Sologenic QR, or Crossmark)
+            Step 3 · Copy Set #{setNumFormatted} Numbers & Sign Non-Custodially (Xaman Phone, Sologenic QR, or Crossmark)
           </div>
           <span className="font-mono text-emerald-800 dark:text-emerald-300">
             Market Pair: XRP / RLUSD · Tab: {activeOrderTicket.xamanSideTab} (Limit)
@@ -933,7 +1407,7 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
             <div>
               <div className="font-sans text-[11px] text-slate-500 dark:text-slate-400">
-                1. Quantity (XRP)
+                1. Set #{setNumFormatted} Quantity (XRP)
               </div>
               <div className="text-sm font-bold text-slate-900 dark:text-white">
                 {activeOrderTicket.xrpQty.toFixed(2)} XRP
@@ -952,7 +1426,7 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
             <div>
               <div className="font-sans text-[11px] text-slate-500 dark:text-slate-400">
-                2. Limit Price (RLUSD)
+                2. Set #{setNumFormatted} Limit Price (RLUSD)
               </div>
               <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                 ${activeOrderTicket.limitPrice.toFixed(4)}
@@ -971,7 +1445,7 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
             <div>
               <div className="font-sans text-[11px] text-slate-500 dark:text-slate-400">
-                3. Order Total (RLUSD)
+                3. Set #{setNumFormatted} Total (RLUSD)
               </div>
               <div className="text-sm font-bold text-sky-700 dark:text-sky-400">
                 ${activeOrderTicket.totalRlusd.toFixed(4)} RLUSD
@@ -1022,7 +1496,9 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>
-              {isSigningCrossmark ? 'Waiting for Crossmark...' : 'Sign OfferCreate in Crossmark'}
+              {isSigningCrossmark
+                ? 'Waiting for Crossmark...'
+                : `Sign Set #${setNumFormatted} in Crossmark`}
             </span>
           </button>
 
@@ -1045,14 +1521,20 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
               <span>
-                Native XRPL <span className="font-mono">OfferCreate</span> Payload (TakerGets = asset you give; TakerPays = asset you receive)
+                Native XRPL <span className="font-mono">OfferCreate</span> Payload (Set #{setNumFormatted} or Full 10-Set Array)
               </span>
               <button
                 type="button"
                 onClick={() =>
                   void handleCopyText(
                     'json',
-                    JSON.stringify(activeOrderTicket.xrplOfferTx, null, 2)
+                    JSON.stringify(
+                      executionStyle === 'all_ten_micro_grid'
+                        ? tenSetXrplBundle
+                        : activeOrderTicket.xrplOfferTx,
+                      null,
+                      2
+                    )
                   )
                 }
                 className="font-semibold text-sky-600 dark:text-sky-400 hover:underline cursor-pointer whitespace-nowrap"
@@ -1060,8 +1542,14 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
                 {copiedField === 'json' ? 'JSON Copied ✓' : 'Copy JSON'}
               </button>
             </div>
-            <pre className="p-3 rounded-lg bg-slate-950 text-sky-300 font-mono text-[11px] overflow-x-auto border border-slate-800">
-              {JSON.stringify(activeOrderTicket.xrplOfferTx, null, 2)}
+            <pre className="p-3 rounded-lg bg-slate-950 text-sky-300 font-mono text-[11px] overflow-x-auto border border-slate-800 max-h-64">
+              {JSON.stringify(
+                executionStyle === 'all_ten_micro_grid'
+                  ? tenSetXrplBundle
+                  : activeOrderTicket.xrplOfferTx,
+                null,
+                2
+              )}
             </pre>
           </div>
         )}
@@ -1128,7 +1616,7 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
                   <span className="font-mono text-slate-800 dark:text-slate-200">
                     {walletAddress.trim().slice(0, 8)}...{walletAddress.trim().slice(-5)}
                   </span>
-                  . As soon as you slide to sign your first Limit Offer in Xaman or Sologenic, it will appear right here automatically!
+                  . As soon as you slide to sign Set #{setNumFormatted} in Xaman or Sologenic, it will appear right here automatically!
                 </>
               ) : (
                 <>
@@ -1184,7 +1672,7 @@ export const RealXrplAccountExecutionGuide: React.FC<RealXrplAccountExecutionGui
           </div>
 
           <div className="text-slate-700 dark:text-slate-300">
-            <strong>1. Real Market Time vs. 15-Second Fast-Forward:</strong> On the real XRP Ledger, a Limit Offer fills only when global market price actually trades to your mark (minutes, hours, or days). You only do <strong>one set at a time</strong> as real price moves—never rush!
+            <strong>1. Real Market Time vs. 15-Second Fast-Forward:</strong> On the real XRP Ledger, a Limit Offer fills only when global market price actually trades to your mark (minutes, hours, or days). Completing <strong>Set #01</strong> first before moving to <strong>Set #02</strong> lets your profit compound cleanly.
           </div>
 
           <div className="text-slate-700 dark:text-slate-300">

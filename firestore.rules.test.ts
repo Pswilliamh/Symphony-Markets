@@ -3,9 +3,12 @@
  * Verifies deterministic rejection (PERMISSION_DENIED) of all 12 attack vectors
  * against the exact boolean invariants enforced in firestore.rules.
  */
+import test from 'node:test';
+import assert from 'node:assert/strict';
 
 interface MockAuthToken {
   uid: string;
+  email?: string;
   email_verified: boolean;
 }
 
@@ -16,10 +19,13 @@ interface RuleEvalContext {
     uid: string;
     walletModeUnlocked: boolean;
   } | null;
-  existingDoc?: Record<string, unknown> | null;
+  adminSettingsDoc?: {
+    secondaryAdminEmail: string;
+  } | null;
 }
 
 const ID_REGEX = /^[a-zA-Z0-9_-]+$/;
+const SHA256_REGEX = /^[a-f0-9]{64}$/;
 const NETWORKS = ['Bitcoin', 'Xaman_XRPL', 'XRPL', 'Stellar', 'EVM_TrustExtension'];
 const COINS = ['BTC', 'XRP', 'XLM'];
 const TARGETS = ['TrustWallet', 'Xaman', 'TrustExtension'];
@@ -31,6 +37,16 @@ function isValidId(id: string): boolean {
 
 function isVerifiedUser(ctx: RuleEvalContext): boolean {
   return ctx.auth !== null && ctx.auth.email_verified === true;
+}
+
+function isAcademyAdmin(ctx: RuleEvalContext): boolean {
+  if (!isVerifiedUser(ctx) || typeof ctx.auth?.email !== 'string') return false;
+  const email = ctx.auth.email;
+  if (email === 'PsWilliamh@gmail.com' || email === 'pswilliamh@gmail.com') {
+    return true;
+  }
+  const sec = ctx.adminSettingsDoc?.secondaryAdminEmail ?? '';
+  return sec.length >= 5 && sec === email;
 }
 
 function isValidUserSecuritySession(
@@ -53,6 +69,40 @@ function isValidUserSecuritySession(
     data.lastWalletNetwork.length >= 4 &&
     data.lastWalletNetwork.length <= 32 &&
     NETWORKS.includes(data.lastWalletNetwork) &&
+    typeof data.createdAt === 'string' &&
+    typeof data.updatedAt === 'string'
+  );
+}
+
+function isValidAcademyPublicGates(data: Record<string, unknown>): boolean {
+  const keys = Object.keys(data);
+  const reqKeys = [
+    'intermediatePasscodeHash',
+    'advancedPasscodeHash',
+    'intermediateGateEnabled',
+    'advancedGateEnabled',
+    'orientationVideoUrl',
+    'orientationVideoTitle',
+    'createdAt',
+    'updatedAt',
+  ];
+  if (!reqKeys.every((k) => keys.includes(k)) || !keys.every((k) => reqKeys.includes(k))) {
+    return false;
+  }
+  return (
+    typeof data.intermediatePasscodeHash === 'string' &&
+    SHA256_REGEX.test(data.intermediatePasscodeHash) &&
+    typeof data.advancedPasscodeHash === 'string' &&
+    SHA256_REGEX.test(data.advancedPasscodeHash) &&
+    typeof data.intermediateGateEnabled === 'boolean' &&
+    typeof data.advancedGateEnabled === 'boolean' &&
+    typeof data.orientationVideoUrl === 'string' &&
+    data.orientationVideoUrl.length <= 512 &&
+    (data.orientationVideoUrl === '' ||
+      /^(https:\/\/|\/assets\/|\/api\/drive-video\/).+$/.test(data.orientationVideoUrl)) &&
+    typeof data.orientationVideoTitle === 'string' &&
+    data.orientationVideoTitle.length >= 3 &&
+    data.orientationVideoTitle.length <= 160 &&
     typeof data.createdAt === 'string' &&
     typeof data.updatedAt === 'string'
   );
@@ -114,17 +164,21 @@ function isValidWalletSetApproval(
 }
 
 export function runDirtyDozenRuleTests(): { passed: number; failed: string[] } {
-  const now = '2026-11-16T12:00:00.000Z';
+  const now = '2026-11-17T12:00:00.000Z';
   const validUserCtx: RuleEvalContext = {
-    auth: { uid: 'user_1', email_verified: true },
+    auth: { uid: 'user_1', email: 'student@example.com', email_verified: true },
     requestTimeIso: now,
     parentSession: { uid: 'user_1', walletModeUnlocked: true },
+    adminSettingsDoc: { secondaryAdminEmail: 'separate.admin@gmail.com' },
   };
 
   const cases: Array<{ name: string; allowed: boolean }> = [
     {
-      name: '01 Unverified Email Spoof',
-      allowed: isVerifiedUser({ auth: { uid: 'user_1', email_verified: false }, requestTimeIso: now }),
+      name: '01 Unverified Admin Email Spoof',
+      allowed: isAcademyAdmin({
+        auth: { uid: 'spoof_1', email: 'PsWilliamh@gmail.com', email_verified: false },
+        requestTimeIso: now,
+      }),
     },
     {
       name: '02 Cross-Tenant Identity Spoofing',
@@ -161,8 +215,8 @@ export function runDirtyDozenRuleTests(): { passed: number; failed: string[] } {
       ),
     },
     {
-      name: '05 ID Poisoning (2KB Junk ID)',
-      allowed: isValidId('x'.repeat(2000) + '$%#'),
+      name: '05 ID Poisoning / Unauthorized Singleton ID',
+      allowed: isValidId('x'.repeat(2000) + '$%#') || ('evil_doc' as string) === 'publicGates',
     },
     {
       name: '06 Orphaned Subcollection Write When Parent Locked',
@@ -177,50 +231,60 @@ export function runDirtyDozenRuleTests(): { passed: number; failed: string[] } {
     },
     {
       name: '08 Immortal Field Mutation (createdAt changed)',
-      allowed: ('2026-11-16T12:05:00.000Z' as string) === '2026-11-16T12:00:00.000Z',
+      allowed: ('2026-11-17T12:05:00.000Z' as string) === '2026-11-17T12:00:00.000Z',
     },
     {
-      name: '09 Terminal State Bypass (status == signed)',
-      allowed: ('signed' as string) !== 'signed',
+      name: '09 Terminal State Bypass by Non-Admin (status == signed)',
+      allowed: ('signed' as string) !== 'signed' || isAcademyAdmin(validUserCtx),
     },
     {
-      name: '10 Value Poisoning on Whitelisted Key',
-      allowed: isValidUserSecuritySession(
-        {
-          uid: 'user_1',
-          walletModeUnlocked: true,
-          lastWalletNetwork: 'Solana_Fake',
-          createdAt: now,
-          updatedAt: now,
-        },
-        validUserCtx
-      ),
+      name: '10 Plaintext Passcode Injection into AcademyPublicGates',
+      allowed: isValidAcademyPublicGates({
+        intermediatePasscodeHash: 'raw_plaintext_password_123',
+        advancedPasscodeHash: 'a'.repeat(64),
+        intermediateGateEnabled: true,
+        advancedGateEnabled: true,
+        orientationVideoUrl: '',
+        orientationVideoTitle: 'Progressive Mastery Guide',
+        createdAt: now,
+        updatedAt: now,
+      }),
     },
     {
-      name: '11 Out-of-Range Numeric Injection',
-      allowed: isValidWalletSetApproval(
-        {
-          ownerUid: 'user_1',
-          setNumber: 99,
-          coinTicker: 'XRP',
-          walletTarget: 'TrustWallet',
-          publicWalletAddress: 'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh',
-          buyPrice: 0,
-          sellPrice: 1,
-          quantity: -10,
-          status: 'dispatched',
-          createdAt: now,
-          updatedAt: now,
-        },
-        validUserCtx
-      ),
+      name: '11 Non-Admin Reading or Mutating AcademyAdminSettings',
+      allowed: isAcademyAdmin(validUserCtx),
     },
     {
       name: '12 Unauthorized List Query Scraping',
-      allowed: false, // allow list: if false;
+      allowed: false,
     },
   ];
 
   const failed = cases.filter((c) => c.allowed).map((c) => c.name);
   return { passed: cases.length - failed.length, failed };
 }
+
+test('Dirty Dozen Firestore security payloads all return PERMISSION_DENIED', () => {
+  const res = runDirtyDozenRuleTests();
+  assert.equal(res.failed.length, 0, `Failed cases: ${res.failed.join(', ')}`);
+  assert.equal(res.passed, 12);
+});
+
+test('Bootstrap Admin and Separate Google Admin are authorized when email_verified is true', () => {
+  const now = '2026-11-17T12:00:00.000Z';
+  assert.equal(
+    isAcademyAdmin({
+      auth: { uid: 'owner_1', email: 'PsWilliamh@gmail.com', email_verified: true },
+      requestTimeIso: now,
+    }),
+    true
+  );
+  assert.equal(
+    isAcademyAdmin({
+      auth: { uid: 'admin_2', email: 'separate.admin@gmail.com', email_verified: true },
+      requestTimeIso: now,
+      adminSettingsDoc: { secondaryAdminEmail: 'separate.admin@gmail.com' },
+    }),
+    true
+  );
+});

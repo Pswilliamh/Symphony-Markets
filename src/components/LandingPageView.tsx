@@ -20,6 +20,8 @@ import { AssetSymbol, Candle } from '../types/market';
 import { AnalemmaEcosystemNodeCard } from './AnalemmaEcosystemNodeCard';
 import { CandlestickSymphonyComposer } from './CandlestickSymphonyComposer';
 import { CoinHistoryAndFoundersModule } from './CoinHistoryAndFoundersModule';
+import { FibonacciSymphonyGeometryModule } from './FibonacciSymphonyGeometryModule';
+import { FibonacciSymphonyMarkersStudio } from './FibonacciSymphonyMarkersStudio';
 import { KsbcGoldTrainingPage } from './KsbcGoldTrainingPage';
 import { LiveAiSignalHelper } from './LiveAiSignalHelper';
 import { MarketCyclesEducationModule } from './MarketCyclesEducationModule';
@@ -77,10 +79,10 @@ interface VideoLessonItem {
 
 const WELCOME_SLIDES: WalkthroughSlide[] = [
   {
-    chapter: '01 / Welcome to Symphony Markets',
+    chapter: '01 / Welcome to Symphony Markets Academy',
     title: 'An Honest, Scam-Free Classroom for Learning Crypto Markets',
     caption:
-      'Years ago, a fake "stop-trading" website stole money from unsuspecting beginners. Symphony Markets was built as the exact opposite: 100% free, open-source, and non-custodial.',
+      'Years ago, a fake "stop-trading" website stole money from unsuspecting beginners. Symphony Markets Academy was built as the exact opposite: 100% free, open-source, and non-custodial.',
     image: founderDeskImg,
   },
   {
@@ -108,6 +110,18 @@ const WELCOME_SLIDES: WalkthroughSlide[] = [
 
 const FIVE_DOLLAR_BLUEPRINT_VIDEO_URL =
   '/assets/aistudio/Symphony_Markets__The__5_Blueprint_781e68ab.mp4';
+const ORGANIC_RHYTHM_VIDEO_URL = '/assets/The_Organic_Rhythm_of_Trading.mp4';
+const ORGANIC_RHYTHM_DRIVE_VIEW_URL =
+  'https://drive.google.com/file/d/1s-wUCvu1e3p3Rp93k1mzgi1TYHBuHw3i/view';
+const ANTIDOTE_LOOSE_CYCLES_VIDEO_URL = '/assets/The_Antidote_to_Loose_Cycles.mp4';
+const ANTIDOTE_LOOSE_CYCLES_DRIVE_VIEW_URL =
+  'https://drive.google.com/file/d/1RCuSGFs76KSTkdQBPDXrSN5ND8y_ZBBi/view';
+const SURVIVAL_FINANCE_VIDEO_URL = '/assets/Survival_Finance_Traditional_Markets.mp4';
+const SURVIVAL_FINANCE_DRIVE_VIEW_URL =
+  'https://drive.google.com/file/d/1pCtFdKXo6Fhd88QnSCoH95qlRTXAf5Dj/view';
+const RHYTHM_OF_CROWD_VIDEO_URL = '/assets/The_Rhythm_of_the_Crowd.mp4';
+const RHYTHM_OF_CROWD_DRIVE_VIEW_URL =
+  'https://drive.google.com/file/d/1kCLZNmmcUAXP5XuRcAWfWnkWBXTs3YD5/view';
 const HOMEPAGE_DRIVE_VIDEO_URL =
   'https://drive.google.com/file/d/1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw/view';
 const ANTIDOTE_DRIVE_VIDEO_URL =
@@ -137,7 +151,15 @@ const BOOK_DRIVE_EPUB_VIEW_URL =
 const SHARED_DRIVE_FOLDER_URL =
   'https://drive.google.com/drive/folders/1hPDCoTd5K4163HsDW7_LtQXXB8VvBkv3';
 
-type SanctuaryDocKey = 'manifesto' | 'certificate' | 'companion' | 'book_pdf';
+const GEOMETRY_CREATION_LOCAL_PDF_URL =
+  '/assets/aistudio/geometry-of-creation-and-commerce_9e656496.pdf';
+
+type SanctuaryDocKey =
+  | 'geometry_creation'
+  | 'manifesto'
+  | 'certificate'
+  | 'companion'
+  | 'book_pdf';
 
 interface SanctuaryDocumentItem {
   key: SanctuaryDocKey;
@@ -152,8 +174,23 @@ interface SanctuaryDocumentItem {
 
 const SANCTUARY_DOCUMENTS: SanctuaryDocumentItem[] = [
   {
+    key: 'geometry_creation',
+    badge: '01 · Sacred Geometry & Fibonacci PDF',
+    title: 'The Geometry of Creation & Commerce (144 / 233 & 3-Point Extensions)',
+    subtitle:
+      'Connects 3-point Fibonacci extensions (100%, 127.2%, 161.8%), the 13-note musical octave, and the 144 / 233 structural ratios.',
+    filename: 'geometry-of-creation-and-commerce.pdf',
+    pageInfo: '3-Page Study PDF · Open Public Read',
+    driveViewUrl: GEOMETRY_CREATION_LOCAL_PDF_URL,
+    highlights: [
+      'Why Fibonacci retracements measure pullbacks while 3-point extensions project 127.2% & 161.8% profit targets.',
+      'How the 13-note musical octave (8 white + 5 black keys) mirrors harmonic market wave structure.',
+      '4-step standard operating procedure showing why stewardship is a progressive craft, not a 1-2-3 gimmick.',
+    ],
+  },
+  {
     key: 'manifesto',
-    badge: '01 · Core Starter Guide',
+    badge: '02 · Core Starter Guide',
     title: 'The “No-Scam Zone” Manifesto & Starter Guide',
     subtitle: 'Foundational protection rules before you ever connect a wallet or place a $5 trade.',
     filename: 'no-scam-zone-manifesto.pdf',
@@ -167,7 +204,7 @@ const SANCTUARY_DOCUMENTS: SanctuaryDocumentItem[] = [
   },
   {
     key: 'certificate',
-    badge: '02 · Ethical Covenant',
+    badge: '03 · Ethical Covenant',
     title: 'Certificate of Commitment & Ethical Agreement',
     subtitle: '“If you’re looking for a scam, you won’t find one here.” — The No-Scam Zone Covenant.',
     filename: 'no-scam-zone-certificate.pdf',
@@ -181,7 +218,7 @@ const SANCTUARY_DOCUMENTS: SanctuaryDocumentItem[] = [
   },
   {
     key: 'companion',
-    badge: '03 · Honorary Student Bonus',
+    badge: '04 · Honorary Student Bonus',
     title: 'The Sovereign Mind & The Honest Market (Reader’s Companion)',
     subtitle:
       'Author’s Dedication & Study Companion to Quantum Analemma A.I. Technology Cycle by Ambassador William Hardrick, DQP-KS.',
@@ -196,7 +233,7 @@ const SANCTUARY_DOCUMENTS: SanctuaryDocumentItem[] = [
   },
   {
     key: 'book_pdf',
-    badge: '04 · Complete Book Edition (PDF + EPUB)',
+    badge: '05 · Complete Book Edition (PDF + EPUB)',
     title: 'Quantum Analemma A.I. Technology Cycle',
     subtitle:
       'Full book edition by Spiritual Sciences Pneumatology Researcher William Hardrick, DQP-KS — included in both PDF and EPUB formats.',
@@ -213,35 +250,53 @@ const SANCTUARY_DOCUMENTS: SanctuaryDocumentItem[] = [
 
 const WELCOME_PLAYLIST = [
   {
+    id: 'organic_rhythm',
+    shortLabel: '01 · Organic Rhythm',
+    fullTitle: 'Symphony Markets Academy: The Organic Rhythm of Trading',
+    duration: '7:03',
+    url: ORGANIC_RHYTHM_VIDEO_URL,
+    poster: videoCoverStopsImg,
+    pairedActionLabel: 'Open ♪ Fibonacci & Symphony →',
+  },
+  {
+    id: 'antidote_loose_cycles',
+    shortLabel: '02 · Antidote to Loose Cycles',
+    fullTitle: 'Symphony Markets Academy: The Antidote to Loose Cycles',
+    duration: '6:14',
+    url: ANTIDOTE_LOOSE_CYCLES_VIDEO_URL,
+    poster: noScamCompassImg,
+    pairedActionLabel: 'Open 4-Year Cycle GPS →',
+  },
+  {
+    id: 'survival_finance',
+    shortLabel: '03 · Survival Finance',
+    fullTitle: 'Symphony Markets Academy: Survival Finance & Traditional Markets',
+    duration: '5:07',
+    url: SURVIVAL_FINANCE_VIDEO_URL,
+    poster: founderDeskImg,
+    pairedActionLabel: 'Open $5 Survival Roadmap →',
+  },
+  {
+    id: 'rhythm_of_crowd',
+    shortLabel: '04 · Fib Part 1',
+    fullTitle: 'Fibonacci Part 1: The Rhythm of the Crowd',
+    duration: '5:36',
+    url: RHYTHM_OF_CROWD_VIDEO_URL,
+    poster: videoCoverStopsImg,
+    pairedActionLabel: 'Open ♪ Fibonacci & Symphony →',
+  },
+  {
     id: 'blueprint',
-    shortLabel: '01 · $5 Blueprint',
-    fullTitle: 'Symphony Markets: The $5 Blueprint',
+    shortLabel: '05 · $5 Blueprint',
+    fullTitle: 'Symphony Markets Academy: The $5 Blueprint',
     duration: '4:40',
     url: FIVE_DOLLAR_BLUEPRINT_VIDEO_URL,
     poster: videoCoverWalletImg,
     pairedActionLabel: 'Open $5 Blueprint →',
   },
   {
-    id: 'sandbox',
-    shortLabel: '02 · No-Scam Sandbox',
-    fullTitle: 'Symphony Markets: The No-Scam Sandbox',
-    duration: '5:45',
-    url: HOMEPAGE_DRIVE_VIDEO_URL,
-    poster: founderDeskImg,
-    pairedActionLabel: 'Open Skill Sandbox →',
-  },
-  {
-    id: 'antidote',
-    shortLabel: '03 · Symphony & Antidote',
-    fullTitle: 'Symphony Markets: Antidote to Predation & Market Harmony',
-    duration: '6:04',
-    url: ANTIDOTE_DRIVE_VIDEO_URL,
-    poster: noScamCompassImg,
-    pairedActionLabel: 'Open ♪ Symphony Music →',
-  },
-  {
     id: 'ksbc_gold',
-    shortLabel: '04 · KSBC Gold RWA',
+    shortLabel: '06 · KSBC Gold RWA',
     fullTitle: 'KSBC Gold RWA: Crystalline Proof-of-Reserve & Open Math',
     duration: '0:10',
     url: KSBC_GOLD_PROMO_VIDEO_URL,
@@ -252,9 +307,53 @@ const WELCOME_PLAYLIST = [
 
 const INITIAL_LESSONS: VideoLessonItem[] = [
   {
+    id: 'vid_organic_rhythm',
+    number: 'Video 01 · 7m 03s',
+    title: 'Symphony Markets Academy: The Organic Rhythm of Trading (Harp, Cello & 3-Point Extensions)',
+    duration: 'HD Video · Ready',
+    description:
+      'Flagship botanical & architectural lesson uniting 8-Hour Harp & Cello Candlestick Notes, Hebrew Gematria (144 Garden of Eden / 233 Tree of Life = 1.618 Φ), 61.8% Golden Pocket rebounds, and 3-Point Fibonacci Extensions (100% & 161.8% Golden Target) with the 2% ($0.10) risk cap.',
+    coverSrc: videoCoverStopsImg,
+    coverAlt: 'Symphony Markets Academy — The Organic Rhythm of Trading cover',
+    driveUrl: ORGANIC_RHYTHM_DRIVE_VIEW_URL,
+  },
+  {
+    id: 'vid_antidote_loose_cycles',
+    number: 'Video 02 · 6m 14s',
+    title: 'Symphony Markets Academy: The Antidote to Loose Cycles (AMM x · y = k, KSBC Gold & Late 2026 GPS)',
+    duration: 'HD Video · Ready',
+    description:
+      'Exposes how opaque market-maker middlemen extract spread markups and trap retail FOMO at 161.8% extension walls—presenting the open-math antidote: x · y = k AMM reserves, KSBC 999.9 Gold RWA transparency, the 2,500-Path Time Machine, and the Late 2026 Cycle GPS.',
+    coverSrc: noScamCompassImg,
+    coverAlt: 'Symphony Markets Academy — The Antidote to Loose Cycles cover',
+    driveUrl: ANTIDOTE_LOOSE_CYCLES_DRIVE_VIEW_URL,
+  },
+  {
+    id: 'vid_survival_finance',
+    number: 'Video 03 · 5m 07s',
+    title: 'Symphony Markets Academy: Survival Finance & Traditional Markets (2% Defense & 16-Year Cycle Map)',
+    duration: 'HD Video · Ready',
+    description:
+      'Contrasts retail casino speculation with institutional risk defense ("survival always comes before profit") across the $5 Real-Wallet Roadmap, 33.3% breakeven win-rate math at 1:2 R:R, 144/233 Fibonacci geometry, and the 16-Year Logarithmic Cycle Map (2012–2028).',
+    coverSrc: founderDeskImg,
+    coverAlt: 'Symphony Markets Academy — Survival Finance & Traditional Markets cover',
+    driveUrl: SURVIVAL_FINANCE_DRIVE_VIEW_URL,
+  },
+  {
+    id: 'vid_rhythm_of_the_crowd',
+    number: 'Video 04 · 5m 36s',
+    title: 'Fibonacci Part 1: The Rhythm of the Crowd (Harmonic Waves & Collective Psychology)',
+    duration: 'HD Video · Ready',
+    description:
+      'Explores how human market crowds breathe in Fibonacci retracements (38.2%, 50%, 61.8% Golden Pocket) and 3-point extensions (100%, 127.2%, 161.8% Φ)—bridging musical harmony with disciplined stewardship.',
+    coverSrc: videoCoverStopsImg,
+    coverAlt: 'Fibonacci Part 1: The Rhythm of the Crowd video lesson cover',
+    driveUrl: RHYTHM_OF_CROWD_DRIVE_VIEW_URL,
+  },
+  {
     id: 'vid_five_dollar_blueprint',
-    number: 'Video 01 · 4m 40s',
-    title: 'Symphony Markets: The $5 Blueprint (Why 1x Spot & 10-Cent Risk Protect Beginners)',
+    number: 'Video 05 · 4m 40s',
+    title: 'Symphony Markets Academy: The $5 Blueprint (Why 1x Spot & 10-Cent Risk Protect Beginners)',
     duration: 'HD Video · Ready',
     description:
       'Exposes how fake stop-loss platforms trap beginners, why sub-penny XRP & XLM fees preserve a $5 wallet, and how the 2% "10-Cent Safety Net" works.',
@@ -264,19 +363,19 @@ const INITIAL_LESSONS: VideoLessonItem[] = [
   },
   {
     id: 'vid_sandbox_overview',
-    number: 'Video 02 · 5m 45s',
-    title: 'Symphony Markets: The No-Scam Sandbox (Official Platform Walkthrough)',
+    number: 'Video 06 · 5m 45s',
+    title: 'Symphony Markets Academy: The No-Scam Sandbox (Official Platform Walkthrough)',
     duration: 'Google Drive MP4 · Ready',
     description:
-      'Full walkthrough introducing the Symphony Markets open-source classroom, the No-Scam Zone mission, and how to practice safely inside the workspace.',
+      'Full walkthrough introducing the Symphony Markets Academy open-source classroom, the No-Scam Zone mission, and how to practice safely inside the workspace.',
     coverSrc: founderDeskImg,
     coverAlt: 'Sunlight across a warm oak study desk with notebook and market charts',
     driveUrl: HOMEPAGE_DRIVE_VIDEO_URL,
   },
   {
     id: 'vid_antidote_predation',
-    number: 'Video 03 · 6m 04s',
-    title: 'Symphony Markets: The Antidote to Predation (Why Ethical Education Defeats Hype)',
+    number: 'Video 07 · 6m 04s',
+    title: 'Symphony Markets Academy: The Antidote to Predation (Why Ethical Education Defeats Hype)',
     duration: 'Google Drive MP4 · Ready',
     description:
       'Deep-dive into how predatory trading platforms exploit emotional urgency, and how self-custody, transparent ledger math, and the No-Scam Zone Covenant protect everyday learners.',
@@ -286,8 +385,8 @@ const INITIAL_LESSONS: VideoLessonItem[] = [
   },
   {
     id: 'vid_promo_ksbc_gold',
-    number: 'Promo 04 · 0m 10s',
-    title: 'KSBC Gold Symphony Markets Promo: Crystalline Proof-of-Reserve & Open Math (x · y = k)',
+    number: 'Promo 08 · 0m 10s',
+    title: 'KSBC Gold · Symphony Markets Academy Reel: Crystalline Proof-of-Reserve & Open Math (x · y = k)',
     duration: '10s Promo Reel · Ready',
     description:
       'Official KSBC Gold section promo showcasing physical 999.9 fine gold in transparent crystalline reserves paired with open AMM pricing math.',
@@ -297,8 +396,8 @@ const INITIAL_LESSONS: VideoLessonItem[] = [
   },
   {
     id: 'vid_promo_symphony_music',
-    number: 'Promo 05 · 0m 10s',
-    title: 'Scam Free Symphony Markets Promo: Golden Harp Notes & 10-Cent Safety Net',
+    number: 'Promo 09 · 0m 10s',
+    title: 'Scam-Free Symphony Markets Academy Reel: Golden Harp Notes & 10-Cent Safety Net',
     duration: '10s Promo Reel · Ready',
     description:
       'Official Scam-Free & Symphony Music section promo demonstrating floating Golden Harp and Deep Cello notes above live candlesticks.',
@@ -308,29 +407,29 @@ const INITIAL_LESSONS: VideoLessonItem[] = [
   },
   {
     id: 'vid_promo_five_dollar',
-    number: 'Promo 06 · 0m 10s',
-    title: 'Symphony Markets Five Dollar Promo: $5 Real-Wallet Roadmap & 11-Module Skill Desk',
+    number: 'Promo 10 · 0m 10s',
+    title: 'Symphony Markets Academy Five Dollar Reel: $5 Real-Wallet Roadmap & 11-Module Skill Desk',
     duration: '10s Promo Reel · Ready',
     description:
       'Official $5 Blueprint section promo touring the sub-penny XRPL/Stellar self-custody workflow, 2,500-path Time Machine, and 2% risk threshold.',
     coverSrc: videoCoverWalletImg,
-    coverAlt: 'Symphony Markets Five Dollar Promo preview',
+    coverAlt: 'Symphony Markets Academy Five Dollar Promo preview',
     driveUrl: FIVE_DOLLAR_PROMO_VIDEO_URL,
   },
   {
     id: 'vid_promo_predation',
-    number: 'Promo 07 · 0m 10s',
-    title: 'Symphony Markets Promo Predation: Exposing Fake Stop Buttons & Extraction Traps',
+    number: 'Promo 11 · 0m 10s',
+    title: 'Symphony Markets Academy Predation Reel: Exposing Fake Stop Buttons & Extraction Traps',
     duration: '10s Promo Reel · Ready',
     description:
       'Official Antidote to Predation section promo contrasting rigged custodial traps against 100% open-source self-custody math.',
     coverSrc: noScamCompassImg,
-    coverAlt: 'Symphony Markets Promo Predation preview',
+    coverAlt: 'Symphony Markets Academy Promo Predation preview',
     driveUrl: PREDATION_PROMO_VIDEO_URL,
   },
   {
     id: 'vid_promo_skill_desk_alt',
-    number: 'Promo 08 · 0m 10s',
+    number: 'Promo 12 · 0m 10s',
     title: 'Day-Trader-Skill 11-Module Suite & 2,500-Path Time Machine (Alternate Reel)',
     duration: '10s Promo Reel · Ready',
     description:
@@ -354,6 +453,18 @@ function toEmbeddableVideoUrl(rawUrl: string): { type: 'iframe' | 'video'; src: 
     }
     if (fileId === '1RNomMOr0irdvq0nsbm8nQh2fhooCPoBp') {
       return FIVE_DOLLAR_BLUEPRINT_VIDEO_URL;
+    }
+    if (fileId === '1kCLZNmmcUAXP5XuRcAWfWnkWBXTs3YD5') {
+      return RHYTHM_OF_CROWD_VIDEO_URL;
+    }
+    if (fileId === '1s-wUCvu1e3p3Rp93k1mzgi1TYHBuHw3i') {
+      return ORGANIC_RHYTHM_VIDEO_URL;
+    }
+    if (fileId === '1RCuSGFs76KSTkdQBPDXrSN5ND8y_ZBBi') {
+      return ANTIDOTE_LOOSE_CYCLES_VIDEO_URL;
+    }
+    if (fileId === '1pCtFdKXo6Fhd88QnSCoH95qlRTXAf5Dj') {
+      return SURVIVAL_FINANCE_VIDEO_URL;
     }
     return `/api/drive-video/${fileId}`;
   };
@@ -405,9 +516,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
   const [currentSlideIdx, setCurrentSlideIdx] = useState<number>(0);
   const [elapsedInSlide, setElapsedInSlide] = useState<number>(0);
-  const [customVideoUrl, setCustomVideoUrl] = useState<string>(FIVE_DOLLAR_BLUEPRINT_VIDEO_URL);
+  const [customVideoUrl, setCustomVideoUrl] = useState<string>(ORGANIC_RHYTHM_VIDEO_URL);
   const [showUrlEditor, setShowUrlEditor] = useState<boolean>(false);
-  const [draftVideoUrl, setDraftVideoUrl] = useState<string>(FIVE_DOLLAR_BLUEPRINT_VIDEO_URL);
+  const [draftVideoUrl, setDraftVideoUrl] = useState<string>(ORGANIC_RHYTHM_VIDEO_URL);
 
   // Story Page Video Library Link State (Page 3: Our Story)
   const [lessons, setLessons] = useState<VideoLessonItem[]>(INITIAL_LESSONS);
@@ -424,9 +535,12 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   const [activeDocKey, setActiveDocKey] = useState<SanctuaryDocKey>('manifesto');
   const [downloadingDocKey, setDownloadingDocKey] = useState<string | null>(null);
 
-  // Paginated Chapter State for Market Cycles Page (Page 2E)
+  // Paginated Chapter State for Market Cycles Page (Page 2E) & Symphony Page (Page 2D)
   const [cyclesChapterIdx, setCyclesChapterIdx] = useState<number>(0);
   const [cyclesPaginatedMode, setCyclesPaginatedMode] = useState<boolean>(true);
+  const [symphonySubPage, setSymphonySubPage] = useState<
+    'music_score' | 'fibonacci_geometry' | 'symphony_markers'
+  >('music_score');
 
   useEffect(() => {
     if (!isPlaying || customVideoUrl || activePage !== 'welcome') return;
@@ -506,11 +620,26 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   };
 
   const handleDownloadSanctuaryDoc = async (
-    docKey: 'manifesto' | 'certificate' | 'companion' | 'book_pdf' | 'book_epub',
+    docKey:
+      | 'geometry_creation'
+      | 'manifesto'
+      | 'certificate'
+      | 'companion'
+      | 'book_pdf'
+      | 'book_epub',
     downloadFilename: string
   ) => {
     setDownloadingDocKey(docKey);
     try {
+      if (docKey === 'geometry_creation') {
+        const link = document.createElement('a');
+        link.href = GEOMETRY_CREATION_LOCAL_PDF_URL;
+        link.download = downloadFilename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
       const res = await fetch(`/api/drive-pdf?doc=${docKey}&download=1`);
       if (!res.ok) {
         throw new Error('Fallback to generated PDF');
@@ -547,15 +676,15 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   if (activePage === 'welcome') {
     return (
       <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 lg:py-8 flex-1 flex flex-col items-center justify-center gap-6">
-        {/* Centered Symphony Markets Highlighted Name + Emblem + Faded Animated Red & Green Candlesticks */}
-        <h1 className="font-editorial text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight text-center">
+        {/* Centered Symphony Markets Academy Highlighted Name + Emblem + Faded Animated Red & Green Candlesticks */}
+        <h1 className="font-editorial text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight text-center">
           <span className="relative overflow-hidden inline-flex items-center gap-3.5 pl-3.5 pr-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-200/80 via-sky-100/95 to-amber-100/80 dark:from-sky-500/25 dark:via-amber-400/20 dark:to-sky-500/20 border border-amber-300/60 dark:border-sky-400/30 shadow-sm">
             <SymphonyCandlestickBackdrop className="opacity-30 dark:opacity-40" />
             <SymphonyHarpLogo
               variant="emblem"
               className="relative z-10 w-11 h-11 sm:w-13 sm:h-13 shadow-md"
             />
-            <span className="relative z-10">Symphony Markets</span>
+            <span className="relative z-10">Symphony Markets Academy</span>
           </span>
         </h1>
 
@@ -617,12 +746,17 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                       ref={welcomeVideoRef}
                       key={embeddedCustomVideo.src}
                       poster={
-                        customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
+                        customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL ||
+                        customVideoUrl === SURVIVAL_FINANCE_VIDEO_URL
                           ? founderDeskImg
-                          : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
+                          : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL ||
+                            customVideoUrl === ANTIDOTE_LOOSE_CYCLES_VIDEO_URL
                           ? noScamCompassImg
                           : customVideoUrl === KSBC_GOLD_PROMO_VIDEO_URL
                           ? goldRwaBlueprintImg
+                          : customVideoUrl === ORGANIC_RHYTHM_VIDEO_URL ||
+                            customVideoUrl === RHYTHM_OF_CROWD_VIDEO_URL
+                          ? videoCoverStopsImg
                           : undefined
                       }
                       controls
@@ -632,12 +766,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                       onPause={() => setVideoPlaying(false)}
                       onEnded={() => {
                         setVideoPlaying(false);
-                        if (customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL) {
-                          setCustomVideoUrl(HOMEPAGE_DRIVE_VIDEO_URL);
-                        } else if (customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL) {
-                          setCustomVideoUrl(ANTIDOTE_DRIVE_VIDEO_URL);
-                        } else if (customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL) {
-                          setCustomVideoUrl(KSBC_GOLD_PROMO_VIDEO_URL);
+                        const activeIdx = WELCOME_PLAYLIST.findIndex(
+                          (item) => item.url === customVideoUrl
+                        );
+                        if (activeIdx >= 0 && activeIdx + 1 < WELCOME_PLAYLIST.length) {
+                          setCustomVideoUrl(WELCOME_PLAYLIST[activeIdx + 1].url);
                         }
                       }}
                       className="w-full h-full object-contain bg-slate-950"
@@ -676,15 +809,19 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                           }}
                           className="pointer-events-auto px-5 py-3 rounded-lg bg-white/95 hover:bg-white text-slate-950 text-xs sm:text-sm font-semibold shadow-lg transition-transform duration-150 hover:scale-105 cursor-pointer whitespace-nowrap shrink-0"
                         >
-                          {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
-                            ? '▶ Play Video 1: The $5 Blueprint'
-                            : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
-                            ? '▶ Play Video 2: The No-Scam Sandbox'
-                            : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
-                            ? '▶ Play Video 3: Symphony & Antidote'
+                          {customVideoUrl === ORGANIC_RHYTHM_VIDEO_URL
+                            ? '▶ Play 01: The Organic Rhythm of Trading (7:03)'
+                            : customVideoUrl === ANTIDOTE_LOOSE_CYCLES_VIDEO_URL
+                            ? '▶ Play 02: The Antidote to Loose Cycles (6:14)'
+                            : customVideoUrl === SURVIVAL_FINANCE_VIDEO_URL
+                            ? '▶ Play 03: Survival Finance & Markets (5:07)'
+                            : customVideoUrl === RHYTHM_OF_CROWD_VIDEO_URL
+                            ? '▶ Play 04: Fibonacci Part 1 (5:36)'
+                            : customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                            ? '▶ Play 05: The $5 Blueprint (4:40)'
                             : customVideoUrl === KSBC_GOLD_PROMO_VIDEO_URL
-                            ? '▶ Play Video 4: KSBC Gold RWA (0:10)'
-                            : '▶ Play Welcome Video'}
+                            ? '▶ Play 06: KSBC Gold RWA (0:10)'
+                            : '▶ Play Academy Video'}
                         </button>
                       </div>
                     )}
@@ -692,7 +829,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 ) : (
                   <iframe
                     src={embeddedCustomVideo.src}
-                    title="Symphony Markets Welcome Video"
+                    title="Symphony Markets Academy Welcome Video"
                     allow="autoplay; fullscreen"
                     className="w-full h-full border-0"
                   />
@@ -788,64 +925,46 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 ) : (
                   <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-300">
                     <span className="font-semibold text-slate-900 dark:text-white">
-                      {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
-                        ? 'Video 1 of 4 · The $5 Blueprint'
-                        : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
-                        ? 'Video 2 of 4 · The No-Scam Sandbox'
-                        : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
-                        ? 'Video 3 of 4 · Symphony & Antidote'
-                        : customVideoUrl === KSBC_GOLD_PROMO_VIDEO_URL
-                        ? 'Video 4 of 4 · KSBC Gold RWA (Crystalline Reserves)'
-                        : 'Custom Welcome Video'}
+                      {WELCOME_PLAYLIST.find((v) => v.url === customVideoUrl)?.fullTitle ??
+                        'Symphony Markets Academy Video'}
                     </span>
                     <span aria-hidden="true">·</span>
                     <button
                       type="button"
                       onClick={() => {
-                        if (customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL) {
-                          onEnterApp('start-here');
-                        } else if (customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL) {
-                          onEnterApp('skill-desk');
-                        } else if (customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL) {
+                        if (
+                          customVideoUrl === ORGANIC_RHYTHM_VIDEO_URL ||
+                          customVideoUrl === RHYTHM_OF_CROWD_VIDEO_URL
+                        ) {
                           onNavigatePage('symphony');
+                        } else if (customVideoUrl === ANTIDOTE_LOOSE_CYCLES_VIDEO_URL) {
+                          onNavigatePage('cycles');
+                        } else if (
+                          customVideoUrl === SURVIVAL_FINANCE_VIDEO_URL ||
+                          customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
+                        ) {
+                          onEnterApp('start-here');
                         } else {
                           onNavigatePage('ksbc');
                         }
                       }}
                       className="text-amber-700 dark:text-amber-400 font-semibold hover:underline cursor-pointer whitespace-nowrap"
                     >
-                      {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
-                        ? 'Launch $5 Blueprint →'
-                        : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
-                        ? 'Launch Skill Sandbox →'
-                        : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
-                        ? 'Open ♪ Symphony Module →'
-                        : 'Open KSBC Gold Tab →'}
+                      {WELCOME_PLAYLIST.find((v) => v.url === customVideoUrl)?.pairedActionLabel ??
+                        'Enter Academy →'}
                     </button>
                     <span aria-hidden="true">·</span>
                     <button
                       type="button"
                       onClick={() => {
                         setVideoPlaying(false);
-                        if (customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL) {
-                          setCustomVideoUrl(HOMEPAGE_DRIVE_VIDEO_URL);
-                        } else if (customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL) {
-                          setCustomVideoUrl(ANTIDOTE_DRIVE_VIDEO_URL);
-                        } else if (customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL) {
-                          setCustomVideoUrl(KSBC_GOLD_PROMO_VIDEO_URL);
-                        } else {
-                          setCustomVideoUrl(FIVE_DOLLAR_BLUEPRINT_VIDEO_URL);
-                        }
+                        const idx = WELCOME_PLAYLIST.findIndex((v) => v.url === customVideoUrl);
+                        const nextIdx = idx >= 0 && idx + 1 < WELCOME_PLAYLIST.length ? idx + 1 : 0;
+                        setCustomVideoUrl(WELCOME_PLAYLIST[nextIdx].url);
                       }}
                       className="text-sky-600 dark:text-sky-400 font-medium hover:underline cursor-pointer whitespace-nowrap"
                     >
-                      {customVideoUrl === FIVE_DOLLAR_BLUEPRINT_VIDEO_URL
-                        ? 'Next: 02 Sandbox →'
-                        : customVideoUrl === HOMEPAGE_DRIVE_VIDEO_URL
-                        ? 'Next: 03 Symphony →'
-                        : customVideoUrl === ANTIDOTE_DRIVE_VIDEO_URL
-                        ? 'Next: 04 KSBC Gold →'
-                        : '↺ Back to 01 Blueprint'}
+                      Next Academy Film →
                     </button>
                   </div>
                 )}
@@ -896,7 +1015,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
             onClick={() => onEnterApp()}
             className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            Enter Symphony Markets →
+            Enter Symphony Markets Academy →
           </button>
           <button
             type="button"
@@ -941,8 +1060,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
         id: 'bull_vs_bear',
         number: '01',
         group: 'cycles' as const,
-        shortLabel: '01. Bull vs. Bear Markets',
-        fullTitle: 'What Is a Bull Market vs. a Bear Market? (And Why Do They Have Those Names?)',
+        shortLabel: '01. Eagle Markets (Bull & Bear)',
+        fullTitle:
+          'The Ascending Eagle & Descending Eagle Markets — And Why Wall Street Calls Them Bull & Bear',
       },
       {
         id: 'four_seasons',
@@ -1023,45 +1143,45 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <span aria-hidden="true">·</span>
               <span className="font-mono">7 Paginated Chapters · Zero Endless Scrolling</span>
             </div>
-            <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-              Bull vs. Bear Markets, 4-Year Cycles & Live AI Classroom
-            </h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
-              <button
-                type="button"
-                onClick={() => setCyclesPaginatedMode(true)}
-                className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  cyclesPaginatedMode
-                    ? 'bg-emerald-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Page-by-Page
-              </button>
-              <button
-                type="button"
-                onClick={() => setCyclesPaginatedMode(false)}
-                className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  !cyclesPaginatedMode
-                    ? 'bg-sky-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                Full Scroll
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onEnterApp('cycle-bull-vs-bear')}
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
-            >
-              Open Full 14-Section App →
-            </button>
-          </div>
+             <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+               Ascending & Descending Eagle Markets, 4-Year Cycles & Live AI Classroom
+             </h1>
+           </div>
+ 
+           <div className="flex flex-wrap items-center gap-2.5">
+             <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
+               <button
+                 type="button"
+                 onClick={() => setCyclesPaginatedMode(true)}
+                 className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                   cyclesPaginatedMode
+                     ? 'bg-emerald-600 text-white'
+                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                 }`}
+               >
+                 Page-by-Page
+               </button>
+               <button
+                 type="button"
+                 onClick={() => setCyclesPaginatedMode(false)}
+                 className={`px-3 py-1.5 rounded-md font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                   !cyclesPaginatedMode
+                     ? 'bg-sky-600 text-white'
+                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                 }`}
+               >
+                 Full Scroll
+               </button>
+             </div>
+ 
+             <button
+               type="button"
+               onClick={() => onEnterApp('cycle-bull-vs-bear')}
+               className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+             >
+               Open Full 17-Section Academy →
+             </button>
+           </div>
         </div>
 
         {/* Grouped Chapter Menu Bar */}
@@ -1293,11 +1413,18 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   }
 
   /* ============================================================================
-   * PAGE 2D: STANDALONE 8-HOUR CANDLESTICK SYMPHONY MUSIC GRAPH STUDIO
+   * PAGE 2D: STANDALONE 8-HOUR CANDLESTICK SYMPHONY & FIBONACCI GEOMETRY STUDIO
    * ============================================================================ */
   if (activePage === 'symphony') {
+    const activeSymLive =
+      symbol === 'BTCUSDT'
+        ? btcLivePrice ?? 91450
+        : symbol === 'XRPUSDT'
+        ? xrpLivePrice
+        : xlmLivePrice;
+
     return (
-      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -1309,62 +1436,212 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 ← Back to Welcome Stage
               </button>
               <span aria-hidden="true">·</span>
-              <span>Separate Visual & Musical Module</span>
+              <span>Symphony Harmonics & Golden Ratio Studio</span>
               <span aria-hidden="true">·</span>
-              <span className="font-mono">♪ ♫ ♩ ♬ Candlesticks as Musical Notes</span>
+              <span className="font-mono">♪ ♫ ♩ ♬ Candlesticks, Fibonacci & 144/233</span>
             </div>
             <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-              ♪ The Market Symphony & 8-Hour Candlestick Music Score
+              ♪ The Market Symphony: Musical Notes & Fibonacci Geometry
             </h1>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onEnterApp('market-symphony')}
-            className="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
-          >
-            Open Inside Full Workspace →
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+              <button
+                type="button"
+                onClick={() => setSymphonySubPage('music_score')}
+                className={`px-3 py-2 rounded-md font-semibold cursor-pointer whitespace-nowrap shrink-0 ${
+                  symphonySubPage === 'music_score'
+                    ? 'bg-sky-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                01. 8-Hour Candlestick Score
+              </button>
+              <button
+                type="button"
+                onClick={() => setSymphonySubPage('fibonacci_geometry')}
+                className={`px-3 py-2 rounded-md font-semibold cursor-pointer whitespace-nowrap shrink-0 ${
+                  symphonySubPage === 'fibonacci_geometry'
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                02. 3-Point Fibonacci & 144/233 PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => setSymphonySubPage('symphony_markers')}
+                className={`px-3 py-2 rounded-md font-semibold cursor-pointer whitespace-nowrap shrink-0 ${
+                  symphonySubPage === 'symphony_markers'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                03. ♬ Fib Buy/Sell Musical Markers
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                onEnterApp(
+                  symphonySubPage === 'symphony_markers'
+                    ? 'fibonacci-symphony-markers'
+                    : symphonySubPage === 'fibonacci_geometry'
+                    ? 'fibonacci-symphony-geometry'
+                    : 'market-symphony'
+                )
+              }
+              className="px-4 py-2.5 bg-slate-900 dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-400 text-white dark:text-slate-950 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Open Inside Full Workspace →
+            </button>
+          </div>
         </div>
 
-        {/* Section-Matched Promo Video: Scam Free Symphony markets promo */}
-        <SectionPromoVideoBanner
-          sectionBadge="Section Promo Video · Scam Free Symphony Markets"
-          headline="Watch: Scam-Free Symphony Markets — Candlesticks as Rising Harp & Calm Cello Notes"
-          description="Instead of anxiety-inducing sirens and scam hype, Symphony Markets translates green upward candles into ascending Golden Harp notes and red pullbacks into grounding Cello rests—training calm pattern recognition alongside the 10-cent risk cap."
-          accentTone="amber"
-          tracks={[
-            {
-              id: 'scam_free_symphony_promo',
-              tabLabel: 'Scam Free Symphony Promo',
-              title: 'Scam Free Symphony markets promo',
-              duration: '0:10',
-              videoSrc: '/api/drive-video/1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
-              driveFileId: '1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
-              posterSrc: videoCoverStopsImg,
-            },
-          ]}
-        />
+        {symphonySubPage === 'music_score' ? (
+          <>
+            {/* Section-Matched Promo Video: The Organic Rhythm of Trading + Fibonacci Part 1 */}
+            <SectionPromoVideoBanner
+              sectionBadge="Symphony Markets Academy · Flagship Symphony & Fibonacci Films"
+              headline="Watch: The Organic Rhythm of Trading (7:03) & Fibonacci Part 1 (5:36)"
+              description="Discover how botanical Fibonacci spirals, Hebrew Gematria (144 / 233 = 1.618 Φ), 3-Point Extensions (100% & 161.8% Golden Target), and 8-Hour Harp & Cello Candlestick Notes unite with the 2% ($0.10) risk boundary."
+              accentTone="amber"
+              tracks={[
+                {
+                  id: 'sym_organic_rhythm_of_trading',
+                  tabLabel: '01 · Organic Rhythm of Trading (7:03)',
+                  title: 'Symphony Markets Academy — The Organic Rhythm of Trading',
+                  duration: '7:03',
+                  videoSrc: ORGANIC_RHYTHM_VIDEO_URL,
+                  driveFileId: '1s-wUCvu1e3p3Rp93k1mzgi1TYHBuHw3i',
+                  posterSrc: videoCoverStopsImg,
+                },
+                {
+                  id: 'fib_part1_rhythm_of_crowd',
+                  tabLabel: '02 · Fibonacci Part 1: Rhythm of the Crowd (5:36)',
+                  title: 'The Rhythm of the Crowd (Fibonacci Part 1)',
+                  duration: '5:36',
+                  videoSrc: RHYTHM_OF_CROWD_VIDEO_URL,
+                  driveFileId: '1kCLZNmmcUAXP5XuRcAWfWnkWBXTs3YD5',
+                  posterSrc: videoCoverStopsImg,
+                },
+                {
+                  id: 'scam_free_symphony_promo',
+                  tabLabel: '03 · Scam-Free Symphony Reel (0:10)',
+                  title: 'Symphony Markets Academy — Scam-Free Notes Reel',
+                  duration: '0:10',
+                  videoSrc: '/api/drive-video/1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
+                  driveFileId: '1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
+                  posterSrc: videoCoverStopsImg,
+                },
+              ]}
+            />
 
-        {/* Visual Candlestick-to-Musical-Notes Analogy Banners & Symphony Audio Cards */}
-        <SymphonyFrequencyBanners />
+            {/* Visual Candlestick-to-Musical-Notes Analogy Banners & Symphony Audio Cards */}
+            <SymphonyFrequencyBanners />
 
-        {/* Dedicated 8-Hour Candlestick Symphony Composer & Interactive Music Staff */}
-        <CandlestickSymphonyComposer
-          symbol={symbol}
-          onSelectSymbol={onSelectSymbol}
-          candles={candles}
-          livePrice={
-            symbol === 'BTCUSDT'
-              ? btcLivePrice
-              : symbol === 'XRPUSDT'
-              ? xrpLivePrice
-              : xlmLivePrice
-          }
-          btcLivePrice={btcLivePrice}
-          xrpLivePrice={xrpLivePrice}
-          xlmLivePrice={xlmLivePrice}
-        />
+            {/* Dedicated 8-Hour Candlestick Symphony Composer & Interactive Music Staff */}
+            <CandlestickSymphonyComposer
+              symbol={symbol}
+              onSelectSymbol={onSelectSymbol}
+              candles={candles}
+              livePrice={activeSymLive}
+              btcLivePrice={btcLivePrice}
+              xrpLivePrice={xrpLivePrice}
+              xlmLivePrice={xlmLivePrice}
+            />
+
+            {/* Clean End-of-Page Switcher to Page 02: Fibonacci Extensions & Geometry of Creation */}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <span className="text-slate-600 dark:text-slate-400">
+                Page 01 of 03 · Next: Explore how <strong>3-Point Fibonacci Extensions (100%, 127.2%, 161.8%)</strong> & <strong>144 / 233 Gematria</strong> map onto creation.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSymphonySubPage('fibonacci_geometry');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <span>Next: 02. 3-Point Fibonacci Extensions & 144/233 Geometry</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </>
+        ) : symphonySubPage === 'fibonacci_geometry' ? (
+          <>
+            <FibonacciSymphonyGeometryModule
+              symbol={symbol}
+              onSelectSymbol={onSelectSymbol}
+              candles={candles}
+              livePrice={activeSymLive}
+              onApplySetupToSimulator={() => onEnterApp('fibonacci-symphony-geometry')}
+            />
+
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setSymphonySubPage('music_score');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <span>← Back to 01. 8-Hour Candlestick Score</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSymphonySubPage('symphony_markers');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <span>Next: 03. ♬ Fibonacci Musical Buy & Sell Markers Studio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <FibonacciSymphonyMarkersStudio
+              symbol={symbol}
+              onSelectSymbol={onSelectSymbol}
+              candles={candles}
+              livePrice={activeSymLive}
+              btcLivePrice={btcLivePrice}
+              xrpLivePrice={xrpLivePrice}
+              xlmLivePrice={xlmLivePrice}
+              onSendMarkerSetupToOrderDesk={() => onEnterApp('risk-chart')}
+            />
+
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setSymphonySubPage('fibonacci_geometry');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-slate-700 dark:text-slate-200 cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <span>← Back to 02. 3-Point Fibonacci & 144/233 Geometry</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onEnterApp('risk-chart')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <span>Open Embedded XRPL DEX & Risk Calculator (Section 06)</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     );
   }
@@ -1391,7 +1668,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <span className="font-mono">57 min 46 sec</span>
             </div>
             <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-              Symphony Markets Audio Podcast
+              Symphony Markets Academy Audio Podcast
             </h1>
           </div>
 
@@ -1474,7 +1751,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               Visual Map of Platform Capabilities · 100% Free Open-Source Toolkit
             </div>
             <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
-              What Symphony Markets Provides Inside the App
+              What Symphony Markets Academy Provides Inside the App
             </h1>
           </div>
 
@@ -1487,53 +1764,53 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           </button>
         </div>
 
-        {/* Section-Matched Promo Video Banner: Scam-Free Sandbox & All Section Reels */}
+        {/* Section-Matched Promo Video Banner: New Full-Length Films & Module Reels */}
         <SectionPromoVideoBanner
-          sectionBadge="Section Promo Videos · No-Scam Sandbox & Module Highlights"
-          headline="Watch Every Symphony Markets Section Promo Straight From Our Video Media Vault"
-          description="Preview the Scam-Free Sandbox, $5 Real-Wallet Blueprint, KSBC Gold Crystalline Reserves, and Antidote to Predation reels before launching any module inside the training workspace."
+          sectionBadge="Symphony Markets Academy · Complete Film & Promo Vault"
+          headline="Watch Every Symphony Markets Academy Film & Section Reel"
+          description="Explore our 3 newest Academy films—Survival Finance & Traditional Markets (5:07), The Organic Rhythm of Trading (7:03), and The Antidote to Loose Cycles (6:14)—alongside the No-Scam Sandbox and KSBC Gold reels."
           accentTone="sky"
           tracks={[
             {
-              id: 'features_scam_free',
-              tabLabel: '01 · Scam Free Promo',
-              title: 'Scam Free Symphony markets promo',
-              duration: '0:10',
-              videoSrc: '/api/drive-video/1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
-              driveFileId: '1R_Cy_uBTBjVgLjCqseoAjPxm0oqh5e9g',
+              id: 'features_survival_finance',
+              tabLabel: '01 · Survival Finance (5:07)',
+              title: 'Symphony Markets Academy — Survival Finance & Traditional Markets',
+              duration: '5:07',
+              videoSrc: SURVIVAL_FINANCE_VIDEO_URL,
+              driveFileId: '1pCtFdKXo6Fhd88QnSCoH95qlRTXAf5Dj',
+              posterSrc: founderDeskImg,
+            },
+            {
+              id: 'features_organic_rhythm',
+              tabLabel: '02 · Organic Rhythm (7:03)',
+              title: 'Symphony Markets Academy — The Organic Rhythm of Trading',
+              duration: '7:03',
+              videoSrc: ORGANIC_RHYTHM_VIDEO_URL,
+              driveFileId: '1s-wUCvu1e3p3Rp93k1mzgi1TYHBuHw3i',
               posterSrc: videoCoverStopsImg,
             },
             {
-              id: 'features_five_dollar',
-              tabLabel: '02 · $5 Blueprint Promo',
-              title: 'Symphony markets five dollar',
-              duration: '0:10',
-              videoSrc: '/api/drive-video/1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
-              driveFileId: '1iGNAlXhg2f03A3z-a4T_3wCElOijfkdX',
-              posterSrc: videoCoverWalletImg,
+              id: 'features_antidote_loose',
+              tabLabel: '03 · Antidote to Loose Cycles (6:14)',
+              title: 'Symphony Markets Academy — The Antidote to Loose Cycles',
+              duration: '6:14',
+              videoSrc: ANTIDOTE_LOOSE_CYCLES_VIDEO_URL,
+              driveFileId: '1RCuSGFs76KSTkdQBPDXrSN5ND8y_ZBBi',
+              posterSrc: noScamCompassImg,
             },
             {
               id: 'features_ksbc_gold',
-              tabLabel: '03 · KSBC Gold Promo',
-              title: 'KSBC Gold Symphony markets promo',
+              tabLabel: '04 · KSBC Gold Reel (0:10)',
+              title: 'KSBC Gold · Symphony Markets Academy Reel',
               duration: '0:10',
               videoSrc: '/api/drive-video/1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7',
               driveFileId: '1vvE86gSwiJeR7LxLPZcGfxbxw5EbPWM7',
               posterSrc: goldRwaBlueprintImg,
             },
             {
-              id: 'features_predation',
-              tabLabel: '04 · Predation Promo',
-              title: 'Symphony markets promo predation',
-              duration: '0:10',
-              videoSrc: '/api/drive-video/1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
-              driveFileId: '1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
-              posterSrc: noScamCompassImg,
-            },
-            {
               id: 'features_full_sandbox',
-              tabLabel: 'Full Walkthrough',
-              title: 'Symphony Markets: The No-Scam Sandbox',
+              tabLabel: '05 · Full Sandbox (5:45)',
+              title: 'Symphony Markets Academy: The No-Scam Sandbox',
               duration: '5:45',
               videoSrc: '/assets/symphony-welcome.mp4',
               driveFileId: '1FTGu-yv8TPVv2YT9gsLUceCak3bAEvcw',
@@ -1777,30 +2054,39 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
   if (activePage === 'story') {
     return (
       <div className="max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Section-Matched Promo Video: Symphony markets promo predation */}
+        {/* Section-Matched Promo Video: Antidote to Loose Cycles & Antidote to Predation */}
         <SectionPromoVideoBanner
-          sectionBadge="Section Promo Video · Antidote to Predation"
-          headline="Watch: Symphony Markets Promo — The Antidote to Financial Predation"
-          description="Built in direct response to a fake 'Stop-Trading' scam, this section exposes how rigged platforms extract money from beginners—and why radical self-custody, open-source math, and the No-Scam Zone Covenant are the antidote."
+          sectionBadge="Symphony Markets Academy · Origin & Antidote Films"
+          headline="Watch: The Antidote to Loose Cycles (6:14) & Antidote to Predation (6:04)"
+          description="Built in direct response to a fake 'Stop-Trading' scam, Symphony Markets Academy exposes how rigged platforms and opaque middlemen extract money from beginners—and why radical self-custody, open-source math, and the No-Scam Zone Covenant are the antidote."
           accentTone="emerald"
           tracks={[
             {
-              id: 'story_predation_promo',
-              tabLabel: 'Predation Promo',
-              title: 'Symphony markets promo predation',
-              duration: '0:10',
-              videoSrc: '/api/drive-video/1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
-              driveFileId: '1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+              id: 'story_antidote_loose_cycles',
+              tabLabel: '01 · Antidote to Loose Cycles (6:14)',
+              title: 'Symphony Markets Academy — The Antidote to Loose Cycles',
+              duration: '6:14',
+              videoSrc: ANTIDOTE_LOOSE_CYCLES_VIDEO_URL,
+              driveFileId: '1RCuSGFs76KSTkdQBPDXrSN5ND8y_ZBBi',
               posterSrc: noScamCompassImg,
             },
             {
               id: 'story_antidote_full',
-              tabLabel: 'Full Antidote Film',
-              title: 'Symphony Markets: The Antidote to Predation',
+              tabLabel: '02 · Antidote to Predation (6:04)',
+              title: 'Symphony Markets Academy: The Antidote to Predation',
               duration: '6:04',
               videoSrc: '/assets/symphony-antidote.mp4',
               driveFileId: '1vgJ0QiwY1aVtJwr-iPtKLdxTdcVqTTnr',
               posterSrc: founderDeskImg,
+            },
+            {
+              id: 'story_predation_promo',
+              tabLabel: '03 · Predation Reel (0:10)',
+              title: 'Symphony Markets Academy — Predation Reel',
+              duration: '0:10',
+              videoSrc: '/api/drive-video/1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+              driveFileId: '1eDtMP2vrBOl1AVqQ9ECVOUI0ByJ_JPtl',
+              posterSrc: noScamCompassImg,
             },
           ]}
         />
@@ -1818,7 +2104,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
             <div className="lg:col-span-7 space-y-4">
               <div className="text-xs font-semibold text-sky-600 dark:text-sky-400">
-                About Symphony Markets · Free & Open-Source on GitHub
+                About Symphony Markets Academy · Free & Open-Source on GitHub
               </div>
               <h1
                 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white leading-snug"
@@ -1835,7 +2121,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                   Over the past six or seven years watching the crypto space, it has been heartbreaking to see that same greed repeated in new disguises: fake automated bots, rigged dashboards, secret-phrase phishing, and influencers promising guaranteed daily returns.
                 </p>
                 <p>
-                  Back then, I made a commitment: if I ever had the chance to help people avoid being scammed, I would establish a strict <strong>No-Scam Zone Policy</strong>. Symphony Markets uses AI not to sell hype, but to give everyday learners an honest, transparent chance to understand markets safely.
+                  Back then, I made a commitment: if I ever had the chance to help people avoid being scammed, I would establish a strict <strong>No-Scam Zone Policy</strong>. Symphony Markets Academy uses AI not to sell hype, but to give everyday learners an honest, transparent chance to understand markets safely.
                 </p>
               </div>
 
@@ -1859,7 +2145,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
               <div className="text-center space-y-1.5">
                 <img
                   src={symphonyHarpEmblemImg}
-                  alt="Symphony Markets High-Res Crypto Medallion Logo"
+                  alt="Symphony Markets Academy High-Res Crypto Medallion Logo"
                   className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-2 border-amber-400/80 shadow-lg mx-auto"
                 />
                 <div className="text-[11px] font-mono text-amber-300">
@@ -1878,13 +2164,13 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
 
             <div className="lg:col-span-8 space-y-3">
               <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                The Symphony Markets Emblem · Visual Symbolism
+                The Symphony Markets Academy Emblem · Visual Symbolism
               </div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                 Why Our Logo Is a Golden Symphony Harp With Candlestick Strings & Floating Notes
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Every element of the <strong>Symphony Markets</strong> crest teaches a core principle of our classroom: the <strong>Golden Classical Harp</strong> represents sovereign order and patience; the <strong>Glowing Emerald & Cyan Candlestick Strings</strong> remind learners that real markets move in structured harmonic waves rather than gambling hype; and the <strong>Floating Musical Notes</strong> symbolize walking away from every trade with peace of mind under the No-Scam Zone Covenant.
+                Every element of the <strong>Symphony Markets Academy</strong> crest teaches a core principle of our classroom: the <strong>Golden Classical Harp</strong> represents sovereign order and patience; the <strong>Glowing Emerald & Cyan Candlestick Strings</strong> remind learners that real markets move in structured harmonic waves rather than gambling hype; and the <strong>Floating Musical Notes</strong> symbolize walking away from every trade with peace of mind under the No-Scam Zone Covenant.
               </p>
               <div className="flex flex-wrap items-center gap-3 pt-1">
                 <a
@@ -2362,9 +2648,9 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
                 By Spiritual Sciences Pneumatology Researcher William Hardrick, DQP-KS
               </p>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Paired with <em>The Sovereign Mind & The Honest Market</em> companion guide, this book explores the 4 foundational pillars behind Symphony Markets: <strong>The Sovereign Breath (Pneuma)</strong>, <strong>The Sacred Geometry of Risk</strong>, <strong>Machine Intelligence as a Shield</strong>, and <strong>Radical Ethics & The No-Scam Zone</strong>.
+                Paired with <em>The Sovereign Mind & The Honest Market</em> companion guide, this book explores the 4 foundational pillars behind Symphony Markets Academy: <strong>The Sovereign Breath (Pneuma)</strong>, <strong>The Sacred Geometry of Risk</strong>, <strong>Machine Intelligence as a Shield</strong>, and <strong>Radical Ethics & The No-Scam Zone</strong>.
               </p>
-              <blockquote className="mt-2 pl-3 border-l-2 border-amber-400 text-xs italic text-slate-700 dark:text-slate-300 leading-relaxed">
+              <blockquote className="mt-2 p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs italic text-slate-700 dark:text-slate-300 leading-relaxed">
                 “It’s not about making money—it’s about learning how to manage and understand what the system is doing.”
               </blockquote>
             </div>
@@ -2571,7 +2857,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({
           </div>
           <iframe
             key={activeDocKey}
-            src={`/api/drive-pdf?doc=${activeDocKey}`}
+            src={
+              activeDocKey === 'geometry_creation'
+                ? GEOMETRY_CREATION_LOCAL_PDF_URL
+                : `/api/drive-pdf?doc=${activeDocKey}`
+            }
             title={activeSanctuaryDoc.title}
             className="w-full h-[680px] border-0 bg-slate-100 dark:bg-slate-950"
           />

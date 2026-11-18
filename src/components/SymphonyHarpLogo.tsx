@@ -10,7 +10,7 @@ interface SymphonyHarpLogoProps {
 }
 
 /**
- * Symphony Markets Official Logo:
+ * Symphony Markets Academy Official Logo:
  * A crypto-medallion crest featuring a golden Symphony Harp whose vertical
  * strings are glowing emerald & cyan market candlesticks (with wicks and bodies)
  * and golden musical notes floating upward from the harmonic curve.
@@ -24,7 +24,7 @@ export const SymphonyHarpLogo: React.FC<SymphonyHarpLogoProps> = ({
     return (
       <img
         src={symphonyHarpEmblemImg}
-        alt="Symphony Markets Logo — Golden harp with candlestick strings and floating musical notes"
+        alt="Symphony Markets Academy Logo — Golden harp with candlestick strings and floating musical notes"
         width={size}
         height={size}
         className={`rounded-full object-cover border border-amber-400/70 shadow-sm shrink-0 select-none ${className}`}
@@ -40,7 +40,7 @@ export const SymphonyHarpLogo: React.FC<SymphonyHarpLogoProps> = ({
       height={size}
       fill="none"
       role="img"
-      aria-label="Symphony Markets Logo — Golden harp with candlestick strings and floating musical notes"
+      aria-label="Symphony Markets Academy Logo — Golden harp with candlestick strings and floating musical notes"
       className={`shrink-0 select-none ${className}`}
     >
       <defs>
@@ -249,7 +249,7 @@ const HARMONIC_BANNER_CANDLES: BackdropCandleItem[] = [
 
 /**
  * Faded, semi-transparent animated red and green candlesticks moving gently
- * up and down behind the Symphony Markets brand banner—visualizing the market
+ * up and down behind the Symphony Markets Academy brand banner—visualizing the market
  * as a harmonic musical score rather than chaotic noise.
  */
 export const SymphonyCandlestickBackdrop: React.FC<{ className?: string }> = ({
