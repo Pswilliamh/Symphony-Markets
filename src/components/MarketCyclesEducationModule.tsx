@@ -30,6 +30,7 @@ interface MarketCyclesEducationModuleProps {
   xlmLivePrice: number;
   onEnterApp?: (targetSectionId?: string) => void;
   onlyPart?: MarketCyclePartId | 'all';
+  sectionNumberOverride?: string;
 }
 
 type CyclePhaseKey = 'accumulation' | 'markup' | 'distribution' | 'markdown';
@@ -359,6 +360,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
   xlmLivePrice,
   onEnterApp,
   onlyPart = 'all',
+  sectionNumberOverride,
 }) => {
   const [selectedPhase, setSelectedPhase] = useState<CyclePhaseKey>('accumulation');
   const [selectedCycleId, setSelectedCycleId] = useState<HistoricalCycleId>('cycle4');
@@ -451,7 +453,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div className="space-y-1.5 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-              <span>01. Symphony Markets Academy Perspective</span>
+              <span>{sectionNumberOverride ?? '01'}. Symphony Markets Academy Perspective</span>
               <span aria-hidden="true">·</span>
               <span>Ascending & Descending Eagle Markets</span>
               <span aria-hidden="true">·</span>
@@ -865,7 +867,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-              <span>02. Interactive 4-Season Wave</span>
+              <span>{sectionNumberOverride ?? '02'}. Interactive 4-Season Wave</span>
               <span aria-hidden="true">·</span>
               <span>Accumulation → Markup → Distribution → Markdown</span>
             </div>
@@ -1100,7 +1102,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
               <Calendar className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-              <span>03. Time-of-Year & Monthly Calendar Rhythms</span>
+              <span>{sectionNumberOverride ?? '03'}. Time-of-Year & Monthly Calendar Rhythms</span>
               <span aria-hidden="true">·</span>
               <span>12-Month Seasonality + Day 1–30 Rhythm</span>
             </div>
@@ -1283,7 +1285,7 @@ export const MarketCyclesEducationModule: React.FC<MarketCyclesEducationModulePr
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
               <Compass className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              <span>04. The 4-Year Halving Clock (2012 – 2028)</span>
+              <span>{sectionNumberOverride ?? '04'}. The 4-Year Halving Clock (2012 – 2028)</span>
               <span aria-hidden="true">·</span>
               <span>Live Cycle GPS: November 2026</span>
             </div>

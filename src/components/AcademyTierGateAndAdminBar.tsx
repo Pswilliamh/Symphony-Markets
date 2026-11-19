@@ -91,7 +91,7 @@ export const AcademyProgressBanner: React.FC<AcademyProgressBannerProps> = ({
           </button>
         </div>
         <p className="text-slate-500 dark:text-slate-400">
-          Students master Beginner Foundations and the Open Reading Room first before unlocking cohort-guided Intermediate charting and Advanced 10-Set execution.
+          Students master Open Foundations & Market Seasons (01–07) first, rehearse Charting & Fibonacci on Paper in Intermediate (08–12), and graduate to Single-Trade & 10-Set Self-Custody XRPL DEX Execution in Advanced (13–16).
           {orientationVideoUrl ? ' Includes your custom Course Orientation Video inside Open Library.' : ''}
         </p>
       </div>
@@ -279,7 +279,7 @@ export const AcademyPasscodeGateCard: React.FC<AcademyPasscodeGateCardProps> = (
               onClick={onOpenBeginnerStart}
               className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              Go to Open Beginner Chapters (01–05)
+              Go to Open Beginner Chapters (01–07)
             </button>
             <button
               type="button"
@@ -652,7 +652,7 @@ export const AcademyAdminConsoleModal: React.FC<AcademyAdminConsoleModalProps> =
                     checked={draftIntEnabled}
                     onChange={(e) => setDraftIntEnabled(e.target.checked)}
                   />
-                  <span>Require passcode for Intermediate (06–12)</span>
+                  <span>Require passcode for Intermediate (08–12)</span>
                 </label>
               </div>
 

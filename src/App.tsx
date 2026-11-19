@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Layers, Lock } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Layers, Lock, ShieldCheck } from 'lucide-react';
 import {
   AcademyAdminConsoleModal,
   AcademyPasscodeGateCard,
@@ -25,6 +25,12 @@ import {
   MarketCyclePartId,
   MarketCyclesEducationModule,
 } from './components/MarketCyclesEducationModule';
+import {
+  ONE_BY_ONE_CHECKLIST_STORAGE_KEY,
+  OneByOneChecklistState,
+  OneByOneTradeChecklist,
+  loadPersistedChecklistState,
+} from './components/OneByOneTradeChecklist';
 import { OpenMediaAndDocumentLibrary } from './components/OpenMediaAndDocumentLibrary';
 import { PortfolioAndToolsSection } from './components/PortfolioAndToolsSection';
 import {
@@ -108,19 +114,19 @@ const CURRICULUM_GROUPS: CurriculumGroupMeta[] = [
   {
     id: 'beginner',
     roman: 'I',
-    label: 'Beginners · Foundations (Open)',
-    rangeBadge: '01–05',
+    label: 'Beginners · Foundations & Seasons (Open)',
+    rangeBadge: '01–07',
   },
   {
     id: 'intermediate',
     roman: 'II',
-    label: 'Intermediate · Chart, Fib & XRPL DEX',
-    rangeBadge: '06–12',
+    label: 'Intermediate · Fibonacci & Paper Rehearsal',
+    rangeBadge: '08–12',
   },
   {
     id: 'advanced',
     roman: 'III',
-    label: 'Advanced · 10-Set, 11-Skill & DEX',
+    label: 'Advanced · Self-Custody DEX Capstone',
     rangeBadge: '13–16',
   },
   {
@@ -132,6 +138,9 @@ const CURRICULUM_GROUPS: CurriculumGroupMeta[] = [
 ];
 
 const WORKSHOP_CHAPTERS: WorkshopChapterMeta[] = [
+  // =========================================================================
+  // STAGE I: BEGINNERS — FOUNDATIONS, SEASONS & RHYTHM (01–07, OPEN ACCESS)
+  // =========================================================================
   {
     id: 'start-here',
     number: '01',
@@ -164,99 +173,113 @@ const WORKSHOP_CHAPTERS: WorkshopChapterMeta[] = [
     cyclePart: 'four_seasons',
   },
   {
-    id: 'market-symphony',
+    id: 'cycle-monthly-rhythms',
     number: '05',
     groupId: 'beginner',
-    shortTitle: '05. ♪ 8-Hour Symphony Graph',
-    fullTitle: '♪ 8-Hour Market Symphony Music Graph',
-  },
-  {
-    id: 'risk-chart',
-    number: '06',
-    groupId: 'intermediate',
-    shortTitle: '06. Live Chart & Embedded XRPL DEX',
-    fullTitle: 'Live Candlestick Chart, 2% Risk & Embedded XRPL DEX Order Desk',
-  },
-  {
-    id: 'candlestick-guide',
-    number: '07',
-    groupId: 'intermediate',
-    shortTitle: '07. Candlestick & Fib Retracements',
-    fullTitle: 'Candlestick Anatomy & Fibonacci Retracement Guide',
-  },
-  {
-    id: 'fibonacci-symphony-geometry',
-    number: '08',
-    groupId: 'intermediate',
-    shortTitle: '08. ♪ 3-Point Fib Extensions & 144/233',
-    fullTitle: 'The Geometry of Creation, Musical Notes & 3-Point Fibonacci Extensions',
-  },
-  {
-    id: 'fibonacci-symphony-markers',
-    number: '09',
-    groupId: 'intermediate',
-    shortTitle: '09. ♬ Fib Symphony Buy/Sell Markers',
-    fullTitle: 'Dedicated Fibonacci Symphony Studio: Musical Buy, Stop & Sell Markers',
-  },
-  {
-    id: 'ai-buy-sell-helper',
-    number: '10',
-    groupId: 'intermediate',
-    shortTitle: '10. ★ Live AI Buy & Sell Helper',
-    fullTitle: 'Live AI Market Examiner: Recommended Buy, Stop-Loss & Sell Points',
-  },
-  {
-    id: 'portfolio-ledger',
-    number: '11',
-    groupId: 'intermediate',
-    shortTitle: '11. Wallet Watch & Paper Ledger',
-    fullTitle: 'Wallet Watch, Paper Portfolio & Alerts Ledger',
-  },
-  {
-    id: 'cycle-monthly-rhythms',
-    number: '12',
-    groupId: 'intermediate',
-    shortTitle: '12. Monthly & Yearly Rhythms',
+    shortTitle: '05. Monthly & Yearly Rhythms',
     fullTitle: 'How the Market Moves by Time of the Year & Time of the Month',
     cyclePart: 'monthly_rhythms',
   },
   {
-    id: 'ten-set-auto-trader',
-    number: '13',
-    groupId: 'advanced',
-    shortTitle: '13. ⚡ 10-Set Sequencer & XRPL DEX',
-    fullTitle: 'Automated 10-Set Buy & Sell Sequencer (& Real XRPL DEX Bridge)',
-  },
-  {
-    id: 'skill-desk',
-    number: '14',
-    groupId: 'advanced',
-    shortTitle: '14. Day-Trader-Skill Desk (11-Module)',
-    fullTitle: 'Day-Trader-Skill Desk — 11-Module Interactive Suite',
-  },
-  {
-    id: 'ai-dex-lab',
-    number: '15',
-    groupId: 'advanced',
-    shortTitle: '15. 24/7 AI Decentralized DEX Lab',
-    fullTitle: '24/7 AI Decentralized DEX Lab — 11-Skill On-Chain Architecture',
-  },
-  {
     id: 'cycle-four-year-clock',
-    number: '16',
-    groupId: 'advanced',
-    shortTitle: '16. Past Four 4-Year Cycles (Late 2026)',
+    number: '06',
+    groupId: 'beginner',
+    shortTitle: '06. 4-Year Cycle Clock (2026)',
     fullTitle: 'The Past Four 4-Year Cycles & Where the Market Is Right Now (Late 2026)',
     cyclePart: 'four_year_cycles',
   },
   {
+    id: 'market-symphony',
+    number: '07',
+    groupId: 'beginner',
+    shortTitle: '07. ♪ 8-Hour Symphony Graph',
+    fullTitle: '♪ 8-Hour Market Symphony Music Graph',
+  },
+
+  // =========================================================================
+  // STAGE II: INTERMEDIATE — SHEET MUSIC, FIBONACCI & PAPER REHEARSAL (08–12)
+  // =========================================================================
+  {
+    id: 'candlestick-guide',
+    number: '08',
+    groupId: 'intermediate',
+    shortTitle: '08. Candlestick & Fib Retracements',
+    fullTitle: 'Candlestick Anatomy & Fibonacci Retracement Guide',
+  },
+  {
+    id: 'fibonacci-symphony-geometry',
+    number: '09',
+    groupId: 'intermediate',
+    shortTitle: '09. ♪ 3-Point Fib Extensions & 144/233',
+    fullTitle: 'The Geometry of Creation, Musical Notes & 3-Point Fibonacci Extensions',
+  },
+  {
+    id: 'fibonacci-symphony-markers',
+    number: '10',
+    groupId: 'intermediate',
+    shortTitle: '10. ♬ Fib Symphony Buy/Sell Markers',
+    fullTitle: 'Dedicated Fibonacci Symphony Studio: Musical Buy, Stop & Sell Markers',
+  },
+  {
+    id: 'ai-buy-sell-helper',
+    number: '11',
+    groupId: 'intermediate',
+    shortTitle: '11. ★ Live AI Market Examiner',
+    fullTitle: 'Live AI Market Examiner: Recommended Buy, Stop-Loss & Sell Points',
+  },
+  {
+    id: 'portfolio-ledger',
+    number: '12',
+    groupId: 'intermediate',
+    shortTitle: '12. Paper Portfolio & Wallet Watch',
+    fullTitle: 'Paper Rehearsal Ledger, Read-Only Wallet Watch & Price Alerts',
+  },
+
+  // =========================================================================
+  // STAGE III: ADVANCED — END OF THE PROCESS: SELF-CUSTODY EXECUTION (13–16)
+  // =========================================================================
+  {
+    id: 'skill-desk',
+    number: '13',
+    groupId: 'advanced',
+    shortTitle: '13. 11-Skill Readiness Check',
+    fullTitle: '11-Module Day-Trader Readiness & Discipline Check',
+  },
+  {
+    id: 'risk-chart',
+    number: '14',
+    groupId: 'advanced',
+    shortTitle: '14. Single Trade · Embedded XRPL DEX',
+    fullTitle: 'Live Candlestick Chart, 2% Risk Desk & First Single Trade on Embedded XRPL DEX',
+  },
+  {
+    id: 'ten-set-auto-trader',
+    number: '15',
+    groupId: 'advanced',
+    shortTitle: '15. ⚡ 10-Set Sequencer & XRPL Bridge',
+    fullTitle: 'Automated 10-Set Buy & Sell Sequencer (& Step-by-Step XRPL DEX Bridge)',
+  },
+  {
+    id: 'ai-dex-lab',
+    number: '16',
+    groupId: 'advanced',
+    shortTitle: '16. ★ Capstone: 24/7 DEX Stewardship',
+    fullTitle: 'Graduation Capstone: 24/7 On-Chain DEX Lab & Self-Custody Mastery',
+  },
+
+  // =========================================================================
+  // STANDALONE REFERENCE ROOM — ALWAYS OPEN (NOT COUNTED AS STEP #17)
+  // =========================================================================
+  {
     id: 'open-library',
-    number: '17',
+    number: 'IV',
     groupId: 'open_library',
-    shortTitle: '17. Open Media & Document Library',
-    fullTitle: 'Open Media, Course Video & Document Reading Room (No Password Required)',
+    shortTitle: 'Open Media & Document Library',
+    fullTitle: 'Open Media, Course Videos & Document Reading Room (No Password Required)',
   },
 ];
+
+const PROGRESSION_CHAPTERS = WORKSHOP_CHAPTERS.filter((ch) => ch.groupId !== 'open_library');
 
 function resolveChapterId(targetSectionId?: string): WorkshopChapterId {
   if (!targetSectionId) return 'start-here';
@@ -272,6 +295,8 @@ export default function App() {
   const [symbol, setSymbol] = useState<AssetSymbol>('XRPUSDT');
   const [timeframe, setTimeframe] = useState<Timeframe>('1h');
   const [activeChapterId, setActiveChapterId] = useState<WorkshopChapterId>('start-here');
+  const [lastProgressionChapterId, setLastProgressionChapterId] =
+    useState<WorkshopChapterId>('start-here');
   const [paginatedMode, setPaginatedMode] = useState<boolean>(true);
 
   const [publicGates, setPublicGates] = useState<AcademyPublicGatesState>(
@@ -300,6 +325,17 @@ export default function App() {
       return false;
     }
   });
+  const [oneByOneChecklist, setOneByOneChecklist] = useState<OneByOneChecklistState>(() =>
+    loadPersistedChecklistState()
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(ONE_BY_ONE_CHECKLIST_STORAGE_KEY, JSON.stringify(oneByOneChecklist));
+    } catch {
+      // Ignore storage quota errors in restricted preview modes
+    }
+  }, [oneByOneChecklist]);
 
   // Market State for BTC, XRP, and XLM
   const [candlesBySymbol, setCandlesBySymbol] = useState<Record<AssetSymbol, Candle[]>>({
@@ -905,6 +941,9 @@ export default function App() {
   const navigateToChapter = (targetSectionId?: string) => {
     const resolvedId = resolveChapterId(targetSectionId);
     setActiveChapterId(resolvedId);
+    if (resolvedId !== 'open-library') {
+      setLastProgressionChapterId(resolvedId);
+    }
     if (
       resolvedId === 'skill-desk' ||
       resolvedId === 'ai-dex-lab' ||
@@ -930,17 +969,36 @@ export default function App() {
     navigateToChapter(targetSectionId);
   };
 
-  const activeChapterIdx = useMemo(() => {
-    const idx = WORKSHOP_CHAPTERS.findIndex((ch) => ch.id === activeChapterId);
-    return idx >= 0 ? idx : 0;
-  }, [activeChapterId]);
+  const activeChapter = useMemo(
+    () => WORKSHOP_CHAPTERS.find((ch) => ch.id === activeChapterId) ?? WORKSHOP_CHAPTERS[0],
+    [activeChapterId]
+  );
 
-  const activeChapter = WORKSHOP_CHAPTERS[activeChapterIdx];
-  const prevChapter = activeChapterIdx > 0 ? WORKSHOP_CHAPTERS[activeChapterIdx - 1] : null;
-  const nextChapter =
-    activeChapterIdx < WORKSHOP_CHAPTERS.length - 1
-      ? WORKSHOP_CHAPTERS[activeChapterIdx + 1]
-      : null;
+  const resumeStudyChapter = useMemo(
+    () =>
+      PROGRESSION_CHAPTERS.find((ch) => ch.id === lastProgressionChapterId) ??
+      PROGRESSION_CHAPTERS[0],
+    [lastProgressionChapterId]
+  );
+
+  const isStandaloneLibraryActive = activeChapter.id === 'open-library';
+
+  const activeProgressionIdx = useMemo(() => {
+    const idx = PROGRESSION_CHAPTERS.findIndex((ch) => ch.id === activeChapter.id);
+    return idx >= 0 ? idx : 0;
+  }, [activeChapter.id]);
+
+  const prevChapter = isStandaloneLibraryActive
+    ? resumeStudyChapter
+    : activeProgressionIdx > 0
+    ? PROGRESSION_CHAPTERS[activeProgressionIdx - 1]
+    : null;
+  const nextChapter = isStandaloneLibraryActive
+    ? null
+    : activeProgressionIdx < PROGRESSION_CHAPTERS.length - 1
+    ? PROGRESSION_CHAPTERS[activeProgressionIdx + 1]
+    : null;
+
   const activeGroup =
     CURRICULUM_GROUPS.find((g) => g.id === activeChapter.groupId) ?? CURRICULUM_GROUPS[0];
   const chaptersInActiveGroup = WORKSHOP_CHAPTERS.filter(
@@ -952,7 +1010,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Top Bar Contract: 3 Zones separated by gap-8 */}
-      <header className="flex items-center justify-between gap-8 px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+      <header className="flex items-center justify-between gap-4 xl:gap-8 px-4 sm:px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         {/* Zone 1: Brand Emblem + Wordmark with warm background highlight & faded animated candlesticks */}
         <a
           href="#welcome"
@@ -968,7 +1026,7 @@ export default function App() {
         </a>
 
         {/* Zone 2: Standalone Page Menu Items (5 concise single-line links obeying Top Bar Contract) */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-slate-600 dark:text-slate-400">
           <button
             type="button"
             onClick={() => navigatePublicPage('symphony')}
@@ -1048,8 +1106,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Mobile Compact Page Switcher (visible only below md breakpoint) */}
-      <nav className="md:hidden flex items-center gap-4 overflow-x-auto px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-600 dark:text-slate-400">
+      {/* Mobile & Tablet Compact Page Switcher (visible below lg breakpoint so header nav never clips) */}
+      <nav className="lg:hidden flex items-center gap-4 overflow-x-auto px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-600 dark:text-slate-400">
         <button
           type="button"
           onClick={() => navigatePublicPage('welcome')}
@@ -1235,7 +1293,7 @@ export default function App() {
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                Page-by-Page Menu ({WORKSHOP_CHAPTERS.length} Sections)
+                Page-by-Page Menu ({PROGRESSION_CHAPTERS.length}-Step Path)
               </button>
               <button
                 type="button"
@@ -1254,7 +1312,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Grouped Curriculum Menu Bar (Beginners · Intermediate · Advanced · Open Library) */}
+          {/* Grouped Curriculum Menu Bar (Stage I · Stage II · Stage III Capstone · Standalone Open Library) */}
           <nav
             aria-label="Training Curriculum Menu"
             className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3.5"
@@ -1329,7 +1387,7 @@ export default function App() {
 
                 <div className="flex flex-wrap items-center gap-2 text-xs shrink-0">
                   <select
-                    aria-label={`Jump directly to any of the ${WORKSHOP_CHAPTERS.length} training sections`}
+                    aria-label={`Jump directly to any of the ${PROGRESSION_CHAPTERS.length} progressive training steps or Open Library`}
                     value={activeChapter.id}
                     onChange={(e) => navigateToChapter(e.target.value)}
                     className="max-w-[260px] px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs font-medium cursor-pointer"
@@ -1337,51 +1395,70 @@ export default function App() {
                     {CURRICULUM_GROUPS.map((grp) => (
                       <optgroup
                         key={grp.id}
-                        label={`Tier ${grp.roman}: ${grp.label} (${grp.rangeBadge})`}
+                        label={`Stage ${grp.roman}: ${grp.label} (${grp.rangeBadge})`}
                       >
                         {WORKSHOP_CHAPTERS.filter((ch) => ch.groupId === grp.id).map((ch) => (
                           <option key={ch.id} value={ch.id}>
-                            {ch.number}. {ch.fullTitle}
+                            {ch.groupId === 'open_library'
+                              ? ch.fullTitle
+                              : `${ch.number}. ${ch.fullTitle}`}
                           </option>
                         ))}
                       </optgroup>
                     ))}
                   </select>
 
-                  <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
-                    {activeChapterIdx + 1} / {WORKSHOP_CHAPTERS.length}
-                  </span>
+                  {isStandaloneLibraryActive ? (
+                    <>
+                      <span className="font-mono text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap">
+                        Always-Open Library
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => navigateToChapter(resumeStudyChapter.id)}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold whitespace-nowrap shrink-0 cursor-pointer"
+                      >
+                        ← Return to {resumeStudyChapter.shortTitle}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums whitespace-nowrap">
+                        Step {activeProgressionIdx + 1} / {PROGRESSION_CHAPTERS.length}
+                      </span>
 
-                  <button
-                    type="button"
-                    disabled={!prevChapter}
-                    onClick={() => prevChapter && navigateToChapter(prevChapter.id)}
-                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap shrink-0 cursor-pointer"
-                  >
-                    ← Prev
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigateToChapter(nextChapter ? nextChapter.id : WORKSHOP_CHAPTERS[0].id)
-                    }
-                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold whitespace-nowrap shrink-0 cursor-pointer"
-                  >
-                    {nextChapter ? 'Next →' : 'Restart ↺'}
-                  </button>
+                      <button
+                        type="button"
+                        disabled={!prevChapter}
+                        onClick={() => prevChapter && navigateToChapter(prevChapter.id)}
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap shrink-0 cursor-pointer"
+                      >
+                        ← Prev
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigateToChapter(nextChapter ? nextChapter.id : PROGRESSION_CHAPTERS[0].id)
+                        }
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold whitespace-nowrap shrink-0 cursor-pointer"
+                      >
+                        {nextChapter ? 'Next →' : 'Restart Path ↺'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
                 <span>
-                  <strong>Full Scroll View Active:</strong> Open Beginner chapters and the Open Media & Document Library display immediately; Intermediate and Advanced sections respect active cohort passcode gates.
+                  <strong>Full Scroll View Active:</strong> Open Foundations & Seasons (01–07) and the Open Media Library display immediately; Intermediate Rehearsal (08–12) and Advanced Execution Capstone (13–16) respect active cohort passcode gates.
                 </span>
                 <button
                   type="button"
                   onClick={() => setPaginatedMode(true)}
                   className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline whitespace-nowrap cursor-pointer"
                 >
-                  Return to Page-by-Page Chapters →
+                  Return to 16-Step Mastery Path →
                 </button>
               </div>
             )}
@@ -1414,7 +1491,7 @@ export default function App() {
             )}
 
           {/* ====================================================================
-           * TIER I: BEGINNERS — OPEN FOUNDATIONS (SECTIONS 01–05, NO PASSCODE)
+           * STAGE I: BEGINNERS — OPEN FOUNDATIONS & MARKET SEASONS (STEPS 01–07)
            * ==================================================================== */}
           {(!paginatedMode || activeChapter.id === 'start-here') && (
             <section id="start-here">
@@ -1477,10 +1554,8 @@ export default function App() {
             </section>
           )}
 
-          {(!paginatedMode ||
-            activeChapter.id === 'cycle-bull-vs-bear' ||
-            activeChapter.id === 'cycle-four-seasons') && (
-            <section id={paginatedMode ? activeChapter.id : 'beginner-market-cycles'}>
+          {(!paginatedMode || activeChapter.id === 'cycle-bull-vs-bear') && (
+            <section id="cycle-bull-vs-bear">
               <MarketCyclesEducationModule
                 symbol={symbol}
                 onSelectSymbol={handleSelectSymbol}
@@ -1489,14 +1564,13 @@ export default function App() {
                 xrpLivePrice={xrpLive}
                 xlmLivePrice={xlmLive}
                 onEnterApp={handleEnterApp}
-                onlyPart={
-                  paginatedMode ? activeChapter.cyclePart ?? 'bull_vs_bear' : 'bull_vs_bear'
-                }
+                onlyPart="bull_vs_bear"
+                sectionNumberOverride="03"
               />
             </section>
           )}
 
-          {!paginatedMode && (
+          {(!paginatedMode || activeChapter.id === 'cycle-four-seasons') && (
             <section id="cycle-four-seasons">
               <MarketCyclesEducationModule
                 symbol={symbol}
@@ -1507,6 +1581,39 @@ export default function App() {
                 xlmLivePrice={xlmLive}
                 onEnterApp={handleEnterApp}
                 onlyPart="four_seasons"
+                sectionNumberOverride="04"
+              />
+            </section>
+          )}
+
+          {(!paginatedMode || activeChapter.id === 'cycle-monthly-rhythms') && (
+            <section id="cycle-monthly-rhythms">
+              <MarketCyclesEducationModule
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                candles={activeCandles}
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+                onEnterApp={handleEnterApp}
+                onlyPart="monthly_rhythms"
+                sectionNumberOverride="05"
+              />
+            </section>
+          )}
+
+          {(!paginatedMode || activeChapter.id === 'cycle-four-year-clock') && (
+            <section id="cycle-four-year-clock">
+              <MarketCyclesEducationModule
+                symbol={symbol}
+                onSelectSymbol={handleSelectSymbol}
+                candles={activeCandles}
+                btcLivePrice={btcLive}
+                xrpLivePrice={xrpLive}
+                xlmLivePrice={xlmLive}
+                onEnterApp={handleEnterApp}
+                onlyPart="four_year_cycles"
+                sectionNumberOverride="06"
               />
             </section>
           )}
@@ -1526,13 +1633,13 @@ export default function App() {
           )}
 
           {/* ====================================================================
-           * TIER II: INTERMEDIATE — CHART, FIBONACCI & EMBEDDED XRPL DEX (SECTIONS 06–12)
+           * STAGE II: INTERMEDIATE — SHEET MUSIC, FIBONACCI & PAPER REHEARSAL (08–12)
            * ==================================================================== */}
           {!paginatedMode && isTierLocked('intermediate') && (
             <AcademyPasscodeGateCard
               requiredTier="intermediate"
-              chapterNumber="06–12"
-              chapterTitle="Intermediate Curriculum: Live Charting, Fibonacci Symphony Markers & Embedded XRPL DEX"
+              chapterNumber="08–12"
+              chapterTitle="Intermediate Curriculum: Candlestick Sheet Music, Fibonacci Extensions & Paper Rehearsal"
               chaptersInTier={WORKSHOP_CHAPTERS.filter((c) => c.groupId === 'intermediate').map(
                 (c) => ({ number: c.number, fullTitle: c.fullTitle })
               )}
@@ -1553,8 +1660,388 @@ export default function App() {
 
           {!isTierLocked('intermediate') && (
             <>
+              {(!paginatedMode || activeChapter.id === 'candlestick-guide') && (
+                <section id="candlestick-guide">
+                  <CandleEducationDeck
+                    symbol={symbol}
+                    candles={activeCandles}
+                    selectedCandleIndex={selectedCandleIndex}
+                    onSelectCandle={setSelectedCandleIndex}
+                    fibLevels={fibLevels}
+                    livePrice={livePrice}
+                    onUsePriceAsEntry={(price) => {
+                      setEntryPrice(price);
+                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
+                      setAlertBanner(
+                        `Set Planned Entry Price to $${price.toFixed(dec)} from Section 08 Candlestick & Fibonacci Guide`
+                      );
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'fibonacci-symphony-geometry') && (
+                <section id="fibonacci-symphony-geometry">
+                  <FibonacciSymphonyGeometryModule
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    livePrice={livePrice}
+                    onApplySetupToSimulator={({
+                      entryPrice: ep,
+                      stopLossPrice,
+                      takeProfitPrice,
+                      rrRatio: rr,
+                    }) => {
+                      setEntryPrice(ep);
+                      const stopPct = Math.max(
+                        0.5,
+                        Math.min(10, Number((((ep - stopLossPrice) / ep) * 100).toFixed(2)))
+                      );
+                      setStopDistancePct(stopPct);
+                      setRrRatio(rr);
+                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
+                      if (isTierLocked('advanced')) {
+                        setActiveBottomTab('portfolio');
+                        setAlertBanner(
+                          `Staged 3-Point Fibonacci Setup (${symbol.replace(
+                            'USDT',
+                            ''
+                          )}): Point C Buy $${ep.toFixed(dec)} · 78.6% Stop $${stopLossPrice.toFixed(
+                            dec
+                          )} · 161.8% Target $${takeProfitPrice.toFixed(
+                            dec
+                          )} — Ready for Paper Rehearsal in Section 12`
+                        );
+                        navigateToChapter('portfolio-ledger');
+                      } else {
+                        setAlertBanner(
+                          `Loaded 3-Point Fibonacci Setup (${symbol.replace(
+                            'USDT',
+                            ''
+                          )}) onto Section 14 Order Desk: Point C Buy $${ep.toFixed(
+                            dec
+                          )} · 78.6% Stop $${stopLossPrice.toFixed(
+                            dec
+                          )} · 161.8% Golden Target $${takeProfitPrice.toFixed(dec)}`
+                        );
+                        navigateToChapter('risk-chart');
+                      }
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'fibonacci-symphony-markers') && (
+                <section id="fibonacci-symphony-markers">
+                  <FibonacciSymphonyMarkersStudio
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    livePrice={livePrice}
+                    btcLivePrice={btcLive}
+                    xrpLivePrice={xrpLive}
+                    xlmLivePrice={xlmLive}
+                    onSendMarkerSetupToOrderDesk={({
+                      symbol: targetSym,
+                      entryPrice: ep,
+                      stopLossPrice,
+                      takeProfitPrice,
+                      rrRatio: rr,
+                      markerLabel,
+                    }) => {
+                      handleSelectSymbol(targetSym);
+                      setEntryPrice(ep);
+                      const stopPct = Math.max(
+                        0.5,
+                        Math.min(10, Number((((ep - stopLossPrice) / ep) * 100).toFixed(2)))
+                      );
+                      setStopDistancePct(stopPct);
+                      setRrRatio(rr);
+                      setTradeSide('long');
+                      setShowRiskOverlay(true);
+                      const dec = targetSym === 'BTCUSDT' ? 2 : 4;
+                      if (isTierLocked('advanced')) {
+                        setActiveBottomTab('portfolio');
+                        setAlertBanner(
+                          `Staged ${markerLabel} (${targetSym.replace(
+                            'USDT',
+                            ''
+                          )}): Buy $${ep.toFixed(dec)} · 78.6% Stop $${stopLossPrice.toFixed(
+                            dec
+                          )} · Sell $${takeProfitPrice.toFixed(
+                            dec
+                          )} — Rehearse in Section 12 Paper Ledger before Stage III Live Execution`
+                        );
+                        navigateToChapter('portfolio-ledger');
+                      } else {
+                        setAlertBanner(
+                          `Loaded ${markerLabel} (${targetSym.replace(
+                            'USDT',
+                            ''
+                          )}) onto Section 14 Order Desk: Buy $${ep.toFixed(
+                            dec
+                          )} · 78.6% Stop $${stopLossPrice.toFixed(
+                            dec
+                          )} · Sell $${takeProfitPrice.toFixed(dec)}`
+                        );
+                        navigateToChapter('risk-chart');
+                      }
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'ai-buy-sell-helper') && (
+                <section id="ai-buy-sell-helper">
+                  <LiveAiSignalHelper
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    timeframe={timeframe}
+                    candles={activeCandles}
+                    stats={activeStats}
+                    fibLevels={fibLevels}
+                    livePrice={livePrice}
+                    btcLivePrice={btcLive}
+                    xrpLivePrice={xrpLive}
+                    xlmLivePrice={xlmLive}
+                    accountBalance={accountBalance}
+                    riskPercent={riskPercent}
+                    onApplyRecommendationToChart={({
+                      entryPrice: recEntry,
+                      stopDistancePct: recStopPct,
+                      rrRatio: recRr,
+                    }) => {
+                      setEntryPrice(recEntry);
+                      setStopDistancePct(recStopPct);
+                      setRrRatio(recRr);
+                      setTradeSide('long');
+                      setShowRiskOverlay(true);
+                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
+                      if (isTierLocked('advanced')) {
+                        setActiveBottomTab('portfolio');
+                        setAlertBanner(
+                          `Staged AI Examiner Levels (${symbol}): Buy $${recEntry.toFixed(
+                            dec
+                          )} · Stop ${recStopPct}% · 1:${recRr} Target — Ready for Section 12 Paper Rehearsal`
+                        );
+                        navigateToChapter('portfolio-ledger');
+                      } else {
+                        setAlertBanner(
+                          `Loaded AI Buy & Sell Points onto Section 14 Live ${symbol} Chart: Buy $${recEntry.toFixed(
+                            dec
+                          )} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
+                        );
+                        navigateToChapter('risk-chart');
+                      }
+                    }}
+                  />
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'portfolio-ledger') && (
+                <section id="portfolio-ledger">
+                  <PortfolioAndToolsSection
+                    activeSectionTab={activeBottomTab}
+                    onSectionTabChange={setActiveBottomTab}
+                    positions={positions}
+                    onClosePosition={handleClosePosition}
+                    btcPrice={btcLive}
+                    xrpPrice={xrpLive}
+                    xlmPrice={xlmLive}
+                    candles={activeCandles}
+                    watchedWallets={watchedWallets}
+                    onAddWallet={(w) => setWatchedWallets((prev) => [w, ...prev])}
+                    onRemoveWallet={(id) =>
+                      setWatchedWallets((prev) => prev.filter((item) => item.id !== id))
+                    }
+                    botStrategies={botStrategies}
+                    onToggleBot={handleToggleBot}
+                    onRunBotBacktest={handleRunBotBacktest}
+                    alerts={alerts}
+                    onAddAlert={(newAl) =>
+                      setAlerts((prev) => [
+                        { ...newAl, id: `al_${Date.now()}`, triggered: false },
+                        ...prev,
+                      ])
+                    }
+                    onDeleteAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
+                  />
+                </section>
+              )}
+            </>
+          )}
+
+          {/* ====================================================================
+           * STAGE III: ADVANCED — END OF THE PROCESS: SELF-CUSTODY EXECUTION (13–16)
+           * ==================================================================== */}
+          {!paginatedMode && isTierLocked('advanced') && (
+            <AcademyPasscodeGateCard
+              requiredTier="advanced"
+              chapterNumber="13–16"
+              chapterTitle="Advanced Capstone: 11-Skill Readiness, Single XRPL DEX Trade & 10-Set Execution"
+              chaptersInTier={WORKSHOP_CHAPTERS.filter((c) => c.groupId === 'advanced').map(
+                (c) => ({ number: c.number, fullTitle: c.fullTitle })
+              )}
+              publicGates={publicGates}
+              onUnlockIntermediate={handleUnlockIntermediate}
+              onUnlockAdvanced={handleUnlockAdvanced}
+              onOpenBeginnerStart={() => navigateToChapter('start-here')}
+              onOpenPublicLibrary={() => {
+                setPaginatedMode(true);
+                navigateToChapter('open-library');
+              }}
+              onOpenAdminModal={() => setShowAdminModal(true)}
+              isAdminUser={isAdminUser}
+              adminPreviewStudentGate={adminPreviewStudentGate}
+              onExitStudentPreview={() => setAdminPreviewStudentGate(false)}
+            />
+          )}
+
+          {!isTierLocked('advanced') && (
+            <>
+              {/* Stage III Finish-Line Execution Sequence Strip (Visible across Steps 13–16 in Page-by-Page Mode) */}
+              {paginatedMode && activeChapter.groupId === 'advanced' && (
+                <section
+                  aria-label="Stage III Finish-Line Execution Sequence"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-300">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span className="font-semibold text-slate-900 dark:text-white">
+                        Stage III — End-of-Process Execution Sequence
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span>
+                        Readiness Check → First Single Self-Custody Trade → 10-Set Sequencer → 24/7 Stewardship
+                      </span>
+                    </div>
+                    <span className="font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+                      Capstone Step {activeChapter.number} of 16
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                    {[
+                      {
+                        id: 'skill-desk' as WorkshopChapterId,
+                        step: '13. Readiness Check',
+                        desc: 'Verify 11 risk & discipline skills before live orders',
+                      },
+                      {
+                        id: 'risk-chart' as WorkshopChapterId,
+                        step: '14. First Single XRPL Trade',
+                        desc: 'Size 1 trade (e.g. 2 XRP) on the Embedded XRPL DEX',
+                      },
+                      {
+                        id: 'ten-set-auto-trader' as WorkshopChapterId,
+                        step: '15. 10-Set Sequencer',
+                        desc: 'Import Set #01–#10 one by one with 1:2+ math',
+                      },
+                      {
+                        id: 'ai-dex-lab' as WorkshopChapterId,
+                        step: '16. 24/7 DEX Stewardship',
+                        desc: 'Graduation architecture & ongoing self-custody',
+                      },
+                    ].map((item) => {
+                      const isCurrent = activeChapter.id === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => navigateToChapter(item.id)}
+                          className={`p-3 rounded-lg border text-left transition-colors cursor-pointer space-y-1 ${
+                            isCurrent
+                              ? 'border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 text-slate-900 dark:text-white'
+                              : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          <div className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                            {item.step}
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                            {item.desc}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {(!paginatedMode || activeChapter.id === 'skill-desk') && (
+                <section id="skill-desk">
+                  <DayTraderSkillSuite
+                    symbol={symbol}
+                    onSelectSymbol={handleSelectSymbol}
+                    candles={activeCandles}
+                    stats={activeStats}
+                    fibLevels={fibLevels}
+                    livePrice={livePrice}
+                    accountBalance={accountBalance}
+                    entryPrice={entryPrice}
+                    onEntryPriceChange={setEntryPrice}
+                    stopLoss={currentStopLoss}
+                    takeProfit={currentTakeProfit}
+                    stopDistancePct={stopDistancePct}
+                    riskPercent={riskPercent}
+                    rrRatio={rrRatio}
+                    tradeSide={tradeSide}
+                    instrument={instrument}
+                    leverage={leverage}
+                    positions={positions}
+                    onOpenPaperPosition={handleOpenPaperPosition}
+                    onAddAlert={(newAl) => {
+                      setAlerts((prev) => [
+                        { ...newAl, id: `al_${Date.now()}`, triggered: false },
+                        ...prev,
+                      ]);
+                      setAlertBanner(
+                        `Armed Alert: ${newAl.symbol} ${newAl.condition} $${newAl.targetPrice.toFixed(
+                          newAl.symbol === 'BTCUSDT' ? 2 : 4
+                        )}`
+                      );
+                    }}
+                  />
+                </section>
+              )}
+
               {(!paginatedMode || activeChapter.id === 'risk-chart') && (
                 <div id="risk-chart" className="space-y-6">
+                  <OneByOneTradeChecklist
+                    contextStep="step14"
+                    xrpLivePrice={xrpLive}
+                    connectedXrplAddress={
+                      embeddedXrplAddress ||
+                      watchedWallets.find((w) => w.network === 'XRPL')?.address ||
+                      ''
+                    }
+                    checklistState={oneByOneChecklist}
+                    onChangeChecklistState={setOneByOneChecklist}
+                    onLoadSetIntoDex={(payload) => {
+                      handleSelectSymbol('XRPUSDT');
+                      setInstrument('spot');
+                      setLeverage(1);
+                      setTradeSide('long');
+                      setShowRiskOverlay(true);
+                      if (payload.walletAddress) {
+                        setEmbeddedXrplAddress(payload.walletAddress);
+                      }
+                      setImportedXrplDexSet({
+                        ...payload,
+                        nonce: Date.now(),
+                      });
+                      const numStr =
+                        payload.setNumber < 10
+                          ? `0${payload.setNumber}`
+                          : String(payload.setNumber);
+                      setAlertBanner(
+                        `Loaded Set #${numStr} (${payload.setupName}) into Embedded XRPL DEX — ${payload.quantityXrp} XRP Ready!`
+                      );
+                    }}
+                  />
+
                   <section className="flex flex-wrap items-center justify-between gap-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-4">
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800">
@@ -1736,232 +2223,19 @@ export default function App() {
                 </div>
               )}
 
-              {(!paginatedMode || activeChapter.id === 'candlestick-guide') && (
-                <section id="candlestick-guide">
-                  <CandleEducationDeck
-                    symbol={symbol}
-                    candles={activeCandles}
-                    selectedCandleIndex={selectedCandleIndex}
-                    onSelectCandle={setSelectedCandleIndex}
-                    fibLevels={fibLevels}
-                    livePrice={livePrice}
-                    onUsePriceAsEntry={(price) => {
-                      setEntryPrice(price);
-                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
-                      setAlertBanner(
-                        `Set Entry Price to $${price.toFixed(dec)} from Candlestick & Fibonacci Guide`
-                      );
-                    }}
-                  />
-                </section>
-              )}
-
-              {(!paginatedMode || activeChapter.id === 'fibonacci-symphony-geometry') && (
-                <section id="fibonacci-symphony-geometry">
-                  <FibonacciSymphonyGeometryModule
-                    symbol={symbol}
-                    onSelectSymbol={handleSelectSymbol}
-                    candles={activeCandles}
-                    livePrice={livePrice}
-                    onApplySetupToSimulator={({
-                      entryPrice: ep,
-                      stopLossPrice,
-                      takeProfitPrice,
-                      rrRatio: rr,
-                    }) => {
-                      setEntryPrice(ep);
-                      const stopPct = Math.max(
-                        0.5,
-                        Math.min(10, Number((((ep - stopLossPrice) / ep) * 100).toFixed(2)))
-                      );
-                      setStopDistancePct(stopPct);
-                      setRrRatio(rr);
-                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
-                      setAlertBanner(
-                        `Loaded 3-Point Fibonacci Setup (${symbol.replace(
-                          'USDT',
-                          ''
-                        )}): Point C Buy $${ep.toFixed(dec)} · 78.6% Stop $${stopLossPrice.toFixed(
-                          dec
-                        )} · 161.8% Golden Target $${takeProfitPrice.toFixed(dec)}`
-                      );
-                      navigateToChapter('risk-chart');
-                    }}
-                  />
-                </section>
-              )}
-
-              {(!paginatedMode || activeChapter.id === 'fibonacci-symphony-markers') && (
-                <section id="fibonacci-symphony-markers">
-                  <FibonacciSymphonyMarkersStudio
-                    symbol={symbol}
-                    onSelectSymbol={handleSelectSymbol}
-                    candles={activeCandles}
-                    livePrice={livePrice}
-                    btcLivePrice={btcLive}
-                    xrpLivePrice={xrpLive}
-                    xlmLivePrice={xlmLive}
-                    onSendMarkerSetupToOrderDesk={({
-                      symbol: targetSym,
-                      entryPrice: ep,
-                      stopLossPrice,
-                      takeProfitPrice,
-                      rrRatio: rr,
-                      markerLabel,
-                    }) => {
-                      handleSelectSymbol(targetSym);
-                      setEntryPrice(ep);
-                      const stopPct = Math.max(
-                        0.5,
-                        Math.min(10, Number((((ep - stopLossPrice) / ep) * 100).toFixed(2)))
-                      );
-                      setStopDistancePct(stopPct);
-                      setRrRatio(rr);
-                      setTradeSide('long');
-                      setShowRiskOverlay(true);
-                      const dec = targetSym === 'BTCUSDT' ? 2 : 4;
-                      setAlertBanner(
-                        `Loaded ${markerLabel} (${targetSym.replace(
-                          'USDT',
-                          ''
-                        )}): Buy $${ep.toFixed(dec)} · 78.6% Stop $${stopLossPrice.toFixed(
-                          dec
-                        )} · Sell $${takeProfitPrice.toFixed(dec)}`
-                      );
-                      navigateToChapter('risk-chart');
-                    }}
-                  />
-                </section>
-              )}
-
-              {(!paginatedMode || activeChapter.id === 'ai-buy-sell-helper') && (
-                <section id="ai-buy-sell-helper">
-                  <LiveAiSignalHelper
-                    symbol={symbol}
-                    onSelectSymbol={handleSelectSymbol}
-                    timeframe={timeframe}
-                    candles={activeCandles}
-                    stats={activeStats}
-                    fibLevels={fibLevels}
-                    livePrice={livePrice}
-                    btcLivePrice={btcLive}
-                    xrpLivePrice={xrpLive}
-                    xlmLivePrice={xlmLive}
-                    accountBalance={accountBalance}
-                    riskPercent={riskPercent}
-                    onApplyRecommendationToChart={({
-                      entryPrice: recEntry,
-                      stopDistancePct: recStopPct,
-                      rrRatio: recRr,
-                    }) => {
-                      setEntryPrice(recEntry);
-                      setStopDistancePct(recStopPct);
-                      setRrRatio(recRr);
-                      setTradeSide('long');
-                      setShowRiskOverlay(true);
-                      const dec = symbol === 'BTCUSDT' ? 2 : 4;
-                      setAlertBanner(
-                        `Loaded AI Buy & Sell Points onto Live ${symbol} Chart: Buy $${recEntry.toFixed(
-                          dec
-                        )} · Stop ${recStopPct}% · 1:${recRr} Target (Use at Your Own Risk)`
-                      );
-                      navigateToChapter('risk-chart');
-                    }}
-                  />
-                </section>
-              )}
-
-              {(!paginatedMode || activeChapter.id === 'portfolio-ledger') && (
-                <section id="portfolio-ledger">
-                  <PortfolioAndToolsSection
-                    activeSectionTab={activeBottomTab}
-                    onSectionTabChange={setActiveBottomTab}
-                    positions={positions}
-                    onClosePosition={handleClosePosition}
-                    btcPrice={btcLive}
-                    xrpPrice={xrpLive}
-                    xlmPrice={xlmLive}
-                    candles={activeCandles}
-                    watchedWallets={watchedWallets}
-                    onAddWallet={(w) => setWatchedWallets((prev) => [w, ...prev])}
-                    onRemoveWallet={(id) =>
-                      setWatchedWallets((prev) => prev.filter((item) => item.id !== id))
-                    }
-                    botStrategies={botStrategies}
-                    onToggleBot={handleToggleBot}
-                    onRunBotBacktest={handleRunBotBacktest}
-                    alerts={alerts}
-                    onAddAlert={(newAl) =>
-                      setAlerts((prev) => [
-                        { ...newAl, id: `al_${Date.now()}`, triggered: false },
-                        ...prev,
-                      ])
-                    }
-                    onDeleteAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
-                  />
-                </section>
-              )}
-
-              {(!paginatedMode || activeChapter.id === 'cycle-monthly-rhythms') && (
-                <section id="cycle-monthly-rhythms">
-                  <MarketCyclesEducationModule
-                    symbol={symbol}
-                    onSelectSymbol={handleSelectSymbol}
-                    candles={activeCandles}
-                    btcLivePrice={btcLive}
-                    xrpLivePrice={xrpLive}
-                    xlmLivePrice={xlmLive}
-                    onEnterApp={handleEnterApp}
-                    onlyPart="monthly_rhythms"
-                  />
-                </section>
-              )}
-            </>
-          )}
-
-          {/* ====================================================================
-           * TIER III: ADVANCED — 10-SET, 11-SKILL & ON-CHAIN DEX (SECTIONS 13–16)
-           * ==================================================================== */}
-          {!paginatedMode && isTierLocked('advanced') && (
-            <AcademyPasscodeGateCard
-              requiredTier="advanced"
-              chapterNumber="13–16"
-              chapterTitle="Advanced Curriculum: 10-Set Sequencer, 11-Skill Desk & On-Chain DEX"
-              chaptersInTier={WORKSHOP_CHAPTERS.filter((c) => c.groupId === 'advanced').map(
-                (c) => ({ number: c.number, fullTitle: c.fullTitle })
-              )}
-              publicGates={publicGates}
-              onUnlockIntermediate={handleUnlockIntermediate}
-              onUnlockAdvanced={handleUnlockAdvanced}
-              onOpenBeginnerStart={() => navigateToChapter('start-here')}
-              onOpenPublicLibrary={() => {
-                setPaginatedMode(true);
-                navigateToChapter('open-library');
-              }}
-              onOpenAdminModal={() => setShowAdminModal(true)}
-              isAdminUser={isAdminUser}
-              adminPreviewStudentGate={adminPreviewStudentGate}
-              onExitStudentPreview={() => setAdminPreviewStudentGate(false)}
-            />
-          )}
-
-          {!isTierLocked('advanced') && (
-            <>
               {(!paginatedMode || activeChapter.id === 'ten-set-auto-trader') && (
-                <section id="ten-set-auto-trader">
-                  <TenSetAutoTraderLab
-                    symbol={symbol}
-                    onSelectSymbol={handleSelectSymbol}
-                    candles={activeCandles}
-                    fibLevels={fibLevels}
-                    livePrice={livePrice}
-                    btcLivePrice={btcLive}
+                <div id="ten-set-auto-trader" className="space-y-6">
+                  <OneByOneTradeChecklist
+                    contextStep="step15"
                     xrpLivePrice={xrpLive}
-                    xlmLivePrice={xlmLive}
-                    accountBalance={accountBalance}
-                    riskPercent={riskPercent}
-                    onLogSetPositionToPortfolio={handleOpenPaperPosition}
-                    onSendSetToEmbeddedXrplDex={(payload) => {
+                    connectedXrplAddress={
+                      embeddedXrplAddress ||
+                      watchedWallets.find((w) => w.network === 'XRPL')?.address ||
+                      ''
+                    }
+                    checklistState={oneByOneChecklist}
+                    onChangeChecklistState={setOneByOneChecklist}
+                    onLoadSetIntoDex={(payload) => {
                       handleSelectSymbol('XRPUSDT');
                       setInstrument('spot');
                       setLeverage(1);
@@ -1979,89 +2253,173 @@ export default function App() {
                           ? `0${payload.setNumber}`
                           : String(payload.setNumber);
                       setAlertBanner(
-                        `Loaded Set #${numStr} (${payload.setupName}) into Step-by-Step Embedded XRPL DEX — ${payload.quantityXrp} XRP Ready!`
+                        `Loaded Set #${numStr} (${payload.setupName}) into Section 14 Embedded XRPL DEX — ${payload.quantityXrp} XRP Ready!`
                       );
                       navigateToChapter('risk-chart');
                     }}
                   />
-                </section>
-              )}
 
-              {(!paginatedMode || activeChapter.id === 'skill-desk') && (
-                <section id="skill-desk">
-                  <DayTraderSkillSuite
-                    symbol={symbol}
-                    onSelectSymbol={handleSelectSymbol}
-                    candles={activeCandles}
-                    stats={activeStats}
-                    fibLevels={fibLevels}
-                    livePrice={livePrice}
-                    accountBalance={accountBalance}
-                    entryPrice={entryPrice}
-                    onEntryPriceChange={setEntryPrice}
-                    stopLoss={currentStopLoss}
-                    takeProfit={currentTakeProfit}
-                    stopDistancePct={stopDistancePct}
-                    riskPercent={riskPercent}
-                    rrRatio={rrRatio}
-                    tradeSide={tradeSide}
-                    instrument={instrument}
-                    leverage={leverage}
-                    positions={positions}
-                    onOpenPaperPosition={handleOpenPaperPosition}
-                    onAddAlert={(newAl) => {
-                      setAlerts((prev) => [
-                        { ...newAl, id: `al_${Date.now()}`, triggered: false },
-                        ...prev,
-                      ]);
-                      setAlertBanner(
-                        `Armed Alert: ${newAl.symbol} ${newAl.condition} $${newAl.targetPrice.toFixed(
-                          newAl.symbol === 'BTCUSDT' ? 2 : 4
-                        )}`
-                      );
-                    }}
-                  />
-                </section>
+                  <section>
+                    <TenSetAutoTraderLab
+                      symbol={symbol}
+                      onSelectSymbol={handleSelectSymbol}
+                      candles={activeCandles}
+                      fibLevels={fibLevels}
+                      livePrice={livePrice}
+                      btcLivePrice={btcLive}
+                      xrpLivePrice={xrpLive}
+                      xlmLivePrice={xlmLive}
+                      accountBalance={accountBalance}
+                      riskPercent={riskPercent}
+                      onLogSetPositionToPortfolio={handleOpenPaperPosition}
+                      onSendSetToEmbeddedXrplDex={(payload) => {
+                        handleSelectSymbol('XRPUSDT');
+                        setInstrument('spot');
+                        setLeverage(1);
+                        setTradeSide('long');
+                        setShowRiskOverlay(true);
+                        if (payload.walletAddress) {
+                          setEmbeddedXrplAddress(payload.walletAddress);
+                        }
+                        setOneByOneChecklist((prev) => ({
+                          ...prev,
+                          sets: {
+                            ...prev.sets,
+                            [payload.setNumber]: {
+                              ...(prev.sets[payload.setNumber] || {
+                                staged: false,
+                                receiptChecked: false,
+                                signedInWallet: false,
+                                filledAndLogged: false,
+                                note: '',
+                              }),
+                              staged: true,
+                            },
+                          },
+                        }));
+                        setImportedXrplDexSet({
+                          ...payload,
+                          nonce: Date.now(),
+                        });
+                        const numStr =
+                          payload.setNumber < 10
+                            ? `0${payload.setNumber}`
+                            : String(payload.setNumber);
+                        setAlertBanner(
+                          `Loaded Set #${numStr} (${payload.setupName}) into Section 14 Embedded XRPL DEX — ${payload.quantityXrp} XRP Ready!`
+                        );
+                        navigateToChapter('risk-chart');
+                      }}
+                    />
+                  </section>
+                </div>
               )}
 
               {(!paginatedMode || activeChapter.id === 'ai-dex-lab') && (
-                <section id="ai-dex-lab">
-                  <DecentralizedAiDexDesk
-                    symbol={symbol}
-                    candles={activeCandles}
-                    stats={activeStats}
-                    livePrice={livePrice}
-                    accountBalance={accountBalance}
-                    entryPrice={entryPrice}
-                    stopLoss={currentStopLoss}
-                    takeProfit={currentTakeProfit}
-                    riskPercent={riskPercent}
-                    rrRatio={rrRatio}
-                    tradeSide={tradeSide}
-                    onOpenPaperPosition={handleOpenPaperPosition}
-                  />
-                </section>
-              )}
+                <div id="ai-dex-lab" className="space-y-6">
+                  <section>
+                    <DecentralizedAiDexDesk
+                      symbol={symbol}
+                      candles={activeCandles}
+                      stats={activeStats}
+                      livePrice={livePrice}
+                      accountBalance={accountBalance}
+                      entryPrice={entryPrice}
+                      stopLoss={currentStopLoss}
+                      takeProfit={currentTakeProfit}
+                      riskPercent={riskPercent}
+                      rrRatio={rrRatio}
+                      tradeSide={tradeSide}
+                      onOpenPaperPosition={handleOpenPaperPosition}
+                    />
+                  </section>
 
-              {(!paginatedMode || activeChapter.id === 'cycle-four-year-clock') && (
-                <section id="cycle-four-year-clock">
-                  <MarketCyclesEducationModule
-                    symbol={symbol}
-                    onSelectSymbol={handleSelectSymbol}
-                    candles={activeCandles}
-                    btcLivePrice={btcLive}
-                    xrpLivePrice={xrpLive}
-                    xlmLivePrice={xlmLive}
-                    onEnterApp={handleEnterApp}
-                    onlyPart="four_year_cycles"
-                  />
-                </section>
+                  {/* End-of-Process Graduation & Self-Custody Stewardship Capstone Summary */}
+                  <section
+                    aria-label="Symphony Markets Academy Graduation Capstone"
+                    className="rounded-xl border border-emerald-500/40 bg-white dark:bg-slate-900 p-6 sm:p-8 space-y-6"
+                  >
+                    <div className="space-y-2 border-b border-slate-200 dark:border-slate-800 pb-4">
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>Step 16 of 16 · End of the Academy Process</span>
+                        <span aria-hidden="true">·</span>
+                        <span>Learn → Rehearse → Execute Stewardship Complete</span>
+                      </div>
+                      <h2
+                        className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white"
+                        style={{ textWrap: 'balance' }}
+                      >
+                        Graduation Protocol: How Symphony Markets Stewards Operate Going Forward
+                      </h2>
+                      <p className="text-sm text-slate-600 dark:text-slate-300 max-w-[70ch] leading-relaxed">
+                        You have walked the full 16-step progression in intentional order—learning the market’s natural seasons first, reading Fibonacci sheet music and rehearsing on paper second, and executing calm, non-custodial limit orders last.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 space-y-1.5">
+                        <div className="font-mono font-semibold text-sky-700 dark:text-sky-400">
+                          I. Seasons & Rhythm First (01–07)
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                          Always identify whether we are in an <strong>Ascending Eagle</strong> or <strong>Descending Eagle</strong> season and check the monthly/4-year clock before hunting setups.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 space-y-1.5">
+                        <div className="font-mono font-semibold text-amber-700 dark:text-amber-400">
+                          II. Fibonacci & Paper Proof (08–12)
+                        </div>
+                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                          Map 61.8% retracement support and 127.2% / 161.8% extension targets, verify at least a <strong>1:2 Risk-to-Reward</strong> ratio, and test new ideas in the Paper Ledger first.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-emerald-400/50 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-1.5">
+                        <div className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                          III. One-by-One Self-Custody (13–16)
+                        </div>
+                        <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                          Keep 100% Spot self-custody (zero leverage, 2% max risk). Execute <strong>one limit order at a time</strong> in Section 14 or step-by-step from the Section 15 10-Set Sequencer.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => navigateToChapter('risk-chart')}
+                        className="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      >
+                        Go to Step 14: Single Trade on Embedded XRPL DEX →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => navigateToChapter('ten-set-auto-trader')}
+                        className="px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      >
+                        Go to Step 15: 10-Set Sequencer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaginatedMode(true);
+                          navigateToChapter('open-library');
+                        }}
+                        className="px-4 py-2.5 rounded-lg border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 text-xs sm:text-sm font-semibold text-sky-700 dark:text-sky-300 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      >
+                        Open Media & Document Library
+                      </button>
+                    </div>
+                  </section>
+                </div>
               )}
             </>
           )}
 
           {/* ====================================================================
-           * TIER IV: OPEN MEDIA & DOCUMENT LIBRARY (SECTION 16 — ZERO PASSCODE)
+           * STANDALONE REFERENCE ROOM: OPEN MEDIA & DOCUMENT LIBRARY (NO PASSCODE)
            * ==================================================================== */}
           {(!paginatedMode || activeChapter.id === 'open-library') && (
             <section id="open-library">
@@ -2088,7 +2446,9 @@ export default function App() {
                 <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-400">
                   <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                    ✓ End of Section {activeChapter.number} of {WORKSHOP_CHAPTERS.length}
+                    {isStandaloneLibraryActive
+                      ? '✓ Open Reference Room (Accessible Anytime)'
+                      : `✓ End of Step ${activeChapter.number} of ${PROGRESSION_CHAPTERS.length}`}
                   </span>
                   <span aria-hidden="true">·</span>
                   <span className="font-medium text-slate-900 dark:text-white">
@@ -2096,13 +2456,22 @@ export default function App() {
                   </span>
                 </div>
                 <span className="font-mono text-slate-500 dark:text-slate-400">
-                  Group {activeGroup.roman}: {activeGroup.label}
+                  Stage {activeGroup.roman}: {activeGroup.label}
                 </span>
               </div>
 
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                 <div className="flex items-center">
-                  {prevChapter ? (
+                  {isStandaloneLibraryActive ? (
+                    <button
+                      type="button"
+                      onClick={() => navigateToChapter(resumeStudyChapter.id)}
+                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4 shrink-0" />
+                      <span>Resume Step: {resumeStudyChapter.shortTitle}</span>
+                    </button>
+                  ) : prevChapter ? (
                     <button
                       type="button"
                       onClick={() => navigateToChapter(prevChapter.id)}
@@ -2139,11 +2508,13 @@ export default function App() {
                     {CURRICULUM_GROUPS.map((grp) => (
                       <optgroup
                         key={grp.id}
-                        label={`Group ${grp.roman}: ${grp.label} (${grp.rangeBadge})`}
+                        label={`Stage ${grp.roman}: ${grp.label} (${grp.rangeBadge})`}
                       >
                         {WORKSHOP_CHAPTERS.filter((ch) => ch.groupId === grp.id).map((ch) => (
                           <option key={ch.id} value={ch.id}>
-                            {ch.number}. {ch.fullTitle}
+                            {ch.groupId === 'open_library'
+                              ? ch.fullTitle
+                              : `${ch.number}. ${ch.fullTitle}`}
                           </option>
                         ))}
                       </optgroup>
@@ -2152,24 +2523,33 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center justify-end">
-                  {nextChapter ? (
+                  {isStandaloneLibraryActive ? (
+                    <button
+                      type="button"
+                      onClick={() => navigateToChapter('start-here')}
+                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                    >
+                      <span>Start Step 01: {PROGRESSION_CHAPTERS[0].fullTitle}</span>
+                      <ArrowRight className="w-4 h-4 shrink-0" />
+                    </button>
+                  ) : nextChapter ? (
                     <button
                       type="button"
                       onClick={() => navigateToChapter(nextChapter.id)}
                       className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
                     >
                       <span>
-                        Next ({nextChapter.number}/{WORKSHOP_CHAPTERS.length}): {nextChapter.fullTitle}
+                        Next ({nextChapter.number}/{PROGRESSION_CHAPTERS.length}): {nextChapter.fullTitle}
                       </span>
                       <ArrowRight className="w-4 h-4 shrink-0" />
                     </button>
                   ) : (
                     <button
                       type="button"
-                      onClick={() => navigateToChapter(WORKSHOP_CHAPTERS[0].id)}
+                      onClick={() => navigateToChapter(PROGRESSION_CHAPTERS[0].id)}
                       className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
                     >
-                      <span>Restart at 01: {WORKSHOP_CHAPTERS[0].fullTitle}</span>
+                      <span>Restart at 01: {PROGRESSION_CHAPTERS[0].fullTitle}</span>
                       <ArrowRight className="w-4 h-4 shrink-0" />
                     </button>
                   )}
